@@ -1,0 +1,141 @@
+# Publishes FITNS.
+#
+# Push a tag like `v0.0.1` and this workflow will:
+#   1. check the tag matches the version in pubspec.yaml
+#   2. analyze and run the full test suite
+#   3. build release APKs, one per ABI, signed with the release key
+#   4. check every APK carries libsqlite3.so and the release signature
+#   5. publish a GitHub Release with stable asset names + SHA-256 checksums
+#
+# Signing needs four repository secrets. tool/setup_release_signing.py
+# creates the key and sets them — once, ever. Every release must be signed
+# with that same key, or Android won't install it over the previous one.
+#
+# Asset names (fitns-arm64-v8a.apk, …) are what download links point at, so
+# they must never change.
+
+name: Release APK
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, verify & publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify tag matches pubspec version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PUBSPEC="$(grep -E '^version:' pubspec.yaml | sed 's/version: *//' | cut -d'+' -f1 | tr -d '[:space:]')"
+          if [ "$TAG" != "$PUBSPEC" ]; then
+            echo "::error::Tag v$TAG does not match pubspec.yaml version $PUBSPEC."
+            echo "Bump pubspec.yaml (and AppInfo — test/branding_test.dart guards it) before tagging."
+            exit 1
+          fi
+
+      # Fail before spending ten minutes on a build that can't be published.
+      - name: Check signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Release signing secrets are not set. Run tool/setup_release_signing.py once, then re-run this workflow."
+            exit 1
+          fi
+
+      - name: Install sqlite3
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Keep in step with ci.yml.
+          channel: stable
+          flutter-version: '3.47.8'
+          cache: true
+
+      # Secrets go through env, never straight into the script text.
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/fitns-release.jks"
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=$RUNNER_TEMP/fitns-release.jks
+          EOF
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build release APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Rename to stable asset names
+        run: |
+          mkdir -p release
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk   release/fitns-arm64-v8a.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release/fitns-armeabi-v7a.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk      release/fitns-x86_64.apk
+
+      # Without libsqlite3.so the app can't open its database at all, and
+      # a debug-signed APK could never be updated by the next release.
+      - name: Verify APKs
+        run: |
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          for apk in release/*.apk; do
+            abi="$(basename "$apk" .apk)"; abi="${abi#fitns-}"
+            unzip -l "$apk" | grep -q "lib/$abi/libsqlite3.so" \
+              || { echo "::error::$apk has no lib/$abi/libsqlite3.so"; exit 1; }
+            "$APKSIGNER" verify --print-certs "$apk" | grep -q "CN=FITNS" \
+              || { echo "::error::$apk is not signed with the FITNS release key"; exit 1; }
+            echo "ok: $apk"
+          done
+
+      - name: Checksums
+        working-directory: release
+        run: sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/fitns-arm64-v8a.apk
+            release/fitns-armeabi-v7a.apk
+            release/fitns-x86_64.apk
+            release/SHA256SUMS.txt
+          generate_release_notes: true
+          body: |
+            **FITNS — Fitness, tracked offline.** A TRAKVRS app, alongside [XPENC](https://xpenc.in).
+
+            | Your device | Download |
+            |---|---|
+            | Most phones (2017+) · ⭐ **Recommended** | [`fitns-arm64-v8a.apk`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/fitns-arm64-v8a.apk) |
+            | Older 32-bit phones | [`fitns-armeabi-v7a.apk`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/fitns-armeabi-v7a.apk) |
+            | Emulators | [`fitns-x86_64.apk`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/fitns-x86_64.apk) |
+
+            Android only. Everything stays on your phone — the app has no internet permission.
+            Verify your download against `SHA256SUMS.txt`. What's new: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md).

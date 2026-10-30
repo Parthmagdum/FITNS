@@ -1,0 +1,91 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Reading the hardware step counter. A runtime permission on Android
+         10+; asked for only when the user turns step tracking on. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <!-- Steps are optional: the app installs and works on a device without
+         a step counter, the Steps card just says so. -->
+    <uses-feature android:name="android.hardware.sensor.stepcounter"
+        android:required="false"/>
+    <!-- Rep counting: push-ups use the proximity sensor, jumps and squats
+         the accelerometer. Neither needs a permission; both optional. -->
+    <uses-feature android:name="android.hardware.sensor.proximity"
+        android:required="false"/>
+    <uses-feature android:name="android.hardware.sensor.accelerometer"
+        android:required="false"/>
+    <!-- All-day step counting (StepCounterService): Android only counts
+         steps while some app holds the sensor, so with FITNS closed a
+         foreground service of type "health" holds it. Opt-out in Settings.
+         Restarted after a reboot by BootReceiver. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Rest timer (RestAlert.kt): a notification when rest is over while
+         the phone is locked, and an exact alarm so it arrives on time.
+         Android 14 doesn't grant exact alarms by default; Settings offers it,
+         and without it the alert can just run a little late. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <!-- FITNS is offline. Strip INTERNET in case any plugin's library
+         manifest declares it — same promise and same guard as XPENC.
+         Debug builds keep it via src/debug for hot reload. -->
+    <uses-permission android:name="android.permission.INTERNET"
+        tools:node="remove"/>
+    <application
+        android:label="FITNS"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <service
+            android:name=".StepCounterService"
+            android:exported="false"
+            android:foregroundServiceType="health"/>
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".RestAlarmReceiver"
+            android:exported="false"/>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>

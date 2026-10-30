@@ -1,0 +1,49 @@
+# Checks every push to main and every pull request: analysis, the full test
+# suite, and a debug build so the Kotlin side (sensor bridges, step service)
+# is compiled too — no Dart test can reach it.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Analyze, test & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      # The database tests run drift on the host, which loads the system
+      # libsqlite3.
+      - name: Install sqlite3
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Keep in step with release.yml.
+          channel: stable
+          flutter-version: '3.47.8'
+          cache: true
+
+      - name: Pub get
+        run: |
+          flutter pub get
+          git diff --quiet pubspec.lock || echo "::warning::pubspec.lock changed under Flutter 3.47.8 — run 'flutter pub get' on that version locally and commit the lock file."
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build (debug)
+        run: flutter build apk --debug

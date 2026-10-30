@@ -1,0 +1,41 @@
+name: fitns
+description: "FITNS — offline, open-source fitness tracking. Workouts, body metrics and steps, all on-device."
+publish_to: 'none'
+
+# `AppInfo.version` / `AppInfo.buildNumber` mirror this line so the About screen
+# can show it without a platform plugin. `test/branding_test.dart` parses this
+# file and fails if the two ever disagree.
+version: 0.0.3+3
+
+environment:
+  # Same floor as XPENC, so a contributor on stable Flutter can build both.
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Same stack and pins as XPENC — the two apps share conventions, and a fix
+  # learned in one should carry straight over to the other.
+  flutter_riverpod: 2.6.1
+  drift: 2.31.0
+  drift_flutter: 0.2.8
+  sqlite3_flutter_libs: 0.5.42
+  go_router: ^17.3.0
+  intl: ^0.20.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: 2.31.0
+  build_runner: ^2.15.1
+  # Pinned to XPENC's resolved version. drift_dev 2.31 can't read the table
+  # argument of `references(Table, #id)` under analyzer 10.2: it warns "This
+  # parameter should be a simple class name" and silently generates the
+  # columns with NO foreign key — so every cascade delete stops working while
+  # the build still succeeds. test/database_test.dart checks a cascade.
+  analyzer: 10.0.1
+
+flutter:
+  uses-material-design: true
