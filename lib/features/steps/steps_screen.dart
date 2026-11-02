@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/dates.dart';
+import '../../core/insights.dart';
 import '../../core/steps/step_stats.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
@@ -269,6 +270,8 @@ class _DayView extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (isSameDay(day, DateTime.now()))
+                StepPaceLine(total: total, goal: goal),
               const SizedBox(height: 20),
               _Estimates(steps: total),
             ],
@@ -314,6 +317,44 @@ class _DayView extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Today's projected finish, from the usual day of the last two weeks.
+class StepPaceLine extends ConsumerWidget {
+  const StepPaceLine({super.key, required this.total, required this.goal});
+
+  final int total;
+  final int goal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final usual = ref.watch(usualStepHoursProvider).valueOrNull;
+    final message = stepPaceMessage(
+      soFar: total,
+      goal: goal,
+      projected: usual == null
+          ? null
+          : projectedSteps(
+              soFar: total,
+              usualHours: usual,
+              now: DateTime.now(),
+            ),
+      format: _count.format,
+    );
+    if (message == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.insights, size: 18, color: theme.accent),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message, style: theme.textTheme.bodySmall)),
+        ],
+      ),
     );
   }
 }

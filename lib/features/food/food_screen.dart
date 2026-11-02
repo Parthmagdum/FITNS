@@ -19,6 +19,9 @@ class FoodScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final day = ref.watch(foodDayProvider);
     final logs = ref.watch(foodLogsProvider(day)).valueOrNull ?? const [];
+    final dayBefore = DateTime(day.year, day.month, day.day - 1);
+    final before =
+        ref.watch(foodLogsProvider(dayBefore)).valueOrNull ?? const [];
 
     return AppPage(
       title: 'Food',
@@ -34,6 +37,10 @@ class FoodScreen extends ConsumerWidget {
             meal: meal,
             logs: [
               for (final l in logs)
+                if (l.meal == meal) l,
+            ],
+            dayBefore: [
+              for (final l in before)
                 if (l.meal == meal) l,
             ],
           ),
@@ -90,19 +97,24 @@ class _DaySwitcher extends ConsumerWidget {
   }
 }
 
-class _MealSection extends StatelessWidget {
+class _MealSection extends ConsumerWidget {
   const _MealSection({
     required this.day,
     required this.meal,
     required this.logs,
+    required this.dayBefore,
   });
 
   final DateTime day;
   final Meal meal;
   final List<FoodLogRow> logs;
 
+  /// The same meal the day before — offered as a one-tap repeat while this
+  /// one is empty, since most people eat the same breakfast most days.
+  final List<FoodLogRow> dayBefore;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final kcal = sumLogs(logs).kcal;
     return Column(
@@ -117,6 +129,47 @@ class _MealSection extends StatelessWidget {
             label: const Text('Add'),
           ),
         ),
+        if (logs.isEmpty && dayBefore.isNotEmpty)
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.replay, color: theme.accent),
+              title: Text('Same as the day before?'),
+              subtitle: Text(
+                '${dayBefore.map((l) => l.name).join(', ')} · '
+                '${formatKcal(sumLogs(dayBefore).kcal)}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
+              ),
+              trailing: TextButton(
+                onPressed: () async {
+                  final db = ref.read(dbProvider);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final before = await db.watchFoodLogs(day).first;
+                  await db.copyMeal(
+                    from: DateTime(day.year, day.month, day.day - 1),
+                    to: day,
+                    meal: meal,
+                  );
+                  final after = await db.watchFoodLogs(day).first;
+                  final added = [
+                    for (final l in after)
+                      if (!before.any((b) => b.id == l.id)) l.id,
+                  ];
+                  showUndo(
+                    messenger,
+                    'Added ${meal.label.toLowerCase()} from the day before',
+                    () async {
+                      for (final id in added) {
+                        await db.deleteFoodLog(id);
+                      }
+                    },
+                  );
+                },
+                child: const Text('Add'),
+              ),
+            ),
+          ),
         if (logs.isNotEmpty)
           Card(
             clipBehavior: Clip.antiAlias,

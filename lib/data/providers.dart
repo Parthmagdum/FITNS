@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/dates.dart';
+import '../core/insights.dart';
 import '../core/motion/motion_sensors.dart';
 import '../core/notifications/rest_alerts.dart';
 import '../core/platform/document_files.dart';
@@ -87,6 +88,15 @@ final previousSetsProvider = FutureProvider.autoDispose
           .previousSets(key.exerciseId, beforeWorkoutId: key.workoutId),
     );
 
+/// For a workout on screen: each exercise's done sets from every earlier
+/// finished workout — what its personal records are measured against.
+final setsBeforeProvider = FutureProvider.autoDispose
+    .family<Map<int, List<WorkoutSetRow>>, ({int workoutId, String exercises})>(
+      (ref, key) => ref.watch(dbProvider).setsBefore([
+        for (final id in key.exercises.split(',')) ?int.tryParse(id),
+      ], workoutId: key.workoutId),
+    );
+
 // ── Body ────────────────────────────────────────────────────────────────────
 
 final bodyEntriesProvider = StreamProvider<List<BodyEntryRow>>(
@@ -155,6 +165,18 @@ final stepHistoryProvider = StreamProvider.autoDispose<Map<String, int>>(
       .watchAllDailySteps()
       .map((rows) => {for (final r in rows) r.day: r.steps}),
 );
+
+/// The average steps per clock hour over the 14 days before today — the
+/// usual day that today's finish is projected from.
+final usualStepHoursProvider = FutureProvider.autoDispose<List<double>>((
+  ref,
+) async {
+  final today = ref.watch(todayProvider);
+  final byDay = await ref
+      .watch(dbProvider)
+      .hourlyStepsBetween(today.subtract(const Duration(days: 14)), today);
+  return averageHours(byDay.values);
+});
 
 final stepSensorProvider = Provider<StepSensor>((ref) => const StepSensor());
 

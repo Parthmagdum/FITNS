@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+**Smarter tracking**
+- **Steps — where today is heading.** From your usual day over the last
+  two weeks, the Steps card and page say whether you'll reach your goal at
+  your normal pace, and if not, how long a walk would close the gap.
+- **Workouts — personal records.** A finished workout marks each
+  exercise's new heaviest weight, best estimated 1-rep max, or most reps
+  (bodyweight), and counts them at the top.
+- **Workouts — when to add weight.** If you hit every set last time, the
+  exercise suggests the next step up (+2.5 kg / +5 lb); "Use" fills it into
+  the sets you haven't done yet.
+- **Body — weight trend.** A 90-day chart of weigh-ins with a 7-day average
+  line, and how fast you're losing or gaining per week (from the last 4
+  weeks, so daily water-weight swings don't fool it).
+- **Water — pace.** Today's water card says whether you're on pace for
+  your goal through the waking day, or how far behind.
+- **Food — same as yesterday.** An empty meal offers the day before's
+  same meal in one tap, with undo.
+
 **Faster**
 - Database indexes on every link between workouts, exercises, sets,
   routines, water and food (schema v6), so history, "previous" sets and the

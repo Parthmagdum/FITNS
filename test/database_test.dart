@@ -399,6 +399,107 @@ void main() {
     });
   });
 
+  group('smart tracking', () {
+    test(
+      'records are measured only against earlier finished workouts',
+      () async {
+        Future<int> session(DateTime start, int grams, int reps) async {
+          final id = await db.startWorkout(now: start);
+          await db.addExercisesToWorkout(id, [1]);
+          final set = (await db.watchWorkoutDetail(id).first)!
+              .entries
+              .single
+              .sets
+              .single;
+          await db.updateSet(
+            set.id,
+            WorkoutSetsCompanion(
+              weightGrams: Value(grams),
+              reps: Value(reps),
+              done: const Value(true),
+            ),
+          );
+          await db.finishWorkout(id, now: start.add(const Duration(hours: 1)));
+          return id;
+        }
+
+        final first = await session(DateTime(2026, 10, 1), 60000, 8);
+        final second = await session(DateTime(2026, 10, 3), 62500, 8);
+        await session(DateTime(2026, 10, 5), 70000, 5);
+
+        expect(await db.setsBefore([1], workoutId: first), isEmpty);
+        final before = await db.setsBefore([1], workoutId: second);
+        expect([for (final s in before[1]!) s.weightGrams], [60000]);
+      },
+    );
+
+    test('a suggested weight fills only the open sets', () async {
+      final id = await db.startWorkout();
+      await db.addExercisesToWorkout(id, [1]);
+      final item = (await db.watchWorkoutDetail(id).first)!.entries.single;
+      await db.addSet(item.item.id);
+      final sets = (await db.watchWorkoutDetail(id).first)!.entries.single.sets;
+      await db.setDone(sets.first.id, done: true);
+      await db.applyWeightToOpenSets(item.item.id, 62500);
+      final after =
+          (await db.watchWorkoutDetail(id).first)!.entries.single.sets;
+      expect([for (final s in after) s.weightGrams], [null, 62500]);
+    });
+
+    test('a meal is copied from one day to another', () async {
+      final yesterday = DateTime(2026, 11, 1);
+      final today = DateTime(2026, 11, 2);
+      await db.quickAddFood(
+        day: yesterday,
+        meal: Meal.breakfast,
+        kcal: 300,
+        name: 'Oats',
+      );
+      await db.quickAddFood(
+        day: yesterday,
+        meal: Meal.breakfast,
+        kcal: 100,
+        name: 'Banana',
+      );
+      await db.quickAddFood(day: yesterday, meal: Meal.lunch, kcal: 600);
+      final copied = await db.copyMeal(
+        from: yesterday,
+        to: today,
+        meal: Meal.breakfast,
+      );
+      expect(copied, 2);
+      final logs = await db.watchFoodLogs(today).first;
+      expect([for (final l in logs) l.name], ['Oats', 'Banana']);
+      expect(logs.every((l) => l.meal == Meal.breakfast), isTrue);
+      expect(await db.watchFoodLogs(yesterday).first, hasLength(3));
+    });
+
+    test('hourly steps over a range of days', () async {
+      final boot = DateTime(2026, 10, 1);
+      await db.recordStepCounter(
+        counter: 0,
+        bootTime: boot,
+        now: DateTime(2026, 10, 30, 7),
+      );
+      await db.recordStepCounter(
+        counter: 500,
+        bootTime: boot,
+        now: DateTime(2026, 10, 30, 8, 30),
+      );
+      await db.recordStepCounter(
+        counter: 900,
+        bootTime: boot,
+        now: DateTime(2026, 11, 2, 9),
+      );
+      final byDay = await db.hourlyStepsBetween(
+        DateTime(2026, 10, 19),
+        DateTime(2026, 11, 2),
+      );
+      expect(byDay.keys, ['2026-10-30']);
+      expect(byDay['2026-10-30']![8], 500);
+    });
+  });
+
   group('undo', () {
     test('a deleted set comes back in place', () async {
       final id = await db.startWorkout();

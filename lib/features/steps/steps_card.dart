@@ -10,6 +10,7 @@ import '../../core/widgets/app_page.dart';
 import '../../core/widgets/week_bars.dart';
 import '../../data/database.dart' show SettingsCompanion;
 import '../../data/providers.dart';
+import 'steps_screen.dart' show StepPaceLine;
 
 final _count = NumberFormat('#,##0');
 
@@ -152,6 +153,7 @@ class StepsCard extends ConsumerWidget {
                     minHeight: 10,
                   ),
                 ),
+                StepPaceLine(total: steps, goal: goal),
                 if (week != null) ...[
                   const SizedBox(height: 20),
                   WeekBars(

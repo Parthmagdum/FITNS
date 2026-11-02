@@ -518,6 +518,14 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteSet(int setId) =>
       (delete(workoutSets)..where((s) => s.id.equals(setId))).go();
 
+  /// Sets [grams] on every not-yet-done set of [itemId] — taking a
+  /// suggested weight in one tap.
+  Future<void> applyWeightToOpenSets(int itemId, int grams) =>
+      (update(workoutSets)..where(
+            (s) => s.workoutExerciseId.equals(itemId) & s.done.equals(false),
+          ))
+          .write(WorkoutSetsCompanion(weightGrams: Value(grams)));
+
   /// Puts back a set exactly as it was — an undo of [deleteSet].
   Future<void> restoreSet(WorkoutSetRow set) =>
       into(workoutSets).insert(set, mode: InsertMode.insertOrIgnore);
@@ -752,6 +760,47 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  /// Every done, loaded-or-counted set of [exerciseIds] from finished
+  /// workouts before [workoutId] — what that workout's records are measured
+  /// against. Same "before" as [previousSets]: earlier start, or the same
+  /// start and a lower id.
+  Future<Map<int, List<WorkoutSetRow>>> setsBefore(
+    List<int> exerciseIds, {
+    required int workoutId,
+  }) async {
+    if (exerciseIds.isEmpty) return const {};
+    final anchor = await (select(
+      workouts,
+    )..where((w) => w.id.equals(workoutId))).getSingleOrNull();
+    if (anchor == null) return const {};
+    final rows =
+        await (select(workoutSets).join([
+              innerJoin(
+                workoutExercises,
+                workoutExercises.id.equalsExp(workoutSets.workoutExerciseId),
+              ),
+              innerJoin(
+                workouts,
+                workouts.id.equalsExp(workoutExercises.workoutId),
+              ),
+            ])..where(
+              workoutExercises.exerciseId.isIn(exerciseIds) &
+                  workoutSets.done.equals(true) &
+                  workouts.endedAt.isNotNull() &
+                  (workouts.startedAt.isSmallerThanValue(anchor.startedAt) |
+                      (workouts.startedAt.equals(anchor.startedAt) &
+                          workouts.id.isSmallerThanValue(anchor.id))),
+            ))
+            .get();
+    final byExercise = <int, List<WorkoutSetRow>>{};
+    for (final row in rows) {
+      byExercise
+          .putIfAbsent(row.readTable(workoutExercises).exerciseId, () => [])
+          .add(row.readTable(workoutSets));
+    }
+    return byExercise;
+  }
+
   // ── Body ───────────────────────────────────────────────────────────────────
 
   /// One log: every metric in [values] shares the moment [at].
@@ -930,6 +979,37 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteFoodLog(int id) =>
       (delete(foodLogs)..where((f) => f.id.equals(id))).go();
 
+  /// Logs everything eaten at [meal] on [from] again on [to] — "same
+  /// breakfast as yesterday". Copies keep their numbers; returns how many.
+  Future<int> copyMeal({
+    required DateTime from,
+    required DateTime to,
+    required Meal meal,
+    DateTime? at,
+  }) => transaction(() async {
+    final source =
+        await (select(foodLogs)
+              ..where(
+                (f) => f.day.equals(dayKey(from)) & f.meal.equalsValue(meal),
+              )
+              ..orderBy([(f) => OrderingTerm.asc(f.loggedAt)]))
+            .get();
+    final when = at ?? momentOn(to);
+    await batch(
+      (b) => b.insertAll(foodLogs, [
+        for (final log in source)
+          log
+              .toCompanion(false)
+              .copyWith(
+                id: const Value.absent(),
+                day: Value(dayKey(to)),
+                loggedAt: Value(when),
+              ),
+      ]),
+    );
+    return source.length;
+  });
+
   /// Puts back a deleted log as it was — an undo of [deleteFoodLog]. A saved
   /// food deleted in between is unlinked rather than failing the undo.
   Future<void> restoreFoodLog(FoodLogRow log) async {
@@ -1035,6 +1115,27 @@ class AppDatabase extends _$AppDatabase {
         }
         return hours;
       });
+
+  /// Steps per hour for each day from [from] up to (not including) [until],
+  /// by `dayKey` — the "usual day" the Steps page projects from.
+  Future<Map<String, List<int>>> hourlyStepsBetween(
+    DateTime from,
+    DateTime until,
+  ) async {
+    final rows =
+        await (select(hourlySteps)..where(
+              (h) =>
+                  h.day.isBiggerOrEqualValue(dayKey(from)) &
+                  h.day.isSmallerThanValue(dayKey(until)),
+            ))
+            .get();
+    final byDay = <String, List<int>>{};
+    for (final r in rows) {
+      if (r.hour < 0 || r.hour > 23) continue;
+      byDay.putIfAbsent(r.day, () => List.filled(24, 0))[r.hour] += r.steps;
+    }
+    return byDay;
+  }
 
   /// Every day with steps, oldest first — one small row per day, so the
   /// Steps page reads it whole for streaks and records.

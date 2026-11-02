@@ -519,6 +519,80 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('smart tracking shows up across the tabs', (tester) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        // Two bench sessions: the second beats the first.
+        for (final (i, grams) in [(20, 60000), (10, 62500)].indexed) {
+          final start = today.subtract(Duration(days: grams.$1));
+          final id = await db.startWorkout(now: start);
+          await db.addExercisesToWorkout(id, [1]);
+          final set = (await db.watchWorkoutDetail(id).first)!
+              .entries
+              .single
+              .sets
+              .single;
+          await db.updateSet(
+            set.id,
+            WorkoutSetsCompanion(
+              weightGrams: Value(grams.$2),
+              reps: const Value(8),
+              done: const Value(true),
+            ),
+          );
+          await db.renameWorkout(id, 'Bench $i');
+          await db.finishWorkout(id, now: start.add(const Duration(hours: 1)));
+        }
+        // A month of slowly falling weigh-ins.
+        for (var d = 28; d >= 0; d -= 4) {
+          await db.addBodyEntries(today.subtract(Duration(days: d)), {
+            BodyMetric.weight: 80000 - (28 - d) * 50,
+          });
+        }
+        await db.quickAddFood(
+          day: yesterday,
+          meal: Meal.breakfast,
+          kcal: 350,
+          name: 'Oats',
+        );
+      },
+    );
+
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    await tester.tap(find.text('Bench 1'));
+    await settle(tester);
+    expect(find.text('1 personal record'), findsOneWidget);
+    expect(find.textContaining('PR · Heaviest'), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
+
+    await tester.tap(find.text('Body').last);
+    await settle(tester);
+    expect(find.textContaining('Losing about'), findsOneWidget);
+
+    await tester.tap(find.text('Food').last);
+    await settle(tester);
+    await tester.scrollUntilVisible(find.text('Same as the day before?'), 200);
+    await settle(tester);
+    expect(find.text('Same as the day before?'), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(ListTile, 'Same as the day before?'),
+        matching: find.byType(TextButton),
+      ),
+    );
+    await settle(tester);
+    expect(find.text('Oats'), findsOneWidget);
+    expect(find.text('Same as the day before?'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
   testWidgets('every tab renders without errors', (tester) async {
     await pumpApp(tester, steps: StepSensorStatus.denied);
     expect(find.text('Turn on step counting'), findsOneWidget);
