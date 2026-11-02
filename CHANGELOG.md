@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.5 — 2026-11-02
 
 **Smarter tracking**
 - **Steps — where today is heading.** From your usual day over the last
