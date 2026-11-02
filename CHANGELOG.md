@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.4 — 2026-11-02
 
 - **Steps page** — tap the Steps card on Today to open a full page, like
   Samsung Health's:
