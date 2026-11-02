@@ -71,18 +71,7 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: Text(
                   '${NumberFormat('#,##0').format(settings.dailyStepGoal)} steps',
                 ),
-                onTap: () async {
-                  final text = await promptText(
-                    context,
-                    title: 'Daily step goal',
-                    initial: '${settings.dailyStepGoal}',
-                    suffix: 'steps',
-                    keyboardType: TextInputType.number,
-                  );
-                  final goal = int.tryParse(text?.trim() ?? '');
-                  if (goal == null || goal < 100 || goal > 100000) return;
-                  await save(SettingsCompanion(dailyStepGoal: Value(goal)));
-                },
+                onTap: () => editStepGoal(context, ref),
               ),
               ListTile(
                 leading: const Icon(Icons.directions_walk),

@@ -349,6 +349,22 @@ class DailySteps extends Table {
   Set<Column> get primaryKey => {day};
 }
 
+/// Steps per clock hour, for the Steps page's day chart. Written alongside
+/// [DailySteps] by the same reading, so an hour's steps always add up to the
+/// day's — except on days from before schema v5, which have none.
+@DataClassName('HourlyStepRow')
+class HourlySteps extends Table {
+  /// A [dayKey] — `2026-10-28`.
+  TextColumn get day => text().withLength(min: 10, max: 10)();
+
+  /// 0–23, local time.
+  IntColumn get hour => integer()();
+  IntColumn get steps => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {day, hour};
+}
+
 /// A drink of water. Schema v4.
 @DataClassName('WaterLogRow')
 class WaterLogs extends Table {

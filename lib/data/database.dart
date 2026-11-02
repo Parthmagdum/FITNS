@@ -79,6 +79,7 @@ int setVolumeGrams(WorkoutSetRow s) => (s.weightGrams ?? 0) * (s.reps ?? 0);
     BodyEntries,
     StepWatermarks,
     DailySteps,
+    HourlySteps,
     WaterLogs,
     Foods,
     FoodLogs,
@@ -91,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -118,6 +119,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(foodLogs);
         await m.createIndex(foodLogsDay);
       }
+      if (from < 5) await m.createTable(hourlySteps);
     },
     beforeOpen: (details) async {
       // SQLite leaves foreign keys off unless asked, and the cascades in
@@ -939,6 +941,17 @@ class AppDatabase extends _$AppDatabase {
               DailyStepsCompanion.custom(steps: old.steps + Constant(delta)),
         ),
       );
+      await into(hourlySteps).insert(
+        HourlyStepsCompanion.insert(
+          day: dayKey(at),
+          hour: at.hour,
+          steps: Value(delta),
+        ),
+        onConflict: DoUpdate(
+          (old) =>
+              HourlyStepsCompanion.custom(steps: old.steps + Constant(delta)),
+        ),
+      );
     }
     // `id` must be explicit: an INTEGER PRIMARY KEY is SQLite's rowid, so
     // leaving it out allocates a fresh row instead of using the default 1.
@@ -963,4 +976,22 @@ class AppDatabase extends _$AppDatabase {
             ..where((d) => d.day.isBiggerOrEqualValue(dayKey(from)))
             ..orderBy([(d) => OrderingTerm.asc(d.day)]))
           .watch();
+
+  /// [day]'s steps per hour, as 24 counts from midnight. All zero for a day
+  /// from before hourly counts were kept.
+  Stream<List<int>> watchHourlySteps(DateTime day) =>
+      (select(
+        hourlySteps,
+      )..where((h) => h.day.equals(dayKey(day)))).watch().map((rows) {
+        final hours = List.filled(24, 0);
+        for (final r in rows) {
+          if (r.hour >= 0 && r.hour < 24) hours[r.hour] += r.steps;
+        }
+        return hours;
+      });
+
+  /// Every day with steps, oldest first — one small row per day, so the
+  /// Steps page reads it whole for streaks and records.
+  Stream<List<DailyStepRow>> watchAllDailySteps() =>
+      (select(dailySteps)..orderBy([(d) => OrderingTerm.asc(d.day)])).watch();
 }

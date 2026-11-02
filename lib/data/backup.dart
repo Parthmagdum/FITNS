@@ -51,7 +51,8 @@ class BackupService {
   ///
   /// 2 (0.0.3): adds waterLogs, foods, foodLogs and the food & water
   /// settings.
-  static const formatVersion = 2;
+  /// 3 (0.0.4): adds hourlySteps.
+  static const formatVersion = 3;
 
   static String fileName(DateTime now) =>
       'fitns-backup-${now.year}-${_two(now.month)}-${_two(now.day)}.json';
@@ -79,6 +80,7 @@ class BackupService {
       'workoutSets': await all(db.workoutSets),
       'bodyEntries': await all(db.bodyEntries),
       'dailySteps': await all(db.dailySteps),
+      'hourlySteps': await all(db.hourlySteps),
       'waterLogs': await all(db.waterLogs),
       'foods': await all(db.foods),
       'foodLogs': await all(db.foodLogs),
@@ -98,8 +100,8 @@ class BackupService {
     'dailySteps',
   ];
 
-  /// Added in format 2; an older backup simply has none.
-  static const _laterTables = ['waterLogs', 'foods', 'foodLogs'];
+  /// Added in format 2 or later; an older backup simply has none.
+  static const _laterTables = ['waterLogs', 'foods', 'foodLogs', 'hourlySteps'];
 
   /// Checks [text] is a FITNS backup this version can read.
   BackupPreview parse(String text) {
@@ -161,6 +163,7 @@ class BackupService {
           db.routines,
           db.bodyEntries,
           db.dailySteps,
+          db.hourlySteps,
           db.stepWatermarks,
           db.exercises,
           db.settings,
@@ -195,6 +198,10 @@ class BackupService {
           b.insertAll(
             db.dailySteps,
             rows('dailySteps').map(DailyStepRow.fromJson),
+          );
+          b.insertAll(
+            db.hourlySteps,
+            rows('hourlySteps').map(HourlyStepRow.fromJson),
           );
           b.insertAll(
             db.waterLogs,

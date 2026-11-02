@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- **Steps page** — tap the Steps card on Today to open a full page, like
+  Samsung Health's:
+  - **Day** — a goal ring, then steps by the hour; tap or drag across the
+    chart to see any hour, and see your most active hour.
+  - **Week / Month** — steps by the day against your goal line, daily
+    average, total and how many days you hit the goal. Tap a bar and
+    "View day" to jump to it. Step back through earlier days, weeks and months.
+  - **Distance, calories and active time** — estimated from your height and
+    latest weigh-in, in km or miles.
+  - **Records** — current and longest goal streaks, best day and all-time
+    steps.
+  - Change the daily step goal right from the page.
+- Steps are now also kept per hour (from this update on). Backups include
+  them; older backups still restore.
+
 ## 0.0.3 — 2026-10-29
 
 - **Food tab** — log what you eat by meal (breakfast, lunch, dinner,

@@ -466,6 +466,43 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('the steps card opens the full Steps page', (tester) async {
+    final now = DateTime.now();
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        final boot = now.subtract(const Duration(days: 3));
+        final start = DateTime(now.year, now.month, now.day);
+        await db.recordStepCounter(counter: 100, bootTime: boot, now: start);
+        await db.recordStepCounter(
+          counter: 2600,
+          bootTime: boot,
+          now: start.add(const Duration(minutes: 30)),
+        );
+      },
+    );
+    await tester.tap(find.text('Steps'));
+    await settle(tester);
+
+    expect(find.text('By the hour'), findsOneWidget);
+    expect(find.text('2,500'), findsOneWidget);
+    expect(find.text('Distance'), findsOneWidget);
+    expect(find.textContaining('Most active'), findsOneWidget);
+
+    await tester.tap(find.text('Week'));
+    await settle(tester);
+    expect(find.text('This week'), findsOneWidget);
+    expect(find.text('Daily average'), findsOneWidget);
+
+    await tester.tap(find.text('Month'));
+    await settle(tester);
+    expect(find.text('This month'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Longest streak'), 200);
+    expect(find.text('Records'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
   testWidgets('every tab renders without errors', (tester) async {
     await pumpApp(tester, steps: StepSensorStatus.denied);
     expect(find.text('Turn on step counting'), findsOneWidget);

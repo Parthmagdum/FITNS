@@ -366,6 +366,31 @@ void main() {
   group('steps', () {
     final boot = DateTime(2026, 10, 1);
 
+    test('books each delta to the hour of the reading too', () async {
+      final day = DateTime(2026, 10, 28);
+      Future<void> read(int counter, int hour, [int minute = 0]) =>
+          db.recordStepCounter(
+            counter: counter,
+            bootTime: boot,
+            now: DateTime(2026, 10, 28, hour, minute),
+          );
+      await read(1000, 7); // baseline
+      await read(1400, 8, 10);
+      await read(1900, 8, 50);
+      await read(4900, 18, 30);
+
+      final hours = await db.watchHourlySteps(day).first;
+      expect(hours, hasLength(24));
+      expect(hours[8], 900);
+      expect(hours[18], 3000);
+      expect(hours.fold(0, (a, b) => a + b), 3900);
+      expect(await db.watchStepsOn(day).first, 3900);
+      expect(
+        await db.watchHourlySteps(DateTime(2026, 10, 29)).first,
+        List.filled(24, 0),
+      );
+    });
+
     test('books deltas to the day of the reading', () async {
       final day1 = DateTime(2026, 10, 28, 9);
       await db.recordStepCounter(counter: 1000, bootTime: boot, now: day1);
