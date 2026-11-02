@@ -63,7 +63,7 @@ class _WorkoutSection extends ConsumerWidget {
     final theme = Theme.of(context);
     final active = ref.watch(activeWorkoutProvider).valueOrNull;
     final routines = ref.watch(routinesProvider).valueOrNull ?? const [];
-    final last = ref.watch(workoutHistoryProvider).valueOrNull?.firstOrNull;
+    final last = ref.watch(lastWorkoutProvider).valueOrNull;
     final units = ref.watch(unitsProvider);
 
     if (active != null) {

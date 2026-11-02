@@ -69,6 +69,15 @@ final workoutHistoryProvider = StreamProvider<List<WorkoutSummary>>(
   (ref) => ref.watch(dbProvider).watchWorkoutHistory(),
 );
 
+/// Just the newest finished workout — what Today shows. A one-row query, so
+/// ticking off sets mid-workout doesn't recount the whole history for it.
+final lastWorkoutProvider = StreamProvider<WorkoutSummary?>(
+  (ref) => ref
+      .watch(dbProvider)
+      .watchWorkoutHistory(limit: 1)
+      .map((rows) => rows.firstOrNull),
+);
+
 /// Last time's sets for an exercise — the "Previous" column — from the
 /// workouts before the one on screen. Read once per screen.
 final previousSetsProvider = FutureProvider.autoDispose
@@ -140,7 +149,7 @@ final hourlyStepsProvider = StreamProvider.autoDispose
 
 /// Every day with steps, by `dayKey` — for streaks, records and the week
 /// and month charts.
-final stepHistoryProvider = StreamProvider<Map<String, int>>(
+final stepHistoryProvider = StreamProvider.autoDispose<Map<String, int>>(
   (ref) => ref
       .watch(dbProvider)
       .watchAllDailySteps()

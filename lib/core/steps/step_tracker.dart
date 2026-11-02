@@ -6,12 +6,25 @@ import 'step_sensor.dart';
 /// Books step-counter readings into the database: live while the app runs,
 /// and — when all-day counting is on — whatever the background service
 /// logged while it was closed.
+///
+/// Live readings arrive with nearly every step while walking. Each booking
+/// is a transaction that wakes every step watcher, so they are booked at most
+/// once per [liveInterval]: the first at once, later ones coalesced into the
+/// newest reading of the interval. Nothing is lost by skipping — the counter
+/// is cumulative — and [stop] books whatever is still waiting.
 class StepTracker {
-  StepTracker(this._sensor, this._db);
+  StepTracker(
+    this._sensor,
+    this._db, {
+    this.liveInterval = const Duration(seconds: 3),
+  });
 
   final StepSensor _sensor;
   final AppDatabase _db;
+  final Duration liveInterval;
   StreamSubscription<StepReading>? _subscription;
+  StepReading? _pending;
+  Timer? _flush;
 
   /// Brings everything in line with the permission and the all-day setting.
   /// Idempotent, so it is simply called again on every resume. Returns the
@@ -27,7 +40,7 @@ class StepTracker {
       return status;
     }
     _subscription ??= _sensor.readings().listen(
-      _book,
+      _onLive,
       onError: (Object _) => _subscription = null,
       cancelOnError: true,
     );
@@ -41,6 +54,28 @@ class StepTracker {
     }
   }
 
+  void _onLive(StepReading r) {
+    // Stamp it now: booked a few seconds later, it must still count towards
+    // the hour (and day) it was taken in.
+    _pending = StepReading(
+      counter: r.counter,
+      bootTime: r.bootTime,
+      readAt: r.readAt ?? DateTime.now(),
+    );
+    if (_flush != null) return;
+    unawaited(_bookPending());
+    _flush = Timer(liveInterval, () {
+      _flush = null;
+      if (_pending != null) _onLive(_pending!);
+    });
+  }
+
+  Future<void> _bookPending() async {
+    final reading = _pending;
+    _pending = null;
+    if (reading != null) await _book(reading);
+  }
+
   Future<void> _book(StepReading r) => _db.recordStepCounter(
     counter: r.counter,
     bootTime: r.bootTime,
@@ -50,5 +85,8 @@ class StepTracker {
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
+    _flush?.cancel();
+    _flush = null;
+    await _bookPending();
   }
 }

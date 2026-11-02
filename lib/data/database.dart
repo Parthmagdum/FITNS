@@ -92,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,6 +120,11 @@ class AppDatabase extends _$AppDatabase {
         await m.createIndex(foodLogsDay);
       }
       if (from < 5) await m.createTable(hourlySteps);
+      if (from < 6) {
+        for (final index in _v6Indexes) {
+          await m.createIndex(index);
+        }
+      }
     },
     beforeOpen: (details) async {
       // SQLite leaves foreign keys off unless asked, and the cascades in
@@ -131,6 +136,17 @@ class AppDatabase extends _$AppDatabase {
       await seedExerciseLibrary();
     },
   );
+
+  /// Added in schema v6 — see the note in tables.dart.
+  List<Index> get _v6Indexes => [
+    routineExercisesRoutine,
+    workoutsEndedStarted,
+    workoutExercisesWorkout,
+    workoutExercisesExercise,
+    workoutSetsItem,
+    waterLogsTime,
+    foodLogsFood,
+  ];
 
   // ── Settings ───────────────────────────────────────────────────────────────
 
@@ -502,8 +518,28 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteSet(int setId) =>
       (delete(workoutSets)..where((s) => s.id.equals(setId))).go();
 
+  /// Puts back a set exactly as it was — an undo of [deleteSet].
+  Future<void> restoreSet(WorkoutSetRow set) =>
+      into(workoutSets).insert(set, mode: InsertMode.insertOrIgnore);
+
   Future<void> removeWorkoutExercise(int itemId) =>
       (delete(workoutExercises)..where((w) => w.id.equals(itemId))).go();
+
+  /// Puts back an exercise and its sets, ids and all — an undo of
+  /// [removeWorkoutExercise]. Does nothing if the workout itself is gone.
+  Future<void> restoreWorkoutEntry(WorkoutEntry entry) => transaction(() async {
+    final workout = await (select(
+      workouts,
+    )..where((w) => w.id.equals(entry.item.workoutId))).getSingleOrNull();
+    if (workout == null) return;
+    await into(
+      workoutExercises,
+    ).insert(entry.item, mode: InsertMode.insertOrIgnore);
+    await batch(
+      (b) =>
+          b.insertAll(workoutSets, entry.sets, mode: InsertMode.insertOrIgnore),
+    );
+  });
 
   Future<void> renameWorkout(int id, String name) =>
       (update(workouts)..where((w) => w.id.equals(id))).write(
@@ -893,6 +929,16 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteFoodLog(int id) =>
       (delete(foodLogs)..where((f) => f.id.equals(id))).go();
+
+  /// Puts back a deleted log as it was — an undo of [deleteFoodLog]. A saved
+  /// food deleted in between is unlinked rather than failing the undo.
+  Future<void> restoreFoodLog(FoodLogRow log) async {
+    final food = log.foodId == null ? null : await foodById(log.foodId!);
+    await into(foodLogs).insert(
+      food == null ? log.copyWith(foodId: const Value(null)) : log,
+      mode: InsertMode.insertOrIgnore,
+    );
+  }
 
   /// Everything eaten on [day], in the order it was logged.
   Stream<List<FoodLogRow>> watchFoodLogs(DateTime day) =>

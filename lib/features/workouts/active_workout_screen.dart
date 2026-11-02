@@ -362,7 +362,15 @@ class _ExerciseCard extends ConsumerWidget {
                     icon: const Icon(Icons.sensors),
                   ),
                 PopupMenuButton<String>(
-                  onSelected: (_) => db.removeWorkoutExercise(entry.item.id),
+                  onSelected: (_) async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await db.removeWorkoutExercise(entry.item.id);
+                    showUndo(
+                      messenger,
+                      'Removed ${exercise.name}',
+                      () => db.restoreWorkoutEntry(entry),
+                    );
+                  },
                   itemBuilder: (_) => const [
                     PopupMenuItem(
                       value: 'remove',
@@ -618,7 +626,17 @@ class _SetRowState extends ConsumerState<_SetRow> {
             child: PopupMenuButton<String>(
               tooltip: 'Set ${widget.number}',
               padding: EdgeInsets.zero,
-              onSelected: (_) => ref.read(dbProvider).deleteSet(_set.id),
+              onSelected: (_) async {
+                final db = ref.read(dbProvider);
+                final set = _set;
+                final messenger = ScaffoldMessenger.of(context);
+                await db.deleteSet(set.id);
+                showUndo(
+                  messenger,
+                  'Deleted set ${widget.number}',
+                  () => db.restoreSet(set),
+                );
+              },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'delete', child: Text('Delete set')),
               ],

@@ -133,10 +133,23 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                 onPressed: () => _move(-1),
               ),
               Expanded(
-                child: Text(
-                  _periodLabel(period.from, period.to),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium,
+                child: Center(
+                  child: DayLabelButton(
+                    label: _periodLabel(period.from, period.to),
+                    onTap: () async {
+                      final picked = await pickDay(
+                        context,
+                        initial: _date,
+                        last: today,
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _anchor = picked;
+                          _selected = null;
+                        });
+                      }
+                    },
+                  ),
                 ),
               ),
               IconButton(

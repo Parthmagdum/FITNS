@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+**Faster**
+- Database indexes on every link between workouts, exercises, sets,
+  routines, water and food (schema v6), so history, "previous" sets and the
+  food list stay quick after years of logging.
+- Walking with the app open now writes steps at most every 3 seconds
+  instead of on nearly every step — less battery and fewer screen redraws.
+  No steps are lost.
+- Today shows your last workout from a one-row query, instead of
+  recounting your whole history every time you tick off a set.
+- The Steps page stops watching your step history once you leave it.
+
+**Easier**
+- **Undo** after deleting a food log, a set, or an exercise in a workout.
+- **Jump to any day** — tap the date on the Food tab or the Steps page to
+  pick one from a calendar.
+- **Workout history by month**, with how many workouts each month had.
+
 ## 0.0.4 — 2026-11-02
 
 - **Steps page** — tap the Steps card on Today to open a full page, like

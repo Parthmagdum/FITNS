@@ -21,6 +21,11 @@ class WorkoutsScreen extends ConsumerWidget {
     final routines = ref.watch(routinesProvider).valueOrNull ?? const [];
     final history = ref.watch(workoutHistoryProvider).valueOrNull ?? const [];
     final units = ref.watch(unitsProvider);
+    final perMonth = <(int, int), int>{};
+    for (final h in history) {
+      final key = (h.workout.startedAt.year, h.workout.startedAt.month);
+      perMonth[key] = (perMonth[key] ?? 0) + 1;
+    }
 
     return AppPage(
       title: 'Workouts',
@@ -71,12 +76,54 @@ class WorkoutsScreen extends ConsumerWidget {
               message: 'Finished workouts show up here.',
             ),
           ),
-        for (final w in history)
+        for (final (i, w) in history.indexed) ...[
+          // A month heading whenever the month changes, with its count —
+          // long histories stay scannable.
+          if (i == 0 ||
+              !_sameMonth(
+                history[i - 1].workout.startedAt,
+                w.workout.startedAt,
+              ))
+            _MonthHeading(
+              month: w.workout.startedAt,
+              count:
+                  perMonth[(
+                    w.workout.startedAt.year,
+                    w.workout.startedAt.month,
+                  )]!,
+            ),
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: WorkoutSummaryCard(summary: w, units: units),
           ),
+        ],
       ],
+    );
+  }
+}
+
+bool _sameMonth(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month;
+
+class _MonthHeading extends StatelessWidget {
+  const _MonthHeading({required this.month, required this.count});
+
+  final DateTime month;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final name = DateFormat(
+      month.year == now.year ? 'MMMM' : 'MMMM yyyy',
+    ).format(month);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      child: Text(
+        '$name · $count ${count == 1 ? 'workout' : 'workouts'}',
+        style: theme.textTheme.labelLarge?.copyWith(color: theme.muted),
+      ),
     );
   }
 }

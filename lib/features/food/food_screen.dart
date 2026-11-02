@@ -49,7 +49,6 @@ class _DaySwitcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final today = ref.watch(todayProvider);
     void go(int days) => ref.read(foodDayProvider.notifier).state = DateTime(
       day.year,
@@ -64,10 +63,20 @@ class _DaySwitcher extends ConsumerWidget {
           icon: const Icon(Icons.chevron_left),
         ),
         Expanded(
-          child: Text(
-            relativeDay(day),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium,
+          child: Center(
+            child: DayLabelButton(
+              label: relativeDay(day),
+              onTap: () async {
+                final picked = await pickDay(
+                  context,
+                  initial: day,
+                  last: today,
+                );
+                if (picked != null) {
+                  ref.read(foodDayProvider.notifier).state = picked;
+                }
+              },
+            ),
           ),
         ),
         IconButton(

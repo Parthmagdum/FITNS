@@ -135,6 +135,16 @@ void main() {
     await settle(tester);
     expect(find.text('Bench Press (Barbell)'), findsOneWidget);
 
+    // Removing an exercise can be undone.
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await settle(tester);
+    await tester.tap(find.text('Remove exercise'));
+    await settle(tester);
+    expect(find.text('Bench Press (Barbell)'), findsNothing);
+    await tester.tap(find.text('Undo'));
+    await settle(tester);
+    expect(find.text('Bench Press (Barbell)'), findsOneWidget);
+
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '60');
     await tester.enterText(fields.at(1), '8');
@@ -151,6 +161,12 @@ void main() {
     await settle(tester);
 
     expect(find.text('60 kg × 8'), findsOneWidget);
+
+    await tester.pageBack();
+    await settle(tester);
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    expect(find.textContaining('· 1 workout'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
