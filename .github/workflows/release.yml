@@ -1,7 +1,10 @@
 # Publishes FITNS.
 #
-# Push a tag like `v0.0.1` and this workflow will:
-#   1. check the tag matches the version in pubspec.yaml
+# Push a tag like `v0.0.1` — or run it by hand from the Actions tab on
+# `main` ("Run workflow"), which tags the commit `v<pubspec version>` — and
+# this workflow will:
+#   1. check the tag matches the version in pubspec.yaml (by hand: that the
+#      tag doesn't exist yet)
 #   2. analyze and run the full test suite
 #   3. build release APKs, one per ABI, signed with the release key
 #   4. check every APK carries libsqlite3.so and the release signature
@@ -19,6 +22,7 @@ name: Release APK
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -33,13 +37,24 @@ jobs:
 
       - name: Verify tag matches pubspec version
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
           PUBSPEC="$(grep -E '^version:' pubspec.yaml | sed 's/version: *//' | cut -d'+' -f1 | tr -d '[:space:]')"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            # Run by hand: the release tag comes from pubspec.yaml and is
+            # created when the release is published.
+            if git ls-remote --exit-code --tags origin "refs/tags/v$PUBSPEC" >/dev/null; then
+              echo "::error::v$PUBSPEC is already released. Bump pubspec.yaml (and AppInfo) first."
+              exit 1
+            fi
+            TAG="$PUBSPEC"
+          else
+            TAG="${GITHUB_REF_NAME#v}"
+          fi
           if [ "$TAG" != "$PUBSPEC" ]; then
             echo "::error::Tag v$TAG does not match pubspec.yaml version $PUBSPEC."
             echo "Bump pubspec.yaml (and AppInfo — test/branding_test.dart guards it) before tagging."
             exit 1
           fi
+          echo "RELEASE_TAG=v$TAG" >> "$GITHUB_ENV"
 
       # Fail before spending ten minutes on a build that can't be published.
       - name: Check signing secrets
@@ -127,15 +142,17 @@ jobs:
             release/fitns-armeabi-v7a.apk
             release/fitns-x86_64.apk
             release/SHA256SUMS.txt
+          tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           body: |
             **FITNS — Fitness, tracked offline.** A TRAKVRS app, alongside [XPENC](https://xpenc.in).
 
             | Your device | Download |
             |---|---|
-            | Most phones (2017+) · ⭐ **Recommended** | [`fitns-arm64-v8a.apk`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/fitns-arm64-v8a.apk) |
-            | Older 32-bit phones | [`fitns-armeabi-v7a.apk`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/fitns-armeabi-v7a.apk) |
-            | Emulators | [`fitns-x86_64.apk`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/fitns-x86_64.apk) |
+            | Most phones (2017+) · ⭐ **Recommended** | [`fitns-arm64-v8a.apk`](https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/fitns-arm64-v8a.apk) |
+            | Older 32-bit phones | [`fitns-armeabi-v7a.apk`](https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/fitns-armeabi-v7a.apk) |
+            | Emulators | [`fitns-x86_64.apk`](https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/fitns-x86_64.apk) |
 
             Android only. Everything stays on your phone — the app has no internet permission.
             Verify your download against `SHA256SUMS.txt`. What's new: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md).
