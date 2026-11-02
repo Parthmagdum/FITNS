@@ -6295,13 +6295,41 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WaterLogsTable waterLogs = $WaterLogsTable(this);
   late final $FoodsTable foods = $FoodsTable(this);
   late final $FoodLogsTable foodLogs = $FoodLogsTable(this);
+  late final Index routineExercisesRoutine = Index(
+    'routine_exercises_routine',
+    'CREATE INDEX routine_exercises_routine ON routine_exercises (routine_id)',
+  );
+  late final Index workoutsEndedStarted = Index(
+    'workouts_ended_started',
+    'CREATE INDEX workouts_ended_started ON workouts (ended_at, started_at)',
+  );
+  late final Index workoutExercisesWorkout = Index(
+    'workout_exercises_workout',
+    'CREATE INDEX workout_exercises_workout ON workout_exercises (workout_id)',
+  );
+  late final Index workoutExercisesExercise = Index(
+    'workout_exercises_exercise',
+    'CREATE INDEX workout_exercises_exercise ON workout_exercises (exercise_id)',
+  );
+  late final Index workoutSetsItem = Index(
+    'workout_sets_item',
+    'CREATE INDEX workout_sets_item ON workout_sets (workout_exercise_id)',
+  );
   late final Index bodyEntriesMetricTime = Index(
     'body_entries_metric_time',
     'CREATE INDEX body_entries_metric_time ON body_entries (metric, measured_at)',
   );
+  late final Index waterLogsTime = Index(
+    'water_logs_time',
+    'CREATE INDEX water_logs_time ON water_logs (logged_at)',
+  );
   late final Index foodLogsDay = Index(
     'food_logs_day',
     'CREATE INDEX food_logs_day ON food_logs (day)',
+  );
+  late final Index foodLogsFood = Index(
+    'food_logs_food',
+    'CREATE INDEX food_logs_food ON food_logs (food_id)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -6322,8 +6350,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     waterLogs,
     foods,
     foodLogs,
+    routineExercisesRoutine,
+    workoutsEndedStarted,
+    workoutExercisesWorkout,
+    workoutExercisesExercise,
+    workoutSetsItem,
     bodyEntriesMetricTime,
+    waterLogsTime,
     foodLogsDay,
+    foodLogsFood,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([

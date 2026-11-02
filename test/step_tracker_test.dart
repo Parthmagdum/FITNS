@@ -85,4 +85,39 @@ void main() {
     expect(await db.watchStepsOn(startOfDay(today)).first, 250);
     await tracker.stop();
   });
+
+  test('live readings are booked at most once per interval', () async {
+    final sensor = _FakeSensor([]);
+    final tracker = StepTracker(
+      sensor,
+      db,
+      liveInterval: const Duration(milliseconds: 200),
+    );
+    await tracker.start(allDay: true);
+    final today = startOfDay(DateTime.now());
+    final writes = <int>[];
+    final sub = db.watchStepsOn(today).listen(writes.add);
+
+    sensor.live.add(StepReading(counter: 1000, bootTime: boot)); // baseline
+    for (var c = 1001; c <= 1050; c++) {
+      sensor.live.add(StepReading(counter: c, bootTime: boot));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    // Only the baseline is booked so far; the 50 steps wait for the interval.
+    expect(await db.watchStepsOn(today).first, 0);
+
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(await db.watchStepsOn(today).first, 50);
+
+    // Stopping books whatever is still waiting.
+    sensor.live.add(StepReading(counter: 1060, bootTime: boot));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    sensor.live.add(StepReading(counter: 1070, bootTime: boot));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await tracker.stop();
+    expect(await db.watchStepsOn(today).first, 70);
+    // Far fewer writes than readings.
+    expect(writes.toSet().length, lessThan(6));
+    await sub.cancel();
+  });
 }

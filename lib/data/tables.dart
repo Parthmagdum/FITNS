@@ -157,6 +157,10 @@ enum ActivityLevel {
 }
 
 // ─── Tables ─────────────────────────────────────────────────────────────────
+//
+// Every foreign key and every column a screen filters or sorts by has an
+// index (schema v6), so history, "previous" sets and the food list stay fast
+// after years of logging instead of scanning whole tables.
 
 /// One row, `id = 1`.
 @DataClassName('SettingRow')
@@ -243,6 +247,7 @@ class Routines extends Table {
 }
 
 @DataClassName('RoutineExerciseRow')
+@TableIndex(name: 'routine_exercises_routine', columns: {#routineId})
 class RoutineExercises extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get routineId =>
@@ -260,6 +265,7 @@ class RoutineExercises extends Table {
 /// most one such row, and it is written to as the user logs, so a killed app
 /// never loses a half-finished workout.
 @DataClassName('WorkoutRow')
+@TableIndex(name: 'workouts_ended_started', columns: {#endedAt, #startedAt})
 class Workouts extends Table {
   IntColumn get id => integer().autoIncrement()();
 
@@ -277,6 +283,8 @@ class Workouts extends Table {
 }
 
 @DataClassName('WorkoutExerciseRow')
+@TableIndex(name: 'workout_exercises_workout', columns: {#workoutId})
+@TableIndex(name: 'workout_exercises_exercise', columns: {#exerciseId})
 class WorkoutExercises extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get workoutId =>
@@ -295,6 +303,7 @@ class WorkoutExercises extends Table {
 /// depends on the exercise's [ExerciseKind]. Only [done] sets survive
 /// finishing a workout.
 @DataClassName('WorkoutSetRow')
+@TableIndex(name: 'workout_sets_item', columns: {#workoutExerciseId})
 class WorkoutSets extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get workoutExerciseId => integer().references(
@@ -367,6 +376,7 @@ class HourlySteps extends Table {
 
 /// A drink of water. Schema v4.
 @DataClassName('WaterLogRow')
+@TableIndex(name: 'water_logs_time', columns: {#loggedAt})
 class WaterLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get loggedAt => dateTime()();
@@ -399,6 +409,7 @@ class Foods extends Table {
 /// Schema v4.
 @DataClassName('FoodLogRow')
 @TableIndex(name: 'food_logs_day', columns: {#day})
+@TableIndex(name: 'food_logs_food', columns: {#foodId})
 class FoodLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
 

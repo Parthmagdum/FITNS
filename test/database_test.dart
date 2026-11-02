@@ -37,6 +37,20 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 6) {
+      for (final index in [
+        'routine_exercises_routine',
+        'workouts_ended_started',
+        'workout_exercises_workout',
+        'workout_exercises_exercise',
+        'workout_sets_item',
+        'water_logs_time',
+        'food_logs_food',
+      ]) {
+        await db.customStatement('DROP INDEX $index');
+      }
+    }
+    if (schema < 5) await db.customStatement('DROP TABLE hourly_steps');
     if (schema < 4) {
       for (final table in ['food_logs', 'foods', 'water_logs']) {
         await db.customStatement('DROP TABLE $table');
@@ -63,7 +77,12 @@ void main() {
     return file;
   }
 
-  for (final (schema, release) in [(2, '0.0.1'), (3, '0.0.2')]) {
+  for (final (schema, release) in [
+    (2, '0.0.1'),
+    (3, '0.0.2'),
+    (4, '0.0.3'),
+    (5, '0.0.4'),
+  ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
       () async {
@@ -77,6 +96,23 @@ void main() {
         );
         final settings = await upgraded.getSettings();
         expect(settings.waterGoalMl, 2000);
+        // Every index exists, the v6 ones included.
+        final indexes = await upgraded
+            .customSelect(
+              "SELECT name FROM sqlite_master WHERE type = 'index' "
+              "AND name NOT LIKE 'sqlite_%'",
+            )
+            .map((r) => r.read<String>('name'))
+            .get();
+        expect(
+          indexes,
+          containsAll([
+            'workout_sets_item',
+            'workout_exercises_workout',
+            'food_logs_food',
+          ]),
+        );
+        await upgraded.recordStepCounter(counter: 10, bootTime: DateTime(2026));
         expect(settings.calorieGoal, isNull);
         // The new tables work.
         await upgraded.addWater(250);
@@ -361,6 +397,177 @@ void main() {
       expect(visible, isNot(contains(custom)));
       expect((await detail(id)).entries.single.exercise.name, 'Landmine Press');
     });
+  });
+
+  group('smart tracking', () {
+    test(
+      'records are measured only against earlier finished workouts',
+      () async {
+        Future<int> session(DateTime start, int grams, int reps) async {
+          final id = await db.startWorkout(now: start);
+          await db.addExercisesToWorkout(id, [1]);
+          final set = (await db.watchWorkoutDetail(id).first)!
+              .entries
+              .single
+              .sets
+              .single;
+          await db.updateSet(
+            set.id,
+            WorkoutSetsCompanion(
+              weightGrams: Value(grams),
+              reps: Value(reps),
+              done: const Value(true),
+            ),
+          );
+          await db.finishWorkout(id, now: start.add(const Duration(hours: 1)));
+          return id;
+        }
+
+        final first = await session(DateTime(2026, 10, 1), 60000, 8);
+        final second = await session(DateTime(2026, 10, 3), 62500, 8);
+        await session(DateTime(2026, 10, 5), 70000, 5);
+
+        expect(await db.setsBefore([1], workoutId: first), isEmpty);
+        final before = await db.setsBefore([1], workoutId: second);
+        expect([for (final s in before[1]!) s.weightGrams], [60000]);
+      },
+    );
+
+    test('a suggested weight fills only the open sets', () async {
+      final id = await db.startWorkout();
+      await db.addExercisesToWorkout(id, [1]);
+      final item = (await db.watchWorkoutDetail(id).first)!.entries.single;
+      await db.addSet(item.item.id);
+      final sets = (await db.watchWorkoutDetail(id).first)!.entries.single.sets;
+      await db.setDone(sets.first.id, done: true);
+      await db.applyWeightToOpenSets(item.item.id, 62500);
+      final after =
+          (await db.watchWorkoutDetail(id).first)!.entries.single.sets;
+      expect([for (final s in after) s.weightGrams], [null, 62500]);
+    });
+
+    test('a meal is copied from one day to another', () async {
+      final yesterday = DateTime(2026, 11, 1);
+      final today = DateTime(2026, 11, 2);
+      await db.quickAddFood(
+        day: yesterday,
+        meal: Meal.breakfast,
+        kcal: 300,
+        name: 'Oats',
+      );
+      await db.quickAddFood(
+        day: yesterday,
+        meal: Meal.breakfast,
+        kcal: 100,
+        name: 'Banana',
+      );
+      await db.quickAddFood(day: yesterday, meal: Meal.lunch, kcal: 600);
+      final copied = await db.copyMeal(
+        from: yesterday,
+        to: today,
+        meal: Meal.breakfast,
+      );
+      expect(copied, 2);
+      final logs = await db.watchFoodLogs(today).first;
+      expect([for (final l in logs) l.name], ['Oats', 'Banana']);
+      expect(logs.every((l) => l.meal == Meal.breakfast), isTrue);
+      expect(await db.watchFoodLogs(yesterday).first, hasLength(3));
+    });
+
+    test('hourly steps over a range of days', () async {
+      final boot = DateTime(2026, 10, 1);
+      await db.recordStepCounter(
+        counter: 0,
+        bootTime: boot,
+        now: DateTime(2026, 10, 30, 7),
+      );
+      await db.recordStepCounter(
+        counter: 500,
+        bootTime: boot,
+        now: DateTime(2026, 10, 30, 8, 30),
+      );
+      await db.recordStepCounter(
+        counter: 900,
+        bootTime: boot,
+        now: DateTime(2026, 11, 2, 9),
+      );
+      final byDay = await db.hourlyStepsBetween(
+        DateTime(2026, 10, 19),
+        DateTime(2026, 11, 2),
+      );
+      expect(byDay.keys, ['2026-10-30']);
+      expect(byDay['2026-10-30']![8], 500);
+    });
+  });
+
+  group('undo', () {
+    test('a deleted set comes back in place', () async {
+      final id = await db.startWorkout();
+      await db.addExercisesToWorkout(id, [1]);
+      final entry = (await db.watchWorkoutDetail(id).first)!.entries.single;
+      final set = entry.sets.single;
+      await db.updateSet(set.id, const WorkoutSetsCompanion(reps: Value(8)));
+      final edited =
+          (await db.watchWorkoutDetail(id).first)!.entries.single.sets.single;
+      await db.deleteSet(set.id);
+      await db.restoreSet(edited);
+      final back =
+          (await db.watchWorkoutDetail(id).first)!.entries.single.sets.single;
+      expect(back, edited);
+    });
+
+    test('a removed exercise comes back with its sets', () async {
+      final id = await db.startWorkout();
+      await db.addExercisesToWorkout(id, [1, 2]);
+      await db.addSet(
+        (await db.watchWorkoutDetail(id).first)!.entries.first.item.id,
+      );
+      final before = (await db.watchWorkoutDetail(id).first)!;
+      final first = before.entries.first;
+      await db.removeWorkoutExercise(first.item.id);
+      expect((await db.watchWorkoutDetail(id).first)!.entries, hasLength(1));
+      await db.restoreWorkoutEntry(first);
+      final after = (await db.watchWorkoutDetail(id).first)!;
+      expect(after.entries.first.item, first.item);
+      expect(after.entries.first.sets, first.sets);
+    });
+
+    test('a removed exercise of a discarded workout stays gone', () async {
+      final id = await db.startWorkout();
+      await db.addExercisesToWorkout(id, [1]);
+      final entry = (await db.watchWorkoutDetail(id).first)!.entries.single;
+      await db.deleteWorkout(id);
+      await db.restoreWorkoutEntry(entry);
+      expect(await db.select(db.workoutExercises).get(), isEmpty);
+    });
+
+    test(
+      'a deleted food log comes back, even if its food was deleted',
+      () async {
+        final day = DateTime(2026, 10, 28);
+        final foodId = await db.saveFood(
+          name: 'Rice',
+          servingLabel: '1 bowl',
+          kcal: 200,
+          proteinTenths: 40,
+          carbsTenths: 450,
+          fatTenths: 5,
+        );
+        await db.logFood(
+          (await db.foodById(foodId))!,
+          servingsHundredths: 150,
+          day: day,
+          meal: Meal.lunch,
+        );
+        final log = (await db.watchFoodLogs(day).first).single;
+        await db.deleteFoodLog(log.id);
+        await db.deleteFood(foodId);
+        await db.restoreFoodLog(log);
+        final back = (await db.watchFoodLogs(day).first).single;
+        expect(back.kcal, 300);
+        expect(back.foodId, isNull);
+      },
+    );
   });
 
   group('steps', () {

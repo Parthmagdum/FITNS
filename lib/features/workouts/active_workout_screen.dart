@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/dates.dart';
+import '../../core/insights.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
@@ -362,7 +363,15 @@ class _ExerciseCard extends ConsumerWidget {
                     icon: const Icon(Icons.sensors),
                   ),
                 PopupMenuButton<String>(
-                  onSelected: (_) => db.removeWorkoutExercise(entry.item.id),
+                  onSelected: (_) async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    await db.removeWorkoutExercise(entry.item.id);
+                    showUndo(
+                      messenger,
+                      'Removed ${exercise.name}',
+                      () => db.restoreWorkoutEntry(entry),
+                    );
+                  },
                   itemBuilder: (_) => const [
                     PopupMenuItem(
                       value: 'remove',
@@ -372,6 +381,8 @@ class _ExerciseCard extends ConsumerWidget {
                 ),
               ],
             ),
+            if (!editing && exercise.kind == ExerciseKind.weightReps)
+              _ProgressHint(entry: entry, previous: previous, units: units),
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -618,7 +629,17 @@ class _SetRowState extends ConsumerState<_SetRow> {
             child: PopupMenuButton<String>(
               tooltip: 'Set ${widget.number}',
               padding: EdgeInsets.zero,
-              onSelected: (_) => ref.read(dbProvider).deleteSet(_set.id),
+              onSelected: (_) async {
+                final db = ref.read(dbProvider);
+                final set = _set;
+                final messenger = ScaffoldMessenger.of(context);
+                await db.deleteSet(set.id);
+                showUndo(
+                  messenger,
+                  'Deleted set ${widget.number}',
+                  () => db.restoreSet(set),
+                );
+              },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'delete', child: Text('Delete set')),
               ],
@@ -840,6 +861,70 @@ class RestTimerBar extends ConsumerWidget {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// "Every set hit 8 last time — try 62.5 kg": progressive overload, offered
+/// when last session earned it, applied to the open sets in one tap.
+class _ProgressHint extends ConsumerWidget {
+  const _ProgressHint({
+    required this.entry,
+    required this.previous,
+    required this.units,
+  });
+
+  final WorkoutEntry entry;
+  final List<WorkoutSetRow> previous;
+  final UnitSystem units;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final next = suggestedWeight(
+      lastTime: [
+        for (final s in previous)
+          (weightGrams: s.weightGrams ?? 0, reps: s.reps ?? 0),
+      ],
+      targetReps: entry.item.targetReps,
+      increment: switch (units) {
+        UnitSystem.metric => 2500,
+        UnitSystem.imperial => (5 * gramsPerPound).round(),
+      },
+    );
+    if (next == null) return const SizedBox.shrink();
+    final open = entry.sets.where((s) => !s.done).toList();
+    final applied = open.isNotEmpty && open.every((s) => s.weightGrams == next);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 6, 8, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+        decoration: BoxDecoration(
+          color: theme.accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.trending_up, size: 18, color: theme.accent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'You hit every set last time — try '
+                '${formatMass(next, units)}',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            TextButton(
+              onPressed: open.isEmpty || applied
+                  ? null
+                  : () => ref
+                        .read(dbProvider)
+                        .applyWeightToOpenSets(entry.item.id, next),
+              child: Text(applied ? 'Applied' : 'Use'),
+            ),
+          ],
         ),
       ),
     );
