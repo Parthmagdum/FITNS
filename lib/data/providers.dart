@@ -132,6 +132,21 @@ final weekStepsProvider = StreamProvider<List<({DateTime day, int steps})>>((
   });
 });
 
+/// A day's steps per hour, midnight first.
+final hourlyStepsProvider = StreamProvider.autoDispose
+    .family<List<int>, DateTime>(
+      (ref, day) => ref.watch(dbProvider).watchHourlySteps(day),
+    );
+
+/// Every day with steps, by `dayKey` — for streaks, records and the week
+/// and month charts.
+final stepHistoryProvider = StreamProvider<Map<String, int>>(
+  (ref) => ref
+      .watch(dbProvider)
+      .watchAllDailySteps()
+      .map((rows) => {for (final r in rows) r.day: r.steps}),
+);
+
 final stepSensorProvider = Provider<StepSensor>((ref) => const StepSensor());
 
 final motionSensorsProvider = Provider<MotionSensors>(
