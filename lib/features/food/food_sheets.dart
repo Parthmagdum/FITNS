@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/dates.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import 'nutrition.dart';
@@ -409,8 +410,12 @@ class _FoodLogSheetState extends ConsumerState<_FoodLogSheet> {
   }
 
   Future<void> _delete() async {
-    await ref.read(dbProvider).deleteFoodLog(widget.log.id);
+    final db = ref.read(dbProvider);
+    final log = widget.log;
+    final messenger = ScaffoldMessenger.of(context);
+    await db.deleteFoodLog(log.id);
     if (mounted) Navigator.pop(context);
+    showUndo(messenger, 'Removed ${log.name}', () => db.restoreFoodLog(log));
   }
 
   @override

@@ -308,3 +308,68 @@ Future<bool> confirm(
   );
   return result ?? false;
 }
+
+/// "Removed …" with an Undo button. Takes the messenger rather than a
+/// context, so it can be grabbed before a sheet or page closes.
+void showUndo(
+  ScaffoldMessengerState messenger,
+  String message,
+  Future<void> Function() undo,
+) {
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(label: 'Undo', onPressed: undo),
+      ),
+    );
+}
+
+/// A calendar to jump straight to a day, up to [last] (usually today).
+Future<DateTime?> pickDay(
+  BuildContext context, {
+  required DateTime initial,
+  required DateTime last,
+}) async {
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: initial.isAfter(last) ? last : initial,
+    firstDate: DateTime(2000),
+    lastDate: last,
+  );
+  return picked == null
+      ? null
+      : DateTime(picked.year, picked.month, picked.day);
+}
+
+/// The middle of a ‹ day › switcher: the label, tappable to pick a day.
+class DayLabelButton extends StatelessWidget {
+  const DayLabelButton({super.key, required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(foregroundColor: theme.colorScheme.onSurface),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.calendar_month_outlined, size: 18, color: theme.muted),
+        ],
+      ),
+    );
+  }
+}

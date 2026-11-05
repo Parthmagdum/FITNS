@@ -135,6 +135,16 @@ void main() {
     await settle(tester);
     expect(find.text('Bench Press (Barbell)'), findsOneWidget);
 
+    // Removing an exercise can be undone.
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await settle(tester);
+    await tester.tap(find.text('Remove exercise'));
+    await settle(tester);
+    expect(find.text('Bench Press (Barbell)'), findsNothing);
+    await tester.tap(find.text('Undo'));
+    await settle(tester);
+    expect(find.text('Bench Press (Barbell)'), findsOneWidget);
+
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '60');
     await tester.enterText(fields.at(1), '8');
@@ -151,6 +161,12 @@ void main() {
     await settle(tester);
 
     expect(find.text('60 kg × 8'), findsOneWidget);
+
+    await tester.pageBack();
+    await settle(tester);
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    expect(find.textContaining('· 1 workout'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
@@ -462,6 +478,117 @@ void main() {
     final settings = await tester.runAsync(db.getSettings);
     expect(settings!.calorieGoal, 2556);
     expect(settings.proteinGoalG, 160);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('the steps card opens the full Steps page', (tester) async {
+    final now = DateTime.now();
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        final boot = now.subtract(const Duration(days: 3));
+        final start = DateTime(now.year, now.month, now.day);
+        await db.recordStepCounter(counter: 100, bootTime: boot, now: start);
+        await db.recordStepCounter(
+          counter: 2600,
+          bootTime: boot,
+          now: start.add(const Duration(minutes: 30)),
+        );
+      },
+    );
+    await tester.tap(find.text('Steps'));
+    await settle(tester);
+
+    expect(find.text('By the hour'), findsOneWidget);
+    expect(find.text('2,500'), findsOneWidget);
+    expect(find.text('Distance'), findsOneWidget);
+    expect(find.textContaining('Most active'), findsOneWidget);
+
+    await tester.tap(find.text('Week'));
+    await settle(tester);
+    expect(find.text('This week'), findsOneWidget);
+    expect(find.text('Daily average'), findsOneWidget);
+
+    await tester.tap(find.text('Month'));
+    await settle(tester);
+    expect(find.text('This month'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Longest streak'), 200);
+    expect(find.text('Records'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('smart tracking shows up across the tabs', (tester) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        // Two bench sessions: the second beats the first.
+        for (final (i, grams) in [(20, 60000), (10, 62500)].indexed) {
+          final start = today.subtract(Duration(days: grams.$1));
+          final id = await db.startWorkout(now: start);
+          await db.addExercisesToWorkout(id, [1]);
+          final set = (await db.watchWorkoutDetail(id).first)!
+              .entries
+              .single
+              .sets
+              .single;
+          await db.updateSet(
+            set.id,
+            WorkoutSetsCompanion(
+              weightGrams: Value(grams.$2),
+              reps: const Value(8),
+              done: const Value(true),
+            ),
+          );
+          await db.renameWorkout(id, 'Bench $i');
+          await db.finishWorkout(id, now: start.add(const Duration(hours: 1)));
+        }
+        // A month of slowly falling weigh-ins.
+        for (var d = 28; d >= 0; d -= 4) {
+          await db.addBodyEntries(today.subtract(Duration(days: d)), {
+            BodyMetric.weight: 80000 - (28 - d) * 50,
+          });
+        }
+        await db.quickAddFood(
+          day: yesterday,
+          meal: Meal.breakfast,
+          kcal: 350,
+          name: 'Oats',
+        );
+      },
+    );
+
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    await tester.tap(find.text('Bench 1'));
+    await settle(tester);
+    expect(find.text('1 personal record'), findsOneWidget);
+    expect(find.textContaining('PR · Heaviest'), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
+
+    await tester.tap(find.text('Body').last);
+    await settle(tester);
+    expect(find.textContaining('Losing about'), findsOneWidget);
+
+    await tester.tap(find.text('Food').last);
+    await settle(tester);
+    await tester.scrollUntilVisible(find.text('Same as the day before?'), 200);
+    await settle(tester);
+    expect(find.text('Same as the day before?'), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(ListTile, 'Same as the day before?'),
+        matching: find.byType(TextButton),
+      ),
+    );
+    await settle(tester);
+    expect(find.text('Oats'), findsOneWidget);
+    expect(find.text('Same as the day before?'), findsNothing);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

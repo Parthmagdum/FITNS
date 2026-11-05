@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/dates.dart';
+import '../../core/insights.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
+import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_icons.dart';
 import 'set_format.dart';
@@ -36,6 +38,36 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final units = ref.watch(unitsProvider);
     final w = detail.workout;
     final inProgress = w.endedAt == null;
+
+    // Personal records, for a finished workout: each exercise's best sets
+    // here against every earlier workout. Keyed by set id.
+    final history = inProgress
+        ? const <int, List<WorkoutSetRow>>{}
+        : ref
+                  .watch(
+                    setsBeforeProvider((
+                      workoutId: w.id,
+                      exercises: {
+                        for (final e in detail.entries) e.exercise.id,
+                      }.join(','),
+                    )),
+                  )
+                  .valueOrNull ??
+              const {};
+    LiftedSet lifted(WorkoutSetRow s) =>
+        (weightGrams: s.weightGrams ?? 0, reps: s.reps ?? 0);
+    final records = <int, Set<PrKind>>{};
+    for (final entry in detail.entries) {
+      if (entry.exercise.kind == ExerciseKind.duration) continue;
+      final done = entry.sets.where((s) => s.done).toList();
+      final found = sessionRecords(
+        [for (final s in done) lifted(s)],
+        [for (final s in history[entry.exercise.id] ?? const []) lifted(s)],
+      );
+      for (final MapEntry(:key, :value) in found.entries) {
+        records[done[key].id] = value;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -107,6 +139,24 @@ class WorkoutDetailScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (records.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.emoji_events, color: theme.accent),
+                      const SizedBox(width: 8),
+                      Text(
+                        records.length == 1
+                            ? '1 personal record'
+                            : '${records.length} personal records',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.accent,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (inProgress) ...[
                   const SizedBox(height: 16),
                   FilledButton(
@@ -158,6 +208,14 @@ class WorkoutDetailScreen extends ConsumerWidget {
                               formatSet(set, entry.exercise.kind, units),
                               style: theme.textTheme.bodyLarge,
                             ),
+                            if (records[set.id] case final kinds?) ...[
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: _PrBadge(
+                                  kinds.map((k) => k.label).join(' · '),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -165,6 +223,41 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 ),
               ),
             ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PrBadge extends StatelessWidget {
+  const _PrBadge(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.accent.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.emoji_events, size: 14, color: theme.accent),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              'PR · $label',
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.accent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ],
       ),
     );

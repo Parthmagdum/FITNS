@@ -12,6 +12,7 @@ import '../../data/providers.dart';
 import '../settings/settings_dialogs.dart';
 import 'body_format.dart';
 import 'body_log_sheet.dart';
+import 'weight_trend_card.dart';
 
 class BodyScreen extends ConsumerWidget {
   const BodyScreen({super.key});
@@ -35,6 +36,7 @@ class BodyScreen extends ConsumerWidget {
       ),
       children: [
         const WeightCard(),
+        const WeightTrendCard(),
         if (measured.isNotEmpty) ...[
           const SectionLabel('Latest measurements'),
           SectionCard(

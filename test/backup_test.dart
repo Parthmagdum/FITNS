@@ -121,6 +121,10 @@ void main() {
     expect(await target.watchBodyEntries().first, hasLength(2));
     expect(await target.watchStepsOn(DateTime(2026, 10, 28)).first, 6000);
     expect(
+      (await target.watchHourlySteps(DateTime(2026, 10, 28)).first)[20],
+      6000,
+    );
+    expect(
       await target.watchExercises().first,
       hasLength(seedExercises.length + 1),
     );
@@ -219,7 +223,7 @@ void main() {
             as Map<String, Object?>;
     // What 0.0.2 wrote: no food tables, none of the newer settings.
     data['formatVersion'] = 1;
-    for (final key in ['waterLogs', 'foods', 'foodLogs']) {
+    for (final key in ['waterLogs', 'foods', 'foodLogs', 'hourlySteps']) {
       data.remove(key);
     }
     final settings = data['settings']! as Map<String, Object?>;

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/dates.dart';
+import '../../core/insights.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
@@ -54,6 +55,8 @@ class WaterCard extends ConsumerWidget {
               minHeight: 10,
             ),
           ),
+          if (isSameDay(day, DateTime.now()) && goal > 0 && drunk < goal)
+            _WaterPace(drunk: drunk, goal: goal, units: units),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -95,6 +98,41 @@ class WaterCard extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Ahead of or behind an even pace through waking hours.
+class _WaterPace extends StatelessWidget {
+  const _WaterPace({
+    required this.drunk,
+    required this.goal,
+    required this.units,
+  });
+
+  final int drunk;
+  final int goal;
+  final UnitSystem units;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    if (waterDayFraction(now) <= 0) return const SizedBox.shrink();
+    final delta = waterPaceDelta(drunkMl: drunk, goalMl: goal, now: now);
+    final behind = delta < -150;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        behind
+            ? '${formatVolume(-delta, units)} behind pace — time for a glass.'
+            : delta > 150
+            ? '${formatVolume(delta, units)} ahead of pace.'
+            : 'On pace for your goal.',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: behind ? theme.colorScheme.error : theme.muted,
+        ),
       ),
     );
   }

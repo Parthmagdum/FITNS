@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/steps/step_sensor.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../core/widgets/week_bars.dart';
+import '../../data/database.dart' show SettingsCompanion;
 import '../../data/providers.dart';
+import 'steps_screen.dart' show StepPaceLine;
 
 final _count = NumberFormat('#,##0');
 
@@ -42,6 +46,24 @@ Future<void> enableStepCounting(BuildContext context, WidgetRef ref) async {
   }
 }
 
+/// Asks for a new daily step goal and saves it.
+Future<void> editStepGoal(BuildContext context, WidgetRef ref) async {
+  final db = ref.read(dbProvider);
+  final current = (await db.getSettings()).dailyStepGoal;
+  if (!context.mounted) return;
+  final text = await promptText(
+    context,
+    title: 'Daily step goal',
+    initial: '$current',
+    suffix: 'steps',
+    keyboardType: TextInputType.number,
+  );
+  final goal = int.tryParse(text?.trim() ?? '');
+  if (goal == null || goal < 100 || goal > 100000) return;
+  await db.updateSettings(SettingsCompanion(dailyStepGoal: Value(goal)));
+}
+
+/// Steps on the Today tab. Tapping it opens the full Steps page.
 class StepsCard extends ConsumerWidget {
   const StepsCard({super.key});
 
@@ -60,7 +82,10 @@ class StepsCard extends ConsumerWidget {
         ref.watch(settingsProvider.select((s) => s.valueOrNull?.allDaySteps)) ??
         true;
 
+    final granted = status == StepSensorStatus.granted;
+
     return SectionCard(
+      onTap: granted ? () => context.push('/steps') : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -68,7 +93,10 @@ class StepsCard extends ConsumerWidget {
             children: [
               Icon(Icons.directions_walk, color: theme.accent),
               const SizedBox(width: 8),
-              Text('Steps', style: theme.textTheme.titleMedium),
+              Expanded(
+                child: Text('Steps', style: theme.textTheme.titleMedium),
+              ),
+              if (granted) Icon(Icons.chevron_right, color: theme.muted),
             ],
           ),
           const SizedBox(height: 12),
@@ -125,6 +153,7 @@ class StepsCard extends ConsumerWidget {
                     minHeight: 10,
                   ),
                 ),
+                StepPaceLine(total: steps, goal: goal),
                 if (week != null) ...[
                   const SizedBox(height: 20),
                   WeekBars(
