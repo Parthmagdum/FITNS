@@ -6,6 +6,7 @@ import '../../core/dates.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
+import '../../data/food_library.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_icons.dart' show IconTile;
 import 'food_sheets.dart';
@@ -55,6 +56,28 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
           at: momentOn(widget.day),
         );
     if (mounted) _added(food.name);
+  }
+
+  /// Saves a built-in food as the user's own (once — the same name is
+  /// reused), then asks how much was eaten.
+  Future<void> _logLibrary(LibraryFood item) async {
+    final db = ref.read(dbProvider);
+    final foods = ref.read(foodsProvider).valueOrNull ?? const [];
+    final existing = foods
+        .where((f) => f.name.toLowerCase() == item.name.toLowerCase())
+        .firstOrNull;
+    final id =
+        existing?.id ??
+        await db.saveFood(
+          name: item.name,
+          servingLabel: item.serving,
+          kcal: item.kcal,
+          proteinTenths: (item.protein * 10).round(),
+          carbsTenths: (item.carbs * 10).round(),
+          fatTenths: (item.fat * 10).round(),
+        );
+    final food = await db.foodById(id);
+    if (food != null && mounted) await _logFood(food);
   }
 
   Future<void> _newFood() async {
@@ -113,6 +136,11 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
       for (final f in foods)
         if (query.isEmpty || f.name.toLowerCase().contains(query)) f,
     ];
+    final savedNames = {for (final f in foods) f.name.toLowerCase()};
+    final library = [
+      for (final f in searchFoodLibrary(query))
+        if (!savedNames.contains(f.name.toLowerCase())) f,
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -130,7 +158,7 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
               decoration: const InputDecoration(
-                hintText: 'Search your foods',
+                hintText: 'Search foods — rice, egg, dal…',
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: (v) => setState(() => _query = v),
@@ -148,12 +176,13 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
             onTap: _quickAdd,
           ),
           const Divider(),
-          if (shown.isEmpty)
+          if (shown.isEmpty && library.isEmpty)
             EmptyHint(
               icon: Icons.restaurant_outlined,
               message: foods.isEmpty
-                  ? 'Save the foods you eat often, then log them in one tap.'
-                  : 'No saved food matches.',
+                  ? 'Search ${foodLibrary.length} common foods above, or save '
+                        'your own and log them in one tap.'
+                  : 'No food matches.',
               action: OutlinedButton(
                 onPressed: _newFood,
                 child: Text(
@@ -177,6 +206,20 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
                 icon: Icon(Icons.add_circle_outline, color: theme.accent),
               ),
             ),
+          if (library.isNotEmpty) ...[
+            const SectionLabel('Common foods'),
+            for (final item in library)
+              ListTile(
+                title: Text(item.name),
+                subtitle: Text(
+                  '${item.serving} · ${formatKcal(item.kcal)} · '
+                  'P ${formatGrams((item.protein * 10).round())}',
+                  style: TextStyle(color: theme.muted),
+                ),
+                trailing: Icon(Icons.add_circle_outline, color: theme.muted),
+                onTap: () => _logLibrary(item),
+              ),
+          ],
         ],
       ),
     );
