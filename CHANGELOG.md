@@ -24,6 +24,12 @@
   bodyweight and dumbbell alternatives.
 - Backups include places and programs (format 4).
 
+**Fixed**
+- **The clock no longer runs while you set up.** A new workout — empty or
+  from a routine or program — opens in setup: add, swap and pre-fill
+  exercises with no clock, ticks or rest timer running. Tap **Start
+  workout** when you're ready; the workout's time counts from then.
+
 ## 0.0.5 — 2026-11-02
 
 **Smarter tracking**

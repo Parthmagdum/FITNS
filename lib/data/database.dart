@@ -151,6 +151,7 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(programDays);
         await m.createIndex(programDaysProgram);
         await m.addColumn(workouts, workouts.programDayId);
+        await m.addColumn(workouts, workouts.inSetup);
         await m.addColumn(workoutExercises, workoutExercises.swappedFromId);
         await seedPlaces();
       }
@@ -449,6 +450,9 @@ class AppDatabase extends _$AppDatabase {
   /// Starts a workout, from a routine or empty. If one is already in progress
   /// that one's id comes back instead — there is only ever one.
   ///
+  /// It opens in setup ([Workouts.inSetup]): the clock waits until
+  /// [beginWorkout], so adding and arranging exercises takes no time off it.
+  ///
   /// A routine's exercises are fitted to [conditions] (by default, the place
   /// and low-impact setting in [Settings]): any that can't be done there is
   /// swapped for the best stand-in that trains the same muscle, remembering
@@ -476,6 +480,7 @@ class AppDatabase extends _$AppDatabase {
         name: routine?.routine.name ?? workoutNameFor(start),
         startedAt: start,
         programDayId: Value(programDayId),
+        inSetup: const Value(true),
       ),
     );
     for (final (i, entry)
@@ -529,6 +534,18 @@ class AppDatabase extends _$AppDatabase {
       return true;
     },
   );
+
+  /// Ends setup and starts the clock: [Workouts.startedAt] becomes [now].
+  /// Does nothing to a workout already started.
+  Future<void> beginWorkout(int workoutId, {DateTime? now}) =>
+      (update(
+        workouts,
+      )..where((w) => w.id.equals(workoutId) & w.inSetup.equals(true))).write(
+        WorkoutsCompanion(
+          startedAt: Value(now ?? DateTime.now()),
+          inSetup: const Value(false),
+        ),
+      );
 
   /// Appends exercises to a workout, each with as many empty sets as it had
   /// last time (or one, the first time).
@@ -700,7 +717,10 @@ class AppDatabase extends _$AppDatabase {
             .go();
         await _dropEmptyExercises(workoutId);
         await (update(workouts)..where((w) => w.id.equals(workoutId))).write(
-          WorkoutsCompanion(endedAt: Value(now ?? DateTime.now())),
+          WorkoutsCompanion(
+            endedAt: Value(now ?? DateTime.now()),
+            inSetup: const Value(false),
+          ),
         );
       });
 

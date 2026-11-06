@@ -41,6 +41,7 @@ void main() {
       await db.customStatement('DROP INDEX program_days_program');
       for (final (table, column) in [
         ('workouts', 'program_day_id'),
+        ('workouts', 'in_setup'),
         ('workout_exercises', 'swapped_from_id'),
         ('settings', 'active_place_id'),
         ('settings', 'low_impact_only'),

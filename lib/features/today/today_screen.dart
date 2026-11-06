@@ -76,21 +76,22 @@ class _WorkoutSection extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'In progress',
+                    active.inSetup ? 'Setting up' : 'In progress',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.accent,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(active.name, style: theme.textTheme.titleMedium),
-                  TickerBuilder(
-                    builder: (context, now) => Text(
-                      formatClock(now.difference(active.startedAt)),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.muted,
+                  if (!active.inSetup)
+                    TickerBuilder(
+                      builder: (context, now) => Text(
+                        formatClock(now.difference(active.startedAt)),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.muted,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -298,6 +298,12 @@ class Workouts extends Table {
   DateTimeColumn get endedAt => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
 
+  /// Still being set up: exercises are being added and arranged, and the
+  /// clock hasn't started. "Start workout" clears it and resets
+  /// [startedAt] to that moment, so time spent setting up never counts.
+  /// Schema v7.
+  BoolColumn get inSetup => boolean().withDefault(const Constant(false))();
+
   /// The program day it was started as — how a program knows what's next.
   /// Survives the program being deleted. Schema v7.
   IntColumn get programDayId => integer().nullable().references(

@@ -3260,6 +3260,21 @@ class $WorkoutsTable extends Workouts
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _inSetupMeta = const VerificationMeta(
+    'inSetup',
+  );
+  @override
+  late final GeneratedColumn<bool> inSetup = GeneratedColumn<bool>(
+    'in_setup',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("in_setup" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _programDayIdMeta = const VerificationMeta(
     'programDayId',
   );
@@ -3282,6 +3297,7 @@ class $WorkoutsTable extends Workouts
     startedAt,
     endedAt,
     notes,
+    inSetup,
     programDayId,
   ];
   @override
@@ -3333,6 +3349,12 @@ class $WorkoutsTable extends Workouts
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('in_setup')) {
+      context.handle(
+        _inSetupMeta,
+        inSetup.isAcceptableOrUnknown(data['in_setup']!, _inSetupMeta),
+      );
+    }
     if (data.containsKey('program_day_id')) {
       context.handle(
         _programDayIdMeta,
@@ -3375,6 +3397,10 @@ class $WorkoutsTable extends Workouts
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      inSetup: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}in_setup'],
+      )!,
       programDayId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}program_day_id'],
@@ -3398,6 +3424,12 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
   final DateTime? endedAt;
   final String? notes;
 
+  /// Still being set up: exercises are being added and arranged, and the
+  /// clock hasn't started. "Start workout" clears it and resets
+  /// [startedAt] to that moment, so time spent setting up never counts.
+  /// Schema v7.
+  final bool inSetup;
+
   /// The program day it was started as — how a program knows what's next.
   /// Survives the program being deleted. Schema v7.
   final int? programDayId;
@@ -3408,6 +3440,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     required this.startedAt,
     this.endedAt,
     this.notes,
+    required this.inSetup,
     this.programDayId,
   });
   @override
@@ -3425,6 +3458,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['in_setup'] = Variable<bool>(inSetup);
     if (!nullToAbsent || programDayId != null) {
       map['program_day_id'] = Variable<int>(programDayId);
     }
@@ -3445,6 +3479,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      inSetup: Value(inSetup),
       programDayId: programDayId == null && nullToAbsent
           ? const Value.absent()
           : Value(programDayId),
@@ -3463,6 +3498,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
       endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
       notes: serializer.fromJson<String?>(json['notes']),
+      inSetup: serializer.fromJson<bool>(json['inSetup']),
       programDayId: serializer.fromJson<int?>(json['programDayId']),
     );
   }
@@ -3476,6 +3512,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       'startedAt': serializer.toJson<DateTime>(startedAt),
       'endedAt': serializer.toJson<DateTime?>(endedAt),
       'notes': serializer.toJson<String?>(notes),
+      'inSetup': serializer.toJson<bool>(inSetup),
       'programDayId': serializer.toJson<int?>(programDayId),
     };
   }
@@ -3487,6 +3524,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     DateTime? startedAt,
     Value<DateTime?> endedAt = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    bool? inSetup,
     Value<int?> programDayId = const Value.absent(),
   }) => WorkoutRow(
     id: id ?? this.id,
@@ -3495,6 +3533,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
     startedAt: startedAt ?? this.startedAt,
     endedAt: endedAt.present ? endedAt.value : this.endedAt,
     notes: notes.present ? notes.value : this.notes,
+    inSetup: inSetup ?? this.inSetup,
     programDayId: programDayId.present ? programDayId.value : this.programDayId,
   );
   WorkoutRow copyWithCompanion(WorkoutsCompanion data) {
@@ -3505,6 +3544,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
       endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
       notes: data.notes.present ? data.notes.value : this.notes,
+      inSetup: data.inSetup.present ? data.inSetup.value : this.inSetup,
       programDayId: data.programDayId.present
           ? data.programDayId.value
           : this.programDayId,
@@ -3520,14 +3560,23 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           ..write('startedAt: $startedAt, ')
           ..write('endedAt: $endedAt, ')
           ..write('notes: $notes, ')
+          ..write('inSetup: $inSetup, ')
           ..write('programDayId: $programDayId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, routineId, name, startedAt, endedAt, notes, programDayId);
+  int get hashCode => Object.hash(
+    id,
+    routineId,
+    name,
+    startedAt,
+    endedAt,
+    notes,
+    inSetup,
+    programDayId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3538,6 +3587,7 @@ class WorkoutRow extends DataClass implements Insertable<WorkoutRow> {
           other.startedAt == this.startedAt &&
           other.endedAt == this.endedAt &&
           other.notes == this.notes &&
+          other.inSetup == this.inSetup &&
           other.programDayId == this.programDayId);
 }
 
@@ -3548,6 +3598,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
   final Value<DateTime> startedAt;
   final Value<DateTime?> endedAt;
   final Value<String?> notes;
+  final Value<bool> inSetup;
   final Value<int?> programDayId;
   const WorkoutsCompanion({
     this.id = const Value.absent(),
@@ -3556,6 +3607,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
     this.startedAt = const Value.absent(),
     this.endedAt = const Value.absent(),
     this.notes = const Value.absent(),
+    this.inSetup = const Value.absent(),
     this.programDayId = const Value.absent(),
   });
   WorkoutsCompanion.insert({
@@ -3565,6 +3617,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
     required DateTime startedAt,
     this.endedAt = const Value.absent(),
     this.notes = const Value.absent(),
+    this.inSetup = const Value.absent(),
     this.programDayId = const Value.absent(),
   }) : name = Value(name),
        startedAt = Value(startedAt);
@@ -3575,6 +3628,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
     Expression<DateTime>? startedAt,
     Expression<DateTime>? endedAt,
     Expression<String>? notes,
+    Expression<bool>? inSetup,
     Expression<int>? programDayId,
   }) {
     return RawValuesInsertable({
@@ -3584,6 +3638,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
       if (startedAt != null) 'started_at': startedAt,
       if (endedAt != null) 'ended_at': endedAt,
       if (notes != null) 'notes': notes,
+      if (inSetup != null) 'in_setup': inSetup,
       if (programDayId != null) 'program_day_id': programDayId,
     });
   }
@@ -3595,6 +3650,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
     Value<DateTime>? startedAt,
     Value<DateTime?>? endedAt,
     Value<String?>? notes,
+    Value<bool>? inSetup,
     Value<int?>? programDayId,
   }) {
     return WorkoutsCompanion(
@@ -3604,6 +3660,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,
       notes: notes ?? this.notes,
+      inSetup: inSetup ?? this.inSetup,
       programDayId: programDayId ?? this.programDayId,
     );
   }
@@ -3629,6 +3686,9 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (inSetup.present) {
+      map['in_setup'] = Variable<bool>(inSetup.value);
+    }
     if (programDayId.present) {
       map['program_day_id'] = Variable<int>(programDayId.value);
     }
@@ -3644,6 +3704,7 @@ class WorkoutsCompanion extends UpdateCompanion<WorkoutRow> {
           ..write('startedAt: $startedAt, ')
           ..write('endedAt: $endedAt, ')
           ..write('notes: $notes, ')
+          ..write('inSetup: $inSetup, ')
           ..write('programDayId: $programDayId')
           ..write(')'))
         .toString();
@@ -10451,6 +10512,7 @@ typedef $$WorkoutsTableCreateCompanionBuilder =
       required DateTime startedAt,
       Value<DateTime?> endedAt,
       Value<String?> notes,
+      Value<bool> inSetup,
       Value<int?> programDayId,
     });
 typedef $$WorkoutsTableUpdateCompanionBuilder =
@@ -10461,6 +10523,7 @@ typedef $$WorkoutsTableUpdateCompanionBuilder =
       Value<DateTime> startedAt,
       Value<DateTime?> endedAt,
       Value<String?> notes,
+      Value<bool> inSetup,
       Value<int?> programDayId,
     });
 
@@ -10559,6 +10622,11 @@ class $$WorkoutsTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get inSetup => $composableBuilder(
+    column: $table.inSetup,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10668,6 +10736,11 @@ class $$WorkoutsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get inSetup => $composableBuilder(
+    column: $table.inSetup,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutinesTableOrderingComposer get routineId {
     final $$RoutinesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10738,6 +10811,9 @@ class $$WorkoutsTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get inSetup =>
+      $composableBuilder(column: $table.inSetup, builder: (column) => column);
 
   $$RoutinesTableAnnotationComposer get routineId {
     final $$RoutinesTableAnnotationComposer composer = $composerBuilder(
@@ -10849,6 +10925,7 @@ class $$WorkoutsTableTableManager
                 Value<DateTime> startedAt = const Value.absent(),
                 Value<DateTime?> endedAt = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> inSetup = const Value.absent(),
                 Value<int?> programDayId = const Value.absent(),
               }) => WorkoutsCompanion(
                 id: id,
@@ -10857,6 +10934,7 @@ class $$WorkoutsTableTableManager
                 startedAt: startedAt,
                 endedAt: endedAt,
                 notes: notes,
+                inSetup: inSetup,
                 programDayId: programDayId,
               ),
           createCompanionCallback:
@@ -10867,6 +10945,7 @@ class $$WorkoutsTableTableManager
                 required DateTime startedAt,
                 Value<DateTime?> endedAt = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<bool> inSetup = const Value.absent(),
                 Value<int?> programDayId = const Value.absent(),
               }) => WorkoutsCompanion.insert(
                 id: id,
@@ -10875,6 +10954,7 @@ class $$WorkoutsTableTableManager
                 startedAt: startedAt,
                 endedAt: endedAt,
                 notes: notes,
+                inSetup: inSetup,
                 programDayId: programDayId,
               ),
           withReferenceMapper: (p0) => p0

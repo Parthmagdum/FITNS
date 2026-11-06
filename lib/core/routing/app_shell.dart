@@ -87,15 +87,23 @@ class _ActiveWorkoutStrip extends ConsumerWidget {
                   style: theme.textTheme.titleSmall,
                 ),
               ),
-              TickerBuilder(
-                builder: (context, now) => Text(
-                  formatClock(now.difference(workout.startedAt)),
+              if (workout.inSetup)
+                Text(
+                  'Setting up',
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.accent,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                    color: theme.muted,
+                  ),
+                )
+              else
+                TickerBuilder(
+                  builder: (context, now) => Text(
+                    formatClock(now.difference(workout.startedAt)),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.accent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(width: 4),
               const Icon(Icons.chevron_right),
             ],

@@ -61,6 +61,11 @@ class _WorkoutLog extends ConsumerWidget {
   /// timer — just its sets to correct.
   bool get editing => workout.endedAt != null;
 
+  /// A new workout still being put together: exercises can be added,
+  /// swapped and pre-filled, but the clock, ticks and rest timer wait for
+  /// "Start workout".
+  bool get setup => !editing && workout.inSetup;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -103,6 +108,13 @@ class _WorkoutLog extends ConsumerWidget {
                         color: theme.muted,
                       ),
                     )
+                  else if (setup)
+                    Text(
+                      'Setting up · clock not started',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.muted,
+                      ),
+                    )
                   else
                     TickerBuilder(
                       builder: (context, now) => Text(
@@ -122,8 +134,16 @@ class _WorkoutLog extends ConsumerWidget {
               style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
               onPressed: editing
                   ? () => context.pop()
+                  : setup
+                  ? (detail.entries.isEmpty ? null : () => _begin(ref))
                   : () => _finish(context, ref),
-              child: Text(editing ? 'Done' : 'Finish'),
+              child: Text(
+                editing
+                    ? 'Done'
+                    : setup
+                    ? 'Start'
+                    : 'Finish',
+              ),
             ),
             PopupMenuButton<String>(
               onSelected: (value) => switch (value) {
@@ -149,6 +169,17 @@ class _WorkoutLog extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
+            if (setup)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                child: Text(
+                  'Add your exercises and set them up first. The clock and '
+                  'rest timer start when you tap Start workout.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.muted,
+                  ),
+                ),
+              ),
             if (editing)
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
@@ -169,6 +200,7 @@ class _WorkoutLog extends ConsumerWidget {
                   units: units,
                   restSeconds: entry.item.restSeconds ?? defaultRest,
                   editing: editing,
+                  setup: setup,
                 ),
               ),
             if (detail.entries.isEmpty)
@@ -181,11 +213,26 @@ class _WorkoutLog extends ConsumerWidget {
               icon: const Icon(Icons.add),
               label: const Text('Add exercises'),
             ),
+            if (setup) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: detail.entries.isEmpty ? null : () => _begin(ref),
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Start workout'),
+              ),
+            ],
           ],
         ),
-        bottomNavigationBar: editing ? null : const RestTimerBar(),
+        bottomNavigationBar: editing || setup ? null : const RestTimerBar(),
       ),
     );
+  }
+
+  /// Setup is over: the clock starts now.
+  Future<void> _begin(WidgetRef ref) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await HapticFeedback.mediumImpact();
+    await ref.read(dbProvider).beginWorkout(workout.id);
   }
 
   Future<void> _addExercises(BuildContext context, WidgetRef ref) async {
@@ -299,12 +346,16 @@ class _ExerciseCard extends ConsumerWidget {
     required this.units,
     required this.restSeconds,
     required this.editing,
+    this.setup = false,
   });
 
   final WorkoutEntry entry;
   final UnitSystem units;
   final int restSeconds;
   final bool editing;
+
+  /// Not started yet: no ticks, no sensor counting.
+  final bool setup;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -376,7 +427,7 @@ class _ExerciseCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (!editing && repProfileFor(exercise) != null)
+                if (!editing && !setup && repProfileFor(exercise) != null)
                   IconButton(
                     tooltip: 'Count with sensors',
                     color: theme.accent,
@@ -421,7 +472,7 @@ class _ExerciseCard extends ConsumerWidget {
               child: _SetHeader(
                 kind: exercise.kind,
                 units: units,
-                editing: editing,
+                editing: editing || setup,
               ),
             ),
             for (final (i, set) in entry.sets.indexed)
@@ -438,6 +489,7 @@ class _ExerciseCard extends ConsumerWidget {
                   targetReps: entry.item.targetReps,
                   restSeconds: restSeconds,
                   editing: editing,
+                  setup: setup,
                 ),
               ),
             Align(
@@ -515,6 +567,7 @@ class _SetRow extends ConsumerStatefulWidget {
     required this.targetReps,
     required this.restSeconds,
     required this.editing,
+    this.setup = false,
   });
 
   final WorkoutSetRow set;
@@ -529,6 +582,9 @@ class _SetRow extends ConsumerStatefulWidget {
   /// History, not a live set: no tick, no rest timer. Every set with a
   /// value is kept when the edit ends.
   final bool editing;
+
+  /// The workout has not started: values can be pre-filled, not ticked.
+  final bool setup;
 
   @override
   ConsumerState<_SetRow> createState() => _SetRowState();
@@ -743,7 +799,7 @@ class _SetRowState extends ConsumerState<_SetRow> {
                 ),
               ),
             ),
-          if (widget.editing)
+          if (widget.editing || widget.setup)
             const SizedBox(width: 8)
           else
             SizedBox(

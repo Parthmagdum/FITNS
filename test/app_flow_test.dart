@@ -145,6 +145,14 @@ void main() {
     await settle(tester);
     expect(find.text('Bench Press (Barbell)'), findsOneWidget);
 
+    // Still setting up: no clock, no ticks, no rest timer yet.
+    expect(find.text('Setting up · clock not started'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+    await tester.tap(find.text('Start workout'));
+    await settle(tester);
+    expect(find.text('Setting up · clock not started'), findsNothing);
+    expect(find.text('Finish'), findsOneWidget);
+
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '60');
     await tester.enterText(fields.at(1), '8');
@@ -199,6 +207,8 @@ void main() {
     await tester.tap(find.text('Legs')); // the quick-start chip on Today
     await settle(tester);
     expect(find.text('Squat (Barbell)'), findsOneWidget);
+    await tester.tap(find.text('Start workout'));
+    await settle(tester);
     expect(find.byIcon(Icons.check_circle_outline), findsNWidgets(4));
     // Target reps are only a hint until typed or ticked.
     final repsField = tester.widget<TextField>(find.byType(TextField).at(1));
@@ -244,6 +254,7 @@ void main() {
         )..where((e) => e.name.equals('Push-up'))).getSingle();
         final id = await db.startWorkout();
         await db.addExercisesToWorkout(id, [pushUp.id]);
+        await db.beginWorkout(id);
       },
     );
 

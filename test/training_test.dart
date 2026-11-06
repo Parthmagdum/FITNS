@@ -247,6 +247,47 @@ void main() {
     });
   });
 
+  group('setup before the clock', () {
+    test(
+      'a new workout waits in setup; starting it resets the clock',
+      () async {
+        final created = DateTime(2026, 11, 6, 18);
+        final id = await db.startWorkout(now: created);
+        var w = (await db.activeWorkout())!;
+        expect(w.id, id);
+        expect(w.inSetup, isTrue);
+
+        // Ten minutes picking exercises don't count.
+        await db.addExercisesToWorkout(id, [(await byKey('push_up')).id]);
+        final begun = created.add(const Duration(minutes: 10));
+        await db.beginWorkout(id, now: begun);
+        w = (await db.activeWorkout())!;
+        expect(w.inSetup, isFalse);
+        expect(w.startedAt, begun);
+
+        // Starting again changes nothing.
+        await db.beginWorkout(id, now: begun.add(const Duration(hours: 1)));
+        expect((await db.activeWorkout())!.startedAt, begun);
+
+        final entry = (await db.watchWorkoutDetail(id).first)!.entries.single;
+        await db.setDone(entry.sets.single.id, done: true);
+        await db.finishWorkout(id, now: begun.add(const Duration(minutes: 30)));
+        final done = (await db.watchWorkoutHistory().first).single.workout;
+        expect(done.inSetup, isFalse);
+        expect(done.endedAt!.difference(done.startedAt).inMinutes, 30);
+      },
+    );
+
+    test(
+      'finished workouts from before setup existed are not in setup',
+      () async {
+        final id = await db.startWorkout();
+        await db.finishWorkout(id);
+        expect((await db.select(db.workouts).getSingle()).inSetup, isFalse);
+      },
+    );
+  });
+
   group('programs', () {
     Future<int> routineNamed(String name) async => db.saveRoutine(
       name: name,
