@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.8 — 2026-11-06
 
 **Your plan, kept on track**
 - **Weekly check-in.** Once a week while a goal is set, Today compares your
