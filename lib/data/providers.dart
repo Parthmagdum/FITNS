@@ -8,6 +8,7 @@ import '../core/notifications/reminders.dart';
 import '../core/notifications/rest_alerts.dart';
 import '../core/platform/barcode_scanner.dart';
 import '../core/platform/document_files.dart';
+import '../core/platform/health_connect.dart';
 import '../core/platform/home_widget.dart';
 import '../core/platform/photo_source.dart';
 import '../core/steps/step_sensor.dart';
@@ -266,6 +267,10 @@ final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
 // ── Home-screen widget ──────────────────────────────────────────────────────
 
 final homeWidgetProvider = Provider<HomeWidget>((ref) => const HomeWidget());
+
+final healthConnectProvider = Provider<HealthConnect>(
+  (ref) => const HealthConnect(),
+);
 
 final barcodeScannerProvider = Provider<BarcodeScanner>(
   (ref) => const BarcodeScanner(),

@@ -92,4 +92,8 @@ dependencies {
     // and works offline — chosen over Google's ML Kit, which is closed and
     // would keep FITNS out of F-Droid.
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // Health Connect (AndroidX, Apache 2.0): steps and weight in, workouts
+    // out — only after the user connects it in Settings. Android 8+.
+    implementation("androidx.health.connect:connect-client:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/branding/app_info.dart';
 import 'core/dates.dart';
 import 'core/notifications/reminders.dart';
+import 'core/platform/health_connect.dart';
 import 'core/platform/home_widget.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -23,7 +24,10 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startSteps());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startSteps();
+      _syncHealth();
+    });
   }
 
   @override
@@ -43,6 +47,18 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
     // Permissions may have been granted or revoked in system settings.
     _startSteps();
     ref.invalidate(restAlertStatusProvider);
+    _syncHealth();
+  }
+
+  /// Once connected, a quiet Health Connect sync each time FITNS opens.
+  Future<void> _syncHealth() async {
+    final settings = ref.read(settingsProvider).valueOrNull;
+    if (settings == null || !settings.healthConnect) return;
+    try {
+      await syncHealth(ref.read(dbProvider), ref.read(healthConnectProvider));
+    } catch (_) {
+      // Permissions revoked or Health Connect busy: try again next time.
+    }
   }
 
   Future<void> _startSteps() async {

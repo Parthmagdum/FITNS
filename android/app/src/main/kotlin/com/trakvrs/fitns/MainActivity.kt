@@ -40,6 +40,11 @@ class MainActivity : FlutterActivity() {
     private var cameraUri: Uri? = null
     private var pendingScan: MethodChannel.Result? = null
 
+    /** Health Connect, on Android 8+ only — the class isn't touched below. */
+    private val health: HealthBridge? by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) HealthBridge(this) else null
+    }
+
     override fun onResume() {
         super.onResume()
         inForeground = true
@@ -214,6 +219,15 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        MethodChannel(messenger, HEALTH_METHODS).setMethodCallHandler { call, result ->
+            val bridge = health
+            when {
+                bridge != null -> bridge.handle(call, result)
+                call.method == "status" -> result.success("unavailable")
+                else -> result.success(null)
+            }
+        }
+
         MethodChannel(messenger, WIDGET_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "update" -> {
@@ -339,6 +353,7 @@ class MainActivity : FlutterActivity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (health?.onActivityResult(requestCode, resultCode, data) == true) return
         if (requestCode == IntentIntegrator.REQUEST_CODE) {
             val result = pendingScan ?: return
             pendingScan = null
@@ -421,6 +436,7 @@ class MainActivity : FlutterActivity() {
         private const val PHOTO_METHODS = "fitns/photos"
         private const val WIDGET_METHODS = "fitns/widget"
         private const val BARCODE_METHODS = "fitns/barcode"
+        private const val HEALTH_METHODS = "fitns/health"
         private const val CAMERA_REQUEST = 4108
         private const val PICK_PHOTO_REQUEST = 4109
         private const val PERMISSION_REQUEST = 4101

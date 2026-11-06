@@ -14,6 +14,7 @@ import '../../data/providers.dart';
 import '../backup/backup_actions.dart';
 import '../steps/steps_card.dart';
 import '../workouts/set_format.dart';
+import 'health_connect_tile.dart';
 import 'reminder_tiles.dart';
 import 'settings_dialogs.dart';
 
@@ -235,6 +236,7 @@ class SettingsScreen extends ConsumerWidget {
         const SectionLabel('Reminders'),
         ReminderTiles(settings: settings),
         const SectionLabel('Your data'),
+        HealthConnectTile(settings: settings),
         Card(
           child: Column(
             children: [

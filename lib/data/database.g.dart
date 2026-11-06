@@ -368,6 +368,21 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _healthConnectMeta = const VerificationMeta(
+    'healthConnect',
+  );
+  @override
+  late final GeneratedColumn<bool> healthConnect = GeneratedColumn<bool>(
+    'health_connect',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("health_connect" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -402,6 +417,7 @@ class $SettingsTable extends Settings
     weighInReminderMinute,
     weighInReminderWeekday,
     cycleTracking,
+    healthConnect,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -637,6 +653,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('health_connect')) {
+      context.handle(
+        _healthConnectMeta,
+        healthConnect.isAcceptableOrUnknown(
+          data['health_connect']!,
+          _healthConnectMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -784,6 +809,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}cycle_tracking'],
       )!,
+      healthConnect: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}health_connect'],
+      )!,
     );
   }
 
@@ -895,6 +924,10 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// knows about water retention. Off unless the user turns it on.
   /// Schema v9.
   final bool cycleTracking;
+
+  /// Health Connect connected: steps and weight in, workouts out, on each
+  /// open. Schema v9.
+  final bool healthConnect;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -928,6 +961,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     this.weighInReminderMinute,
     required this.weighInReminderWeekday,
     required this.cycleTracking,
+    required this.healthConnect,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1012,6 +1046,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     }
     map['weigh_in_reminder_weekday'] = Variable<int>(weighInReminderWeekday);
     map['cycle_tracking'] = Variable<bool>(cycleTracking);
+    map['health_connect'] = Variable<bool>(healthConnect);
     return map;
   }
 
@@ -1085,6 +1120,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           : Value(weighInReminderMinute),
       weighInReminderWeekday: Value(weighInReminderWeekday),
       cycleTracking: Value(cycleTracking),
+      healthConnect: Value(healthConnect),
     );
   }
 
@@ -1148,6 +1184,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         json['weighInReminderWeekday'],
       ),
       cycleTracking: serializer.fromJson<bool>(json['cycleTracking']),
+      healthConnect: serializer.fromJson<bool>(json['healthConnect']),
     );
   }
   @override
@@ -1196,6 +1233,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'weighInReminderMinute': serializer.toJson<int?>(weighInReminderMinute),
       'weighInReminderWeekday': serializer.toJson<int>(weighInReminderWeekday),
       'cycleTracking': serializer.toJson<bool>(cycleTracking),
+      'healthConnect': serializer.toJson<bool>(healthConnect),
     };
   }
 
@@ -1232,6 +1270,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     Value<int?> weighInReminderMinute = const Value.absent(),
     int? weighInReminderWeekday,
     bool? cycleTracking,
+    bool? healthConnect,
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -1284,6 +1323,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     weighInReminderWeekday:
         weighInReminderWeekday ?? this.weighInReminderWeekday,
     cycleTracking: cycleTracking ?? this.cycleTracking,
+    healthConnect: healthConnect ?? this.healthConnect,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -1367,6 +1407,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       cycleTracking: data.cycleTracking.present
           ? data.cycleTracking.value
           : this.cycleTracking,
+      healthConnect: data.healthConnect.present
+          ? data.healthConnect.value
+          : this.healthConnect,
     );
   }
 
@@ -1404,7 +1447,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('waterReminders: $waterReminders, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
           ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
-          ..write('cycleTracking: $cycleTracking')
+          ..write('cycleTracking: $cycleTracking, ')
+          ..write('healthConnect: $healthConnect')
           ..write(')'))
         .toString();
   }
@@ -1443,6 +1487,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     weighInReminderMinute,
     weighInReminderWeekday,
     cycleTracking,
+    healthConnect,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1479,7 +1524,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.waterReminders == this.waterReminders &&
           other.weighInReminderMinute == this.weighInReminderMinute &&
           other.weighInReminderWeekday == this.weighInReminderWeekday &&
-          other.cycleTracking == this.cycleTracking);
+          other.cycleTracking == this.cycleTracking &&
+          other.healthConnect == this.healthConnect);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -1515,6 +1561,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<int?> weighInReminderMinute;
   final Value<int> weighInReminderWeekday;
   final Value<bool> cycleTracking;
+  final Value<bool> healthConnect;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -1548,6 +1595,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
     this.cycleTracking = const Value.absent(),
+    this.healthConnect = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1582,6 +1630,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
     this.cycleTracking = const Value.absent(),
+    this.healthConnect = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -1616,6 +1665,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<int>? weighInReminderMinute,
     Expression<int>? weighInReminderWeekday,
     Expression<bool>? cycleTracking,
+    Expression<bool>? healthConnect,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1657,6 +1707,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (weighInReminderWeekday != null)
         'weigh_in_reminder_weekday': weighInReminderWeekday,
       if (cycleTracking != null) 'cycle_tracking': cycleTracking,
+      if (healthConnect != null) 'health_connect': healthConnect,
     });
   }
 
@@ -1693,6 +1744,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<int?>? weighInReminderMinute,
     Value<int>? weighInReminderWeekday,
     Value<bool>? cycleTracking,
+    Value<bool>? healthConnect,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -1730,6 +1782,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       weighInReminderWeekday:
           weighInReminderWeekday ?? this.weighInReminderWeekday,
       cycleTracking: cycleTracking ?? this.cycleTracking,
+      healthConnect: healthConnect ?? this.healthConnect,
     );
   }
 
@@ -1850,6 +1903,9 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (cycleTracking.present) {
       map['cycle_tracking'] = Variable<bool>(cycleTracking.value);
     }
+    if (healthConnect.present) {
+      map['health_connect'] = Variable<bool>(healthConnect.value);
+    }
     return map;
   }
 
@@ -1887,7 +1943,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('waterReminders: $waterReminders, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
           ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
-          ..write('cycleTracking: $cycleTracking')
+          ..write('cycleTracking: $cycleTracking, ')
+          ..write('healthConnect: $healthConnect')
           ..write(')'))
         .toString();
   }
@@ -9464,6 +9521,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
       Value<bool> cycleTracking,
+      Value<bool> healthConnect,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -9499,6 +9557,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
       Value<bool> cycleTracking,
+      Value<bool> healthConnect,
     });
 
 class $$SettingsTableFilterComposer
@@ -9674,6 +9733,11 @@ class $$SettingsTableFilterComposer
     column: $table.cycleTracking,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get healthConnect => $composableBuilder(
+    column: $table.healthConnect,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SettingsTableOrderingComposer
@@ -9844,6 +9908,11 @@ class $$SettingsTableOrderingComposer
     column: $table.cycleTracking,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get healthConnect => $composableBuilder(
+    column: $table.healthConnect,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -10001,6 +10070,11 @@ class $$SettingsTableAnnotationComposer
     column: $table.cycleTracking,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get healthConnect => $composableBuilder(
+    column: $table.healthConnect,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -10066,6 +10140,7 @@ class $$SettingsTableTableManager
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
                 Value<bool> cycleTracking = const Value.absent(),
+                Value<bool> healthConnect = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -10099,6 +10174,7 @@ class $$SettingsTableTableManager
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
                 cycleTracking: cycleTracking,
+                healthConnect: healthConnect,
               ),
           createCompanionCallback:
               ({
@@ -10134,6 +10210,7 @@ class $$SettingsTableTableManager
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
                 Value<bool> cycleTracking = const Value.absent(),
+                Value<bool> healthConnect = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -10167,6 +10244,7 @@ class $$SettingsTableTableManager
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
                 cycleTracking: cycleTracking,
+                healthConnect: healthConnect,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

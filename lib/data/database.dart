@@ -204,6 +204,7 @@ class AppDatabase extends _$AppDatabase {
         // Created whole (barcode included) by the v4 step on older files.
         if (from >= 4) await m.addColumn(foods, foods.barcode);
         await m.addColumn(settings, settings.cycleTracking);
+        await m.addColumn(settings, settings.healthConnect);
         await m.createIndex(sleepLogsWoke);
       }
     },
@@ -1912,6 +1913,50 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   });
+
+  /// Health Connect's daily step totals, by `dayKey`: each day becomes the
+  /// larger of the two counts, so importing never lowers one. Returns how
+  /// many days went up.
+  Future<int> importDailySteps(Map<String, int> byDay) => transaction(() async {
+    var raised = 0;
+    for (final MapEntry(key: day, value: steps) in byDay.entries) {
+      if (steps <= 0) continue;
+      final current = await (select(
+        dailySteps,
+      )..where((d) => d.day.equals(day))).getSingleOrNull();
+      if (current != null && current.steps >= steps) continue;
+      await into(dailySteps).insertOnConflictUpdate(
+        DailyStepsCompanion.insert(day: day, steps: Value(steps)),
+      );
+      raised++;
+    }
+    return raised;
+  });
+
+  /// Weigh-ins from elsewhere; one within a minute of an existing weigh-in
+  /// is the same one and skipped. Returns how many were added.
+  Future<int> importWeighIns(List<({DateTime at, int grams})> weighIns) =>
+      transaction(() async {
+        var added = 0;
+        for (final w in weighIns) {
+          final near =
+              await (select(bodyEntries)
+                    ..where(
+                      (e) =>
+                          e.metric.equalsValue(BodyMetric.weight) &
+                          e.measuredAt.isBetweenValues(
+                            w.at.subtract(const Duration(minutes: 1)),
+                            w.at.add(const Duration(minutes: 1)),
+                          ),
+                    )
+                    ..limit(1))
+                  .getSingleOrNull();
+          if (near != null) continue;
+          await addBodyEntries(w.at, {BodyMetric.weight: w.grams});
+          added++;
+        }
+        return added;
+      });
 
   Stream<int> watchStepsOn(DateTime day) =>
       (select(dailySteps)..where((d) => d.day.equals(dayKey(day))))

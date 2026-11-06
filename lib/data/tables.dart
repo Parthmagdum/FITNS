@@ -291,6 +291,11 @@ class Settings extends Table {
   BoolColumn get cycleTracking =>
       boolean().withDefault(const Constant(false))();
 
+  /// Health Connect connected: steps and weight in, workouts out, on each
+  /// open. Schema v9.
+  BoolColumn get healthConnect =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -57,6 +57,7 @@ void main() {
         'weigh_in_reminder_minute',
         'weigh_in_reminder_weekday',
         'cycle_tracking',
+        'health_connect',
       ]) {
         await db.customStatement('ALTER TABLE settings DROP COLUMN $column');
       }
