@@ -152,6 +152,8 @@ void main() {
     await settle(tester);
     expect(find.text('Setting up · clock not started'), findsNothing);
     expect(find.text('Finish'), findsOneWidget);
+    // The first exercise's own timer is running.
+    expect(find.byTooltip('Pause this exercise'), findsOneWidget);
 
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '60');

@@ -332,6 +332,14 @@ class WorkoutExercises extends Table {
   /// The routine's exercise this one stands in for, when it was swapped to
   /// suit the place or a low-impact day. Null when it is the original.
   /// Schema v7.
+  /// Time spent on this exercise, not counting a stretch still running —
+  /// see [timerSince]. Schema v8.
+  IntColumn get timedSeconds => integer().withDefault(const Constant(0))();
+
+  /// When its timer last started, while it runs; null when stopped. At most
+  /// one exercise of a workout runs at a time. Schema v8.
+  DateTimeColumn get timerSince => dateTime().nullable()();
+
   @ReferenceName('swappedInWorkoutExercises')
   IntColumn get swappedFromId =>
       integer().nullable().references(Exercises, #id)();

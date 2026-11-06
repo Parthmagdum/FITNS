@@ -37,6 +37,13 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 8) {
+      for (final column in ['timed_seconds', 'timer_since']) {
+        await db.customStatement(
+          'ALTER TABLE workout_exercises DROP COLUMN $column',
+        );
+      }
+    }
     if (schema < 7) {
       await db.customStatement('DROP INDEX program_days_program');
       for (final (table, column) in [
@@ -99,6 +106,7 @@ void main() {
     (4, '0.0.3'),
     (5, '0.0.4'),
     (6, '0.0.5'),
+    (7, '0.0.6'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',

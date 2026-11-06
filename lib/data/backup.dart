@@ -54,7 +54,8 @@ class BackupService {
   /// 3 (0.0.4): adds hourlySteps.
   /// 4 (0.0.6): adds places, programs and programDays, and the training
   /// settings.
-  static const formatVersion = 4;
+  /// 5 (0.0.7): adds each workout exercise's time.
+  static const formatVersion = 5;
 
   static String fileName(DateTime now) =>
       'fitns-backup-${now.year}-${_two(now.month)}-${_two(now.day)}.json';

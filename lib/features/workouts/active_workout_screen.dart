@@ -427,6 +427,7 @@ class _ExerciseCard extends ConsumerWidget {
                     ),
                   ),
                 ),
+                if (!editing && !setup) _ExerciseTimer(item: entry.item),
                 if (!editing && !setup && repProfileFor(exercise) != null)
                   IconButton(
                     tooltip: 'Count with sensors',
@@ -504,6 +505,77 @@ class _ExerciseCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// How long this exercise has taken. Counting up while it's the one being
+/// done (tap to pause); paused or finished, tap to carry on; not begun, a
+/// Start button — starting one stops whichever was running.
+class _ExerciseTimer extends ConsumerWidget {
+  const _ExerciseTimer({required this.item});
+
+  final WorkoutExerciseRow item;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final db = ref.read(dbProvider);
+    final running = item.timerSince != null;
+    final begun = running || item.timedSeconds > 0;
+
+    if (!begun) {
+      return TextButton.icon(
+        style: TextButton.styleFrom(
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+        ),
+        onPressed: () => db.startExerciseTimer(item.id),
+        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+        label: const Text('Start'),
+      );
+    }
+
+    Widget chip(DateTime now) {
+      final color = running ? theme.accent : theme.muted;
+      return Tooltip(
+        message: running ? 'Pause this exercise' : 'Carry on with this one',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => running
+              ? db.stopExerciseTimer(item.id)
+              : db.startExerciseTimer(item.id),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: running ? theme.accent.withValues(alpha: 0.12) : null,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  running ? Icons.timer_outlined : Icons.pause_rounded,
+                  size: 16,
+                  color: color,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  formatClock(exerciseTime(item, now: now)),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: color,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return running
+        ? TickerBuilder(builder: (context, now) => chip(now))
+        : chip(DateTime.now());
   }
 }
 
@@ -690,6 +762,7 @@ class _SetRowState extends ConsumerState<_SetRow> {
         completedAt: Value(DateTime.now()),
       ),
     );
+    await db.exerciseSetDone(_set.workoutExerciseId);
     ref
         .read(restTimerProvider.notifier)
         .start(Duration(seconds: widget.restSeconds));

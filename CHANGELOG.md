@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **A timer for each exercise**, alongside the workout's overall clock. The
+  first exercise's timer starts with the workout; ticking off an
+  exercise's last set stops it and starts the next one from zero. Jump to
+  another exercise and the timer follows you there. Tap a timer to pause
+  or carry on, or Start to begin an exercise by hand. Finished workouts
+  show how long each exercise took.
+
 ## 0.0.6 — 2026-11-06
 
 **Train anywhere, your way**

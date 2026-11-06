@@ -3789,6 +3789,29 @@ class $WorkoutExercisesTable extends WorkoutExercises
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _timedSecondsMeta = const VerificationMeta(
+    'timedSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> timedSeconds = GeneratedColumn<int>(
+    'timed_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _timerSinceMeta = const VerificationMeta(
+    'timerSince',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timerSince = GeneratedColumn<DateTime>(
+    'timer_since',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _swappedFromIdMeta = const VerificationMeta(
     'swappedFromId',
   );
@@ -3811,6 +3834,8 @@ class $WorkoutExercisesTable extends WorkoutExercises
     sort,
     targetReps,
     restSeconds,
+    timedSeconds,
+    timerSince,
     swappedFromId,
   ];
   @override
@@ -3867,6 +3892,21 @@ class $WorkoutExercisesTable extends WorkoutExercises
         ),
       );
     }
+    if (data.containsKey('timed_seconds')) {
+      context.handle(
+        _timedSecondsMeta,
+        timedSeconds.isAcceptableOrUnknown(
+          data['timed_seconds']!,
+          _timedSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('timer_since')) {
+      context.handle(
+        _timerSinceMeta,
+        timerSince.isAcceptableOrUnknown(data['timer_since']!, _timerSinceMeta),
+      );
+    }
     if (data.containsKey('swapped_from_id')) {
       context.handle(
         _swappedFromIdMeta,
@@ -3909,6 +3949,14 @@ class $WorkoutExercisesTable extends WorkoutExercises
         DriftSqlType.int,
         data['${effectivePrefix}rest_seconds'],
       ),
+      timedSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timed_seconds'],
+      )!,
+      timerSince: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timer_since'],
+      ),
       swappedFromId: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}swapped_from_id'],
@@ -3938,6 +3986,13 @@ class WorkoutExerciseRow extends DataClass
   /// The routine's exercise this one stands in for, when it was swapped to
   /// suit the place or a low-impact day. Null when it is the original.
   /// Schema v7.
+  /// Time spent on this exercise, not counting a stretch still running —
+  /// see [timerSince]. Schema v8.
+  final int timedSeconds;
+
+  /// When its timer last started, while it runs; null when stopped. At most
+  /// one exercise of a workout runs at a time. Schema v8.
+  final DateTime? timerSince;
   final int? swappedFromId;
   const WorkoutExerciseRow({
     required this.id,
@@ -3946,6 +4001,8 @@ class WorkoutExerciseRow extends DataClass
     required this.sort,
     this.targetReps,
     this.restSeconds,
+    required this.timedSeconds,
+    this.timerSince,
     this.swappedFromId,
   });
   @override
@@ -3960,6 +4017,10 @@ class WorkoutExerciseRow extends DataClass
     }
     if (!nullToAbsent || restSeconds != null) {
       map['rest_seconds'] = Variable<int>(restSeconds);
+    }
+    map['timed_seconds'] = Variable<int>(timedSeconds);
+    if (!nullToAbsent || timerSince != null) {
+      map['timer_since'] = Variable<DateTime>(timerSince);
     }
     if (!nullToAbsent || swappedFromId != null) {
       map['swapped_from_id'] = Variable<int>(swappedFromId);
@@ -3979,6 +4040,10 @@ class WorkoutExerciseRow extends DataClass
       restSeconds: restSeconds == null && nullToAbsent
           ? const Value.absent()
           : Value(restSeconds),
+      timedSeconds: Value(timedSeconds),
+      timerSince: timerSince == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timerSince),
       swappedFromId: swappedFromId == null && nullToAbsent
           ? const Value.absent()
           : Value(swappedFromId),
@@ -3997,6 +4062,8 @@ class WorkoutExerciseRow extends DataClass
       sort: serializer.fromJson<int>(json['sort']),
       targetReps: serializer.fromJson<int?>(json['targetReps']),
       restSeconds: serializer.fromJson<int?>(json['restSeconds']),
+      timedSeconds: serializer.fromJson<int>(json['timedSeconds']),
+      timerSince: serializer.fromJson<DateTime?>(json['timerSince']),
       swappedFromId: serializer.fromJson<int?>(json['swappedFromId']),
     );
   }
@@ -4010,6 +4077,8 @@ class WorkoutExerciseRow extends DataClass
       'sort': serializer.toJson<int>(sort),
       'targetReps': serializer.toJson<int?>(targetReps),
       'restSeconds': serializer.toJson<int?>(restSeconds),
+      'timedSeconds': serializer.toJson<int>(timedSeconds),
+      'timerSince': serializer.toJson<DateTime?>(timerSince),
       'swappedFromId': serializer.toJson<int?>(swappedFromId),
     };
   }
@@ -4021,6 +4090,8 @@ class WorkoutExerciseRow extends DataClass
     int? sort,
     Value<int?> targetReps = const Value.absent(),
     Value<int?> restSeconds = const Value.absent(),
+    int? timedSeconds,
+    Value<DateTime?> timerSince = const Value.absent(),
     Value<int?> swappedFromId = const Value.absent(),
   }) => WorkoutExerciseRow(
     id: id ?? this.id,
@@ -4029,6 +4100,8 @@ class WorkoutExerciseRow extends DataClass
     sort: sort ?? this.sort,
     targetReps: targetReps.present ? targetReps.value : this.targetReps,
     restSeconds: restSeconds.present ? restSeconds.value : this.restSeconds,
+    timedSeconds: timedSeconds ?? this.timedSeconds,
+    timerSince: timerSince.present ? timerSince.value : this.timerSince,
     swappedFromId: swappedFromId.present
         ? swappedFromId.value
         : this.swappedFromId,
@@ -4047,6 +4120,12 @@ class WorkoutExerciseRow extends DataClass
       restSeconds: data.restSeconds.present
           ? data.restSeconds.value
           : this.restSeconds,
+      timedSeconds: data.timedSeconds.present
+          ? data.timedSeconds.value
+          : this.timedSeconds,
+      timerSince: data.timerSince.present
+          ? data.timerSince.value
+          : this.timerSince,
       swappedFromId: data.swappedFromId.present
           ? data.swappedFromId.value
           : this.swappedFromId,
@@ -4062,6 +4141,8 @@ class WorkoutExerciseRow extends DataClass
           ..write('sort: $sort, ')
           ..write('targetReps: $targetReps, ')
           ..write('restSeconds: $restSeconds, ')
+          ..write('timedSeconds: $timedSeconds, ')
+          ..write('timerSince: $timerSince, ')
           ..write('swappedFromId: $swappedFromId')
           ..write(')'))
         .toString();
@@ -4075,6 +4156,8 @@ class WorkoutExerciseRow extends DataClass
     sort,
     targetReps,
     restSeconds,
+    timedSeconds,
+    timerSince,
     swappedFromId,
   );
   @override
@@ -4087,6 +4170,8 @@ class WorkoutExerciseRow extends DataClass
           other.sort == this.sort &&
           other.targetReps == this.targetReps &&
           other.restSeconds == this.restSeconds &&
+          other.timedSeconds == this.timedSeconds &&
+          other.timerSince == this.timerSince &&
           other.swappedFromId == this.swappedFromId);
 }
 
@@ -4097,6 +4182,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
   final Value<int> sort;
   final Value<int?> targetReps;
   final Value<int?> restSeconds;
+  final Value<int> timedSeconds;
+  final Value<DateTime?> timerSince;
   final Value<int?> swappedFromId;
   const WorkoutExercisesCompanion({
     this.id = const Value.absent(),
@@ -4105,6 +4192,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
     this.sort = const Value.absent(),
     this.targetReps = const Value.absent(),
     this.restSeconds = const Value.absent(),
+    this.timedSeconds = const Value.absent(),
+    this.timerSince = const Value.absent(),
     this.swappedFromId = const Value.absent(),
   });
   WorkoutExercisesCompanion.insert({
@@ -4114,6 +4203,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
     required int sort,
     this.targetReps = const Value.absent(),
     this.restSeconds = const Value.absent(),
+    this.timedSeconds = const Value.absent(),
+    this.timerSince = const Value.absent(),
     this.swappedFromId = const Value.absent(),
   }) : workoutId = Value(workoutId),
        exerciseId = Value(exerciseId),
@@ -4125,6 +4216,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
     Expression<int>? sort,
     Expression<int>? targetReps,
     Expression<int>? restSeconds,
+    Expression<int>? timedSeconds,
+    Expression<DateTime>? timerSince,
     Expression<int>? swappedFromId,
   }) {
     return RawValuesInsertable({
@@ -4134,6 +4227,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
       if (sort != null) 'sort': sort,
       if (targetReps != null) 'target_reps': targetReps,
       if (restSeconds != null) 'rest_seconds': restSeconds,
+      if (timedSeconds != null) 'timed_seconds': timedSeconds,
+      if (timerSince != null) 'timer_since': timerSince,
       if (swappedFromId != null) 'swapped_from_id': swappedFromId,
     });
   }
@@ -4145,6 +4240,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
     Value<int>? sort,
     Value<int?>? targetReps,
     Value<int?>? restSeconds,
+    Value<int>? timedSeconds,
+    Value<DateTime?>? timerSince,
     Value<int?>? swappedFromId,
   }) {
     return WorkoutExercisesCompanion(
@@ -4154,6 +4251,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
       sort: sort ?? this.sort,
       targetReps: targetReps ?? this.targetReps,
       restSeconds: restSeconds ?? this.restSeconds,
+      timedSeconds: timedSeconds ?? this.timedSeconds,
+      timerSince: timerSince ?? this.timerSince,
       swappedFromId: swappedFromId ?? this.swappedFromId,
     );
   }
@@ -4179,6 +4278,12 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
     if (restSeconds.present) {
       map['rest_seconds'] = Variable<int>(restSeconds.value);
     }
+    if (timedSeconds.present) {
+      map['timed_seconds'] = Variable<int>(timedSeconds.value);
+    }
+    if (timerSince.present) {
+      map['timer_since'] = Variable<DateTime>(timerSince.value);
+    }
     if (swappedFromId.present) {
       map['swapped_from_id'] = Variable<int>(swappedFromId.value);
     }
@@ -4194,6 +4299,8 @@ class WorkoutExercisesCompanion extends UpdateCompanion<WorkoutExerciseRow> {
           ..write('sort: $sort, ')
           ..write('targetReps: $targetReps, ')
           ..write('restSeconds: $restSeconds, ')
+          ..write('timedSeconds: $timedSeconds, ')
+          ..write('timerSince: $timerSince, ')
           ..write('swappedFromId: $swappedFromId')
           ..write(')'))
         .toString();
@@ -11078,6 +11185,8 @@ typedef $$WorkoutExercisesTableCreateCompanionBuilder =
       required int sort,
       Value<int?> targetReps,
       Value<int?> restSeconds,
+      Value<int> timedSeconds,
+      Value<DateTime?> timerSince,
       Value<int?> swappedFromId,
     });
 typedef $$WorkoutExercisesTableUpdateCompanionBuilder =
@@ -11088,6 +11197,8 @@ typedef $$WorkoutExercisesTableUpdateCompanionBuilder =
       Value<int> sort,
       Value<int?> targetReps,
       Value<int?> restSeconds,
+      Value<int> timedSeconds,
+      Value<DateTime?> timerSince,
       Value<int?> swappedFromId,
     });
 
@@ -11215,6 +11326,16 @@ class $$WorkoutExercisesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get timedSeconds => $composableBuilder(
+    column: $table.timedSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timerSince => $composableBuilder(
+    column: $table.timerSince,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkoutsTableFilterComposer get workoutId {
     final $$WorkoutsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -11339,6 +11460,16 @@ class $$WorkoutExercisesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get timedSeconds => $composableBuilder(
+    column: $table.timedSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timerSince => $composableBuilder(
+    column: $table.timerSince,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkoutsTableOrderingComposer get workoutId {
     final $$WorkoutsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -11431,6 +11562,16 @@ class $$WorkoutExercisesTableAnnotationComposer
 
   GeneratedColumn<int> get restSeconds => $composableBuilder(
     column: $table.restSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timedSeconds => $composableBuilder(
+    column: $table.timedSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get timerSince => $composableBuilder(
+    column: $table.timerSince,
     builder: (column) => column,
   );
 
@@ -11570,6 +11711,8 @@ class $$WorkoutExercisesTableTableManager
                 Value<int> sort = const Value.absent(),
                 Value<int?> targetReps = const Value.absent(),
                 Value<int?> restSeconds = const Value.absent(),
+                Value<int> timedSeconds = const Value.absent(),
+                Value<DateTime?> timerSince = const Value.absent(),
                 Value<int?> swappedFromId = const Value.absent(),
               }) => WorkoutExercisesCompanion(
                 id: id,
@@ -11578,6 +11721,8 @@ class $$WorkoutExercisesTableTableManager
                 sort: sort,
                 targetReps: targetReps,
                 restSeconds: restSeconds,
+                timedSeconds: timedSeconds,
+                timerSince: timerSince,
                 swappedFromId: swappedFromId,
               ),
           createCompanionCallback:
@@ -11588,6 +11733,8 @@ class $$WorkoutExercisesTableTableManager
                 required int sort,
                 Value<int?> targetReps = const Value.absent(),
                 Value<int?> restSeconds = const Value.absent(),
+                Value<int> timedSeconds = const Value.absent(),
+                Value<DateTime?> timerSince = const Value.absent(),
                 Value<int?> swappedFromId = const Value.absent(),
               }) => WorkoutExercisesCompanion.insert(
                 id: id,
@@ -11596,6 +11743,8 @@ class $$WorkoutExercisesTableTableManager
                 sort: sort,
                 targetReps: targetReps,
                 restSeconds: restSeconds,
+                timedSeconds: timedSeconds,
+                timerSince: timerSince,
                 swappedFromId: swappedFromId,
               ),
           withReferenceMapper: (p0) => p0

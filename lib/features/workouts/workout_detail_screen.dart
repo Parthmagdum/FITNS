@@ -186,6 +186,23 @@ class WorkoutDetailScreen extends ConsumerWidget {
                             style: theme.textTheme.titleMedium,
                           ),
                         ),
+                        if (exerciseTime(entry.item) > Duration.zero) ...[
+                          Icon(
+                            Icons.timer_outlined,
+                            size: 16,
+                            color: theme.muted,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            formatClock(exerciseTime(entry.item)),
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 8),
