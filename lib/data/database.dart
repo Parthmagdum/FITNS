@@ -112,6 +112,7 @@ int setVolumeGrams(WorkoutSetRow s) => (s.weightGrams ?? 0) * (s.reps ?? 0);
     ProgramDays,
     SleepLogs,
     CycleStarts,
+    ProgressPhotos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -199,6 +200,7 @@ class AppDatabase extends _$AppDatabase {
         }
         await m.createTable(sleepLogs);
         await m.createTable(cycleStarts);
+        await m.createTable(progressPhotos);
         await m.addColumn(settings, settings.cycleTracking);
         await m.createIndex(sleepLogsWoke);
       }
@@ -1569,6 +1571,24 @@ class AppDatabase extends _$AppDatabase {
             ..where((s) => s.wokeAt.isBiggerOrEqualValue(startOfDay(from)))
             ..orderBy([(s) => OrderingTerm.desc(s.wokeAt)]))
           .watch();
+
+  // ── Progress photos ────────────────────────────────────────────────────────
+
+  Future<int> addProgressPhoto(String path, {DateTime? at}) =>
+      into(progressPhotos).insert(
+        ProgressPhotosCompanion.insert(
+          takenAt: at ?? DateTime.now(),
+          path: path,
+        ),
+      );
+
+  Future<void> deleteProgressPhoto(int id) =>
+      (delete(progressPhotos)..where((p) => p.id.equals(id))).go();
+
+  /// Oldest first.
+  Stream<List<ProgressPhotoRow>> watchProgressPhotos() => (select(
+    progressPhotos,
+  )..orderBy([(p) => OrderingTerm.asc(p.takenAt)])).watch();
 
   // ── Cycle ──────────────────────────────────────────────────────────────────
 

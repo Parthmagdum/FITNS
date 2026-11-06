@@ -7,6 +7,7 @@ import '../core/motion/motion_sensors.dart';
 import '../core/notifications/reminders.dart';
 import '../core/notifications/rest_alerts.dart';
 import '../core/platform/document_files.dart';
+import '../core/platform/photo_source.dart';
 import '../core/steps/step_sensor.dart';
 import '../core/steps/step_tracker.dart';
 import '../core/training/swaps.dart';
@@ -258,6 +259,14 @@ final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
         ref.watch(todayProvider).subtract(const Duration(days: 13)),
       ),
 );
+
+// ── Progress photos ─────────────────────────────────────────────────────────
+
+final progressPhotosProvider = StreamProvider<List<ProgressPhotoRow>>(
+  (ref) => ref.watch(dbProvider).watchProgressPhotos(),
+);
+
+final photoSourceProvider = Provider<PhotoSource>((ref) => const PhotoSource());
 
 // ── Cycle ───────────────────────────────────────────────────────────────────
 

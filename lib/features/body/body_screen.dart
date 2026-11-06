@@ -14,6 +14,7 @@ import '../plan/goal_card.dart';
 import 'body_fat_card.dart';
 import 'body_format.dart';
 import 'body_log_sheet.dart';
+import 'progress_photos.dart';
 import 'weight_trend_card.dart';
 
 class BodyScreen extends ConsumerWidget {
@@ -41,6 +42,7 @@ class BodyScreen extends ConsumerWidget {
         ...goalSection(),
         const WeightTrendCard(),
         const BodyFatEstimateCard(),
+        const ProgressPhotosSection(),
         if (measured.isNotEmpty) ...[
           const SectionLabel('Latest measurements'),
           SectionCard(

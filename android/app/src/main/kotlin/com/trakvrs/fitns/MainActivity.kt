@@ -1,12 +1,15 @@
 package com.trakvrs.fitns
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -30,6 +33,10 @@ class MainActivity : FlutterActivity() {
     private var pendingSave: Pair<MethodChannel.Result, String>? = null
     private var pendingOpen: MethodChannel.Result? = null
     private var pendingNotifications: MethodChannel.Result? = null
+
+    /** A progress photo being taken or picked, and the camera's target. */
+    private var pendingPhoto: MethodChannel.Result? = null
+    private var cameraUri: Uri? = null
 
     override fun onResume() {
         super.onResume()
@@ -174,6 +181,17 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // Progress photos go through the phone's own camera app and photo
+        // picker, so FITNS needs neither the camera nor storage permission.
+        MethodChannel(messenger, PHOTO_METHODS).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "canTake" -> result.success(canTakePhoto())
+                "take" -> takePhoto(result)
+                "pick" -> pickPhoto(result)
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(messenger, REMINDER_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "sync" -> {
@@ -189,6 +207,60 @@ class MainActivity : FlutterActivity() {
             .setStreamHandler(MotionStream(sensors, Sensor.TYPE_ACCELEROMETER, 10_000))
         EventChannel(messenger, PROXIMITY_EVENTS)
             .setStreamHandler(MotionStream(sensors, Sensor.TYPE_PROXIMITY, SensorManager.SENSOR_DELAY_GAME))
+    }
+
+    /**
+     * The camera hands its photo over through a gallery entry FITNS creates
+     * and deletes again — possible without a permission from Android 10.
+     */
+    private fun canTakePhoto(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).resolveActivity(packageManager) != null
+
+    private fun takePhoto(result: MethodChannel.Result) {
+        if (!canTakePhoto()) return result.success(null)
+        pendingPhoto?.success(null)
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "fitns_${System.currentTimeMillis()}.jpg")
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/FITNS")
+        }
+        val uri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?: return result.success(null)
+        pendingPhoto = result
+        cameraUri = uri
+        startActivityForResult(
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).putExtra(MediaStore.EXTRA_OUTPUT, uri),
+            CAMERA_REQUEST,
+        )
+    }
+
+    private fun pickPhoto(result: MethodChannel.Result) {
+        pendingPhoto?.success(null)
+        pendingPhoto = result
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Intent(MediaStore.ACTION_PICK_IMAGES)
+        } else {
+            Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            }
+        }
+        startActivityForResult(intent, PICK_PHOTO_REQUEST)
+    }
+
+    /** Saves [uri] into private storage off the main thread, answers Dart. */
+    private fun savePhoto(uri: Uri, result: MethodChannel.Result, then: () -> Unit = {}) {
+        Thread {
+            try {
+                val path = PhotoFiles.save(this, uri)
+                runOnUiThread { result.success(path) }
+            } catch (e: Exception) {
+                runOnUiThread { result.error("photo_failed", e.message, null) }
+            } finally {
+                then()
+            }
+        }.start()
     }
 
     /** Notifications only became a runtime permission in Android 13. */
@@ -237,6 +309,26 @@ class MainActivity : FlutterActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = if (resultCode == RESULT_OK) data?.data else null
         when (requestCode) {
+            CAMERA_REQUEST -> {
+                val result = pendingPhoto ?: return
+                val target = cameraUri
+                pendingPhoto = null
+                cameraUri = null
+                if (target == null) return result.success(null)
+                // The gallery entry was only a hand-off: gone either way.
+                val discard = { contentResolver.delete(target, null, null); Unit }
+                if (resultCode != RESULT_OK) {
+                    discard()
+                    return result.success(null)
+                }
+                savePhoto(target, result, discard)
+            }
+            PICK_PHOTO_REQUEST -> {
+                val result = pendingPhoto ?: return
+                pendingPhoto = null
+                if (uri == null) return result.success(null)
+                savePhoto(uri, result)
+            }
             SAVE_REQUEST -> {
                 val (result, content) = pendingSave ?: return
                 pendingSave = null
@@ -288,6 +380,9 @@ class MainActivity : FlutterActivity() {
         private const val FILE_METHODS = "fitns/files"
         private const val REST_METHODS = "fitns/rest"
         private const val REMINDER_METHODS = "fitns/reminders"
+        private const val PHOTO_METHODS = "fitns/photos"
+        private const val CAMERA_REQUEST = 4108
+        private const val PICK_PHOTO_REQUEST = 4109
         private const val PERMISSION_REQUEST = 4101
         private const val SAVE_REQUEST = 4105
         private const val OPEN_REQUEST = 4106

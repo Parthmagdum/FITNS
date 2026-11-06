@@ -187,6 +187,9 @@ class BackupService {
           db.places,
           db.sleepLogs,
           db.cycleStarts,
+          // Photos aren't in backups — their files stay on the old phone —
+          // so rows pointing at them go too.
+          db.progressPhotos,
           db.bodyEntries,
           db.dailySteps,
           db.hourlySteps,

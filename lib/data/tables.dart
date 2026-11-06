@@ -549,6 +549,16 @@ class SleepLogs extends Table {
   IntColumn get quality => integer().nullable()();
 }
 
+/// A progress photo. The image lives in the app's private storage at
+/// [path]; this row is left out of backups, since the file can't travel
+/// with them. Schema v9.
+@DataClassName('ProgressPhotoRow')
+class ProgressPhotos extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get takenAt => dateTime()();
+  TextColumn get path => text()();
+}
+
 /// The first day of a period. Only ever kept on the phone. Schema v9.
 @DataClassName('CycleStartRow')
 class CycleStarts extends Table {
