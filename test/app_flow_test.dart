@@ -85,11 +85,15 @@ Future<void> settle(WidgetTester tester) async {
 
 /// Scrolls [finder] into the middle of the screen, clear of the bars at
 /// either edge, so a tap lands on it.
-Future<void> scrollToMiddle(WidgetTester tester, Finder finder) async {
+Future<void> scrollToMiddle(
+  WidgetTester tester,
+  Finder finder, {
+  bool up = false,
+}) async {
   // The page's own list — the first scrollable — not one inside a field.
   await tester.scrollUntilVisible(
     finder,
-    200,
+    up ? -200 : 200,
     scrollable: find.byType(Scrollable).first,
   );
   unawaited(Scrollable.ensureVisible(tester.element(finder), alignment: 0.5));
@@ -729,7 +733,8 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('Save'));
     await settle(tester);
-    await tester.scrollUntilVisible(find.text('Simple'), 200);
+    // Programs sit above where the list was left: scroll up to it.
+    await scrollToMiddle(tester, find.text('Simple'), up: true);
     expect(find.text('Simple'), findsOneWidget);
     // A new day starts with the first routine — the ready-made Leg day.
     expect(find.text('Up next: Day 1 of 2 · Leg day'), findsOneWidget);

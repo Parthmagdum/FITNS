@@ -11,6 +11,7 @@ import '../body/body_screen.dart';
 import '../food/calories_card.dart';
 import '../food/water_card.dart';
 import '../plan/goal_card.dart';
+import '../sleep/sleep_card.dart';
 import '../steps/steps_card.dart';
 import '../workouts/workout_actions.dart';
 import '../workouts/workouts_screen.dart';
@@ -43,6 +44,8 @@ class TodayScreen extends ConsumerWidget {
         CaloriesCard(day: today, onTap: () => context.go('/food')),
         const SizedBox(height: 12),
         WaterCard(day: today),
+        const SectionLabel('Sleep'),
+        const SleepCard(),
         SectionLabel(
           'Body',
           trailing: hasWeight
@@ -107,10 +110,27 @@ class _WorkoutSection extends ConsumerWidget {
       );
     }
 
-    final startable = [
-      for (final r in routines)
-        if (r.items.isNotEmpty) r,
-    ];
+    // Most recently done first, then the newest — so the user's own
+    // routines come before the ready-made ones they've never started.
+    final history = ref.watch(workoutHistoryProvider).valueOrNull ?? const [];
+    final lastDone = <int, DateTime>{};
+    for (final h in history) {
+      final id = h.workout.routineId;
+      if (id != null) lastDone.putIfAbsent(id, () => h.workout.startedAt);
+    }
+    final startable =
+        [
+          for (final r in routines)
+            if (r.items.isNotEmpty) r,
+        ]..sort((a, b) {
+          final da = lastDone[a.routine.id], db = lastDone[b.routine.id];
+          if (da != null || db != null) {
+            if (da == null) return 1;
+            if (db == null) return -1;
+            return db.compareTo(da);
+          }
+          return b.routine.id.compareTo(a.routine.id);
+        });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -262,6 +262,9 @@ class Settings extends Table {
   IntColumn get trainingDaysPerWeek => integer().nullable()();
   TextColumn get dietType => textEnum<DietType>().nullable()();
 
+  /// When the weekly plan check-in was last done or dismissed. Schema v9.
+  DateTimeColumn get lastCheckInAt => dateTime().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -407,6 +410,11 @@ class WorkoutSets extends Table {
   IntColumn get durationSeconds => integer().nullable()();
   BoolColumn get done => boolean().withDefault(const Constant(false))();
   DateTimeColumn get completedAt => dateTime().nullable()();
+
+  /// Reps in reserve — how many more the user could have done, 0–4 (4 means
+  /// "4 or more"). Optional; it sharpens the "add weight" suggestion.
+  /// Schema v9.
+  IntColumn get rir => integer().nullable()();
 }
 
 /// Somewhere the user trains — a gym, home, a park, a hotel room — and the
@@ -501,6 +509,18 @@ class HourlySteps extends Table {
 
   @override
   Set<Column> get primaryKey => {day, hour};
+}
+
+/// A night's sleep, booked to the day the user woke up. Schema v9.
+@DataClassName('SleepLogRow')
+@TableIndex(name: 'sleep_logs_woke', columns: {#wokeAt})
+class SleepLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get sleptAt => dateTime()();
+  DateTimeColumn get wokeAt => dateTime()();
+
+  /// 1 (poor) – 5 (great). Optional.
+  IntColumn get quality => integer().nullable()();
 }
 
 /// A drink of water. Schema v4.

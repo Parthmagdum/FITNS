@@ -110,6 +110,7 @@ int setVolumeGrams(WorkoutSetRow s) => (s.weightGrams ?? 0) * (s.reps ?? 0);
     Places,
     Programs,
     ProgramDays,
+    SleepLogs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -119,7 +120,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -183,6 +184,12 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(settings, column);
         }
       }
+      if (from < 9) {
+        await m.addColumn(workoutSets, workoutSets.rir);
+        await m.addColumn(settings, settings.lastCheckInAt);
+        await m.createTable(sleepLogs);
+        await m.createIndex(sleepLogsWoke);
+      }
     },
     beforeOpen: (details) async {
       // SQLite leaves foreign keys off unless asked, and the cascades in
@@ -194,13 +201,13 @@ class AppDatabase extends _$AppDatabase {
       await seedExerciseLibrary();
       // Ready-made routines once only: a new install, or the update that
       // brings them (schema 8). After that they're the user's to delete.
-      final before = details.versionBefore;
-      if (before == null || before < 8) await seedStarterRoutines();
+      await seedStarterRoutines(after: details.versionBefore ?? 0);
     },
   );
 
-  /// Adds each of [starterRoutines] unless a routine of that name exists.
-  Future<void> seedStarterRoutines() async {
+  /// Adds the [starterRoutines] that came with a schema newer than [after]
+  /// — all of them on a new install — unless a routine of that name exists.
+  Future<void> seedStarterRoutines({int after = 0}) async {
     final ids = {
       for (final e in await (select(
         exercises,
@@ -210,8 +217,8 @@ class AppDatabase extends _$AppDatabase {
     final names = {
       for (final r in await select(routines).get()) r.name.toLowerCase(),
     };
-    for (final r in starterRoutines) {
-      if (names.contains(r.name.toLowerCase())) continue;
+    for (final (:since, routine: r) in starterRoutines) {
+      if (since <= after || names.contains(r.name.toLowerCase())) continue;
       await saveRoutine(
         name: r.name,
         items: [
@@ -1448,6 +1455,30 @@ class AppDatabase extends _$AppDatabase {
   /// Deletes a whole log — every metric recorded at [at].
   Future<void> deleteBodyLog(DateTime at) =>
       (delete(bodyEntries)..where((e) => e.measuredAt.equals(at))).go();
+
+  // ── Sleep ──────────────────────────────────────────────────────────────────
+
+  Future<int> addSleep({
+    required DateTime sleptAt,
+    required DateTime wokeAt,
+    int? quality,
+  }) => into(sleepLogs).insert(
+    SleepLogsCompanion.insert(
+      sleptAt: sleptAt,
+      wokeAt: wokeAt,
+      quality: Value(quality),
+    ),
+  );
+
+  Future<void> deleteSleep(int id) =>
+      (delete(sleepLogs)..where((s) => s.id.equals(id))).go();
+
+  /// Nights that ended from the start of [from]'s day on, newest first.
+  Stream<List<SleepLogRow>> watchSleepSince(DateTime from) =>
+      (select(sleepLogs)
+            ..where((s) => s.wokeAt.isBiggerOrEqualValue(startOfDay(from)))
+            ..orderBy([(s) => OrderingTerm.desc(s.wokeAt)]))
+          .watch();
 
   // ── Water ──────────────────────────────────────────────────────────────────
 

@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:fitns/core/units.dart';
 import 'package:fitns/data/backup.dart';
 import 'package:fitns/data/database.dart';
+import 'package:fitns/data/seed_routines.dart';
 import 'package:fitns/data/seed_exercises.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -97,7 +98,7 @@ void main() {
     final backup = service.parse(await BackupService(source).export());
 
     expect(backup.workouts, 1);
-    expect(backup.routines, 2); // the ready-made Leg day too
+    expect(backup.routines, 6); // the 5 ready-made ones too
     expect(backup.bodyEntries, 2);
     expect(backup.stepDays, 1);
 
@@ -120,7 +121,10 @@ void main() {
     expect(routines.map((r) => r.routine.name), contains('Leg day'));
     expect(
       routines
-          .singleWhere((r) => r.routine.name != 'Leg day')
+          .singleWhere(
+            (r) =>
+                !starterRoutines.any((s) => s.routine.name == r.routine.name),
+          )
           .items
           .single
           .item

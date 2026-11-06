@@ -284,6 +284,18 @@ class $SettingsTable extends Settings
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       ).withConverter<DietType?>($SettingsTable.$converterdietTypen);
+  static const VerificationMeta _lastCheckInAtMeta = const VerificationMeta(
+    'lastCheckInAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastCheckInAt =
+      GeneratedColumn<DateTime>(
+        'last_check_in_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -311,6 +323,7 @@ class $SettingsTable extends Settings
     goalSetAt,
     trainingDaysPerWeek,
     dietType,
+    lastCheckInAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -483,6 +496,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('last_check_in_at')) {
+      context.handle(
+        _lastCheckInAtMeta,
+        lastCheckInAt.isAcceptableOrUnknown(
+          data['last_check_in_at']!,
+          _lastCheckInAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -602,6 +624,10 @@ class $SettingsTable extends Settings
           data['${effectivePrefix}diet_type'],
         ),
       ),
+      lastCheckInAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_check_in_at'],
+      ),
     );
   }
 
@@ -690,6 +716,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   final DateTime? goalSetAt;
   final int? trainingDaysPerWeek;
   final DietType? dietType;
+
+  /// When the weekly plan check-in was last done or dismissed. Schema v9.
+  final DateTime? lastCheckInAt;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -716,6 +745,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     this.goalSetAt,
     this.trainingDaysPerWeek,
     this.dietType,
+    this.lastCheckInAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -787,6 +817,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         $SettingsTable.$converterdietTypen.toSql(dietType),
       );
     }
+    if (!nullToAbsent || lastCheckInAt != null) {
+      map['last_check_in_at'] = Variable<DateTime>(lastCheckInAt);
+    }
     return map;
   }
 
@@ -847,6 +880,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       dietType: dietType == null && nullToAbsent
           ? const Value.absent()
           : Value(dietType),
+      lastCheckInAt: lastCheckInAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastCheckInAt),
     );
   }
 
@@ -895,6 +931,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       dietType: $SettingsTable.$converterdietTypen.fromJson(
         serializer.fromJson<String?>(json['dietType']),
       ),
+      lastCheckInAt: serializer.fromJson<DateTime?>(json['lastCheckInAt']),
     );
   }
   @override
@@ -936,6 +973,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'dietType': serializer.toJson<String?>(
         $SettingsTable.$converterdietTypen.toJson(dietType),
       ),
+      'lastCheckInAt': serializer.toJson<DateTime?>(lastCheckInAt),
     };
   }
 
@@ -965,6 +1003,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     Value<DateTime?> goalSetAt = const Value.absent(),
     Value<int?> trainingDaysPerWeek = const Value.absent(),
     Value<DietType?> dietType = const Value.absent(),
+    Value<DateTime?> lastCheckInAt = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -1003,6 +1042,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         ? trainingDaysPerWeek.value
         : this.trainingDaysPerWeek,
     dietType: dietType.present ? dietType.value : this.dietType,
+    lastCheckInAt: lastCheckInAt.present
+        ? lastCheckInAt.value
+        : this.lastCheckInAt,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -1065,6 +1107,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ? data.trainingDaysPerWeek.value
           : this.trainingDaysPerWeek,
       dietType: data.dietType.present ? data.dietType.value : this.dietType,
+      lastCheckInAt: data.lastCheckInAt.present
+          ? data.lastCheckInAt.value
+          : this.lastCheckInAt,
     );
   }
 
@@ -1095,7 +1140,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('goalStartWeightGrams: $goalStartWeightGrams, ')
           ..write('goalSetAt: $goalSetAt, ')
           ..write('trainingDaysPerWeek: $trainingDaysPerWeek, ')
-          ..write('dietType: $dietType')
+          ..write('dietType: $dietType, ')
+          ..write('lastCheckInAt: $lastCheckInAt')
           ..write(')'))
         .toString();
   }
@@ -1127,6 +1173,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     goalSetAt,
     trainingDaysPerWeek,
     dietType,
+    lastCheckInAt,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1156,7 +1203,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.goalStartWeightGrams == this.goalStartWeightGrams &&
           other.goalSetAt == this.goalSetAt &&
           other.trainingDaysPerWeek == this.trainingDaysPerWeek &&
-          other.dietType == this.dietType);
+          other.dietType == this.dietType &&
+          other.lastCheckInAt == this.lastCheckInAt);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -1185,6 +1233,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<DateTime?> goalSetAt;
   final Value<int?> trainingDaysPerWeek;
   final Value<DietType?> dietType;
+  final Value<DateTime?> lastCheckInAt;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -1211,6 +1260,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.goalSetAt = const Value.absent(),
     this.trainingDaysPerWeek = const Value.absent(),
     this.dietType = const Value.absent(),
+    this.lastCheckInAt = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1238,6 +1288,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.goalSetAt = const Value.absent(),
     this.trainingDaysPerWeek = const Value.absent(),
     this.dietType = const Value.absent(),
+    this.lastCheckInAt = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -1265,6 +1316,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<DateTime>? goalSetAt,
     Expression<int>? trainingDaysPerWeek,
     Expression<String>? dietType,
+    Expression<DateTime>? lastCheckInAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1295,6 +1347,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (trainingDaysPerWeek != null)
         'training_days_per_week': trainingDaysPerWeek,
       if (dietType != null) 'diet_type': dietType,
+      if (lastCheckInAt != null) 'last_check_in_at': lastCheckInAt,
     });
   }
 
@@ -1324,6 +1377,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<DateTime?>? goalSetAt,
     Value<int?>? trainingDaysPerWeek,
     Value<DietType?>? dietType,
+    Value<DateTime?>? lastCheckInAt,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -1351,6 +1405,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       goalSetAt: goalSetAt ?? this.goalSetAt,
       trainingDaysPerWeek: trainingDaysPerWeek ?? this.trainingDaysPerWeek,
       dietType: dietType ?? this.dietType,
+      lastCheckInAt: lastCheckInAt ?? this.lastCheckInAt,
     );
   }
 
@@ -1444,6 +1499,9 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
         $SettingsTable.$converterdietTypen.toSql(dietType.value),
       );
     }
+    if (lastCheckInAt.present) {
+      map['last_check_in_at'] = Variable<DateTime>(lastCheckInAt.value);
+    }
     return map;
   }
 
@@ -1474,7 +1532,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('goalStartWeightGrams: $goalStartWeightGrams, ')
           ..write('goalSetAt: $goalSetAt, ')
           ..write('trainingDaysPerWeek: $trainingDaysPerWeek, ')
-          ..write('dietType: $dietType')
+          ..write('dietType: $dietType, ')
+          ..write('lastCheckInAt: $lastCheckInAt')
           ..write(')'))
         .toString();
   }
@@ -4802,6 +4861,15 @@ class $WorkoutSetsTable extends WorkoutSets
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _rirMeta = const VerificationMeta('rir');
+  @override
+  late final GeneratedColumn<int> rir = GeneratedColumn<int>(
+    'rir',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4812,6 +4880,7 @@ class $WorkoutSetsTable extends WorkoutSets
     durationSeconds,
     done,
     completedAt,
+    rir,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4886,6 +4955,12 @@ class $WorkoutSetsTable extends WorkoutSets
         ),
       );
     }
+    if (data.containsKey('rir')) {
+      context.handle(
+        _rirMeta,
+        rir.isAcceptableOrUnknown(data['rir']!, _rirMeta),
+      );
+    }
     return context;
   }
 
@@ -4927,6 +5002,10 @@ class $WorkoutSetsTable extends WorkoutSets
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
       ),
+      rir: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rir'],
+      ),
     );
   }
 
@@ -4945,6 +5024,11 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
   final int? durationSeconds;
   final bool done;
   final DateTime? completedAt;
+
+  /// Reps in reserve — how many more the user could have done, 0–4 (4 means
+  /// "4 or more"). Optional; it sharpens the "add weight" suggestion.
+  /// Schema v9.
+  final int? rir;
   const WorkoutSetRow({
     required this.id,
     required this.workoutExerciseId,
@@ -4954,6 +5038,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     this.durationSeconds,
     required this.done,
     this.completedAt,
+    this.rir,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4974,6 +5059,9 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
     }
+    if (!nullToAbsent || rir != null) {
+      map['rir'] = Variable<int>(rir);
+    }
     return map;
   }
 
@@ -4993,6 +5081,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
+      rir: rir == null && nullToAbsent ? const Value.absent() : Value(rir),
     );
   }
 
@@ -5010,6 +5099,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       durationSeconds: serializer.fromJson<int?>(json['durationSeconds']),
       done: serializer.fromJson<bool>(json['done']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      rir: serializer.fromJson<int?>(json['rir']),
     );
   }
   @override
@@ -5024,6 +5114,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       'durationSeconds': serializer.toJson<int?>(durationSeconds),
       'done': serializer.toJson<bool>(done),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'rir': serializer.toJson<int?>(rir),
     };
   }
 
@@ -5036,6 +5127,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     Value<int?> durationSeconds = const Value.absent(),
     bool? done,
     Value<DateTime?> completedAt = const Value.absent(),
+    Value<int?> rir = const Value.absent(),
   }) => WorkoutSetRow(
     id: id ?? this.id,
     workoutExerciseId: workoutExerciseId ?? this.workoutExerciseId,
@@ -5047,6 +5139,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
         : this.durationSeconds,
     done: done ?? this.done,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    rir: rir.present ? rir.value : this.rir,
   );
   WorkoutSetRow copyWithCompanion(WorkoutSetsCompanion data) {
     return WorkoutSetRow(
@@ -5066,6 +5159,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
+      rir: data.rir.present ? data.rir.value : this.rir,
     );
   }
 
@@ -5079,7 +5173,8 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           ..write('weightGrams: $weightGrams, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('done: $done, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('rir: $rir')
           ..write(')'))
         .toString();
   }
@@ -5094,6 +5189,7 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
     durationSeconds,
     done,
     completedAt,
+    rir,
   );
   @override
   bool operator ==(Object other) =>
@@ -5106,7 +5202,8 @@ class WorkoutSetRow extends DataClass implements Insertable<WorkoutSetRow> {
           other.weightGrams == this.weightGrams &&
           other.durationSeconds == this.durationSeconds &&
           other.done == this.done &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.rir == this.rir);
 }
 
 class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
@@ -5118,6 +5215,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
   final Value<int?> durationSeconds;
   final Value<bool> done;
   final Value<DateTime?> completedAt;
+  final Value<int?> rir;
   const WorkoutSetsCompanion({
     this.id = const Value.absent(),
     this.workoutExerciseId = const Value.absent(),
@@ -5127,6 +5225,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
     this.durationSeconds = const Value.absent(),
     this.done = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.rir = const Value.absent(),
   });
   WorkoutSetsCompanion.insert({
     this.id = const Value.absent(),
@@ -5137,6 +5236,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
     this.durationSeconds = const Value.absent(),
     this.done = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.rir = const Value.absent(),
   }) : workoutExerciseId = Value(workoutExerciseId),
        sort = Value(sort);
   static Insertable<WorkoutSetRow> custom({
@@ -5148,6 +5248,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
     Expression<int>? durationSeconds,
     Expression<bool>? done,
     Expression<DateTime>? completedAt,
+    Expression<int>? rir,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5158,6 +5259,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
       if (done != null) 'done': done,
       if (completedAt != null) 'completed_at': completedAt,
+      if (rir != null) 'rir': rir,
     });
   }
 
@@ -5170,6 +5272,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
     Value<int?>? durationSeconds,
     Value<bool>? done,
     Value<DateTime?>? completedAt,
+    Value<int?>? rir,
   }) {
     return WorkoutSetsCompanion(
       id: id ?? this.id,
@@ -5180,6 +5283,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
       durationSeconds: durationSeconds ?? this.durationSeconds,
       done: done ?? this.done,
       completedAt: completedAt ?? this.completedAt,
+      rir: rir ?? this.rir,
     );
   }
 
@@ -5210,6 +5314,9 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
+    if (rir.present) {
+      map['rir'] = Variable<int>(rir.value);
+    }
     return map;
   }
 
@@ -5223,7 +5330,8 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSetRow> {
           ..write('weightGrams: $weightGrams, ')
           ..write('durationSeconds: $durationSeconds, ')
           ..write('done: $done, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('rir: $rir')
           ..write(')'))
         .toString();
   }
@@ -8034,6 +8142,307 @@ class PlacesCompanion extends UpdateCompanion<PlaceRow> {
   }
 }
 
+class $SleepLogsTable extends SleepLogs
+    with TableInfo<$SleepLogsTable, SleepLogRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SleepLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _sleptAtMeta = const VerificationMeta(
+    'sleptAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> sleptAt = GeneratedColumn<DateTime>(
+    'slept_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _wokeAtMeta = const VerificationMeta('wokeAt');
+  @override
+  late final GeneratedColumn<DateTime> wokeAt = GeneratedColumn<DateTime>(
+    'woke_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _qualityMeta = const VerificationMeta(
+    'quality',
+  );
+  @override
+  late final GeneratedColumn<int> quality = GeneratedColumn<int>(
+    'quality',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sleptAt, wokeAt, quality];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sleep_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SleepLogRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('slept_at')) {
+      context.handle(
+        _sleptAtMeta,
+        sleptAt.isAcceptableOrUnknown(data['slept_at']!, _sleptAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sleptAtMeta);
+    }
+    if (data.containsKey('woke_at')) {
+      context.handle(
+        _wokeAtMeta,
+        wokeAt.isAcceptableOrUnknown(data['woke_at']!, _wokeAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wokeAtMeta);
+    }
+    if (data.containsKey('quality')) {
+      context.handle(
+        _qualityMeta,
+        quality.isAcceptableOrUnknown(data['quality']!, _qualityMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SleepLogRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SleepLogRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      sleptAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}slept_at'],
+      )!,
+      wokeAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}woke_at'],
+      )!,
+      quality: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quality'],
+      ),
+    );
+  }
+
+  @override
+  $SleepLogsTable createAlias(String alias) {
+    return $SleepLogsTable(attachedDatabase, alias);
+  }
+}
+
+class SleepLogRow extends DataClass implements Insertable<SleepLogRow> {
+  final int id;
+  final DateTime sleptAt;
+  final DateTime wokeAt;
+
+  /// 1 (poor) – 5 (great). Optional.
+  final int? quality;
+  const SleepLogRow({
+    required this.id,
+    required this.sleptAt,
+    required this.wokeAt,
+    this.quality,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['slept_at'] = Variable<DateTime>(sleptAt);
+    map['woke_at'] = Variable<DateTime>(wokeAt);
+    if (!nullToAbsent || quality != null) {
+      map['quality'] = Variable<int>(quality);
+    }
+    return map;
+  }
+
+  SleepLogsCompanion toCompanion(bool nullToAbsent) {
+    return SleepLogsCompanion(
+      id: Value(id),
+      sleptAt: Value(sleptAt),
+      wokeAt: Value(wokeAt),
+      quality: quality == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quality),
+    );
+  }
+
+  factory SleepLogRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SleepLogRow(
+      id: serializer.fromJson<int>(json['id']),
+      sleptAt: serializer.fromJson<DateTime>(json['sleptAt']),
+      wokeAt: serializer.fromJson<DateTime>(json['wokeAt']),
+      quality: serializer.fromJson<int?>(json['quality']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'sleptAt': serializer.toJson<DateTime>(sleptAt),
+      'wokeAt': serializer.toJson<DateTime>(wokeAt),
+      'quality': serializer.toJson<int?>(quality),
+    };
+  }
+
+  SleepLogRow copyWith({
+    int? id,
+    DateTime? sleptAt,
+    DateTime? wokeAt,
+    Value<int?> quality = const Value.absent(),
+  }) => SleepLogRow(
+    id: id ?? this.id,
+    sleptAt: sleptAt ?? this.sleptAt,
+    wokeAt: wokeAt ?? this.wokeAt,
+    quality: quality.present ? quality.value : this.quality,
+  );
+  SleepLogRow copyWithCompanion(SleepLogsCompanion data) {
+    return SleepLogRow(
+      id: data.id.present ? data.id.value : this.id,
+      sleptAt: data.sleptAt.present ? data.sleptAt.value : this.sleptAt,
+      wokeAt: data.wokeAt.present ? data.wokeAt.value : this.wokeAt,
+      quality: data.quality.present ? data.quality.value : this.quality,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SleepLogRow(')
+          ..write('id: $id, ')
+          ..write('sleptAt: $sleptAt, ')
+          ..write('wokeAt: $wokeAt, ')
+          ..write('quality: $quality')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sleptAt, wokeAt, quality);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SleepLogRow &&
+          other.id == this.id &&
+          other.sleptAt == this.sleptAt &&
+          other.wokeAt == this.wokeAt &&
+          other.quality == this.quality);
+}
+
+class SleepLogsCompanion extends UpdateCompanion<SleepLogRow> {
+  final Value<int> id;
+  final Value<DateTime> sleptAt;
+  final Value<DateTime> wokeAt;
+  final Value<int?> quality;
+  const SleepLogsCompanion({
+    this.id = const Value.absent(),
+    this.sleptAt = const Value.absent(),
+    this.wokeAt = const Value.absent(),
+    this.quality = const Value.absent(),
+  });
+  SleepLogsCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime sleptAt,
+    required DateTime wokeAt,
+    this.quality = const Value.absent(),
+  }) : sleptAt = Value(sleptAt),
+       wokeAt = Value(wokeAt);
+  static Insertable<SleepLogRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? sleptAt,
+    Expression<DateTime>? wokeAt,
+    Expression<int>? quality,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sleptAt != null) 'slept_at': sleptAt,
+      if (wokeAt != null) 'woke_at': wokeAt,
+      if (quality != null) 'quality': quality,
+    });
+  }
+
+  SleepLogsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? sleptAt,
+    Value<DateTime>? wokeAt,
+    Value<int?>? quality,
+  }) {
+    return SleepLogsCompanion(
+      id: id ?? this.id,
+      sleptAt: sleptAt ?? this.sleptAt,
+      wokeAt: wokeAt ?? this.wokeAt,
+      quality: quality ?? this.quality,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sleptAt.present) {
+      map['slept_at'] = Variable<DateTime>(sleptAt.value);
+    }
+    if (wokeAt.present) {
+      map['woke_at'] = Variable<DateTime>(wokeAt.value);
+    }
+    if (quality.present) {
+      map['quality'] = Variable<int>(quality.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SleepLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('sleptAt: $sleptAt, ')
+          ..write('wokeAt: $wokeAt, ')
+          ..write('quality: $quality')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8058,6 +8467,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodsTable foods = $FoodsTable(this);
   late final $FoodLogsTable foodLogs = $FoodLogsTable(this);
   late final $PlacesTable places = $PlacesTable(this);
+  late final $SleepLogsTable sleepLogs = $SleepLogsTable(this);
   late final Index routineExercisesRoutine = Index(
     'routine_exercises_routine',
     'CREATE INDEX routine_exercises_routine ON routine_exercises (routine_id)',
@@ -8098,6 +8508,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'program_days_program',
     'CREATE INDEX program_days_program ON program_days (program_id)',
   );
+  late final Index sleepLogsWoke = Index(
+    'sleep_logs_woke',
+    'CREATE INDEX sleep_logs_woke ON sleep_logs (woke_at)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8120,6 +8534,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foods,
     foodLogs,
     places,
+    sleepLogs,
     routineExercisesRoutine,
     workoutsEndedStarted,
     workoutExercisesWorkout,
@@ -8130,6 +8545,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foodLogsDay,
     foodLogsFood,
     programDaysProgram,
+    sleepLogsWoke,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -8219,6 +8635,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<DateTime?> goalSetAt,
       Value<int?> trainingDaysPerWeek,
       Value<DietType?> dietType,
+      Value<DateTime?> lastCheckInAt,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -8247,6 +8664,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<DateTime?> goalSetAt,
       Value<int?> trainingDaysPerWeek,
       Value<DietType?> dietType,
+      Value<DateTime?> lastCheckInAt,
     });
 
 class $$SettingsTableFilterComposer
@@ -8387,6 +8805,11 @@ class $$SettingsTableFilterComposer
         column: $table.dietType,
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
+
+  ColumnFilters<DateTime> get lastCheckInAt => $composableBuilder(
+    column: $table.lastCheckInAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SettingsTableOrderingComposer
@@ -8522,6 +8945,11 @@ class $$SettingsTableOrderingComposer
     column: $table.dietType,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get lastCheckInAt => $composableBuilder(
+    column: $table.lastCheckInAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -8644,6 +9072,11 @@ class $$SettingsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<DietType?, String> get dietType =>
       $composableBuilder(column: $table.dietType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastCheckInAt => $composableBuilder(
+    column: $table.lastCheckInAt,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -8702,6 +9135,7 @@ class $$SettingsTableTableManager
                 Value<DateTime?> goalSetAt = const Value.absent(),
                 Value<int?> trainingDaysPerWeek = const Value.absent(),
                 Value<DietType?> dietType = const Value.absent(),
+                Value<DateTime?> lastCheckInAt = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -8728,6 +9162,7 @@ class $$SettingsTableTableManager
                 goalSetAt: goalSetAt,
                 trainingDaysPerWeek: trainingDaysPerWeek,
                 dietType: dietType,
+                lastCheckInAt: lastCheckInAt,
               ),
           createCompanionCallback:
               ({
@@ -8756,6 +9191,7 @@ class $$SettingsTableTableManager
                 Value<DateTime?> goalSetAt = const Value.absent(),
                 Value<int?> trainingDaysPerWeek = const Value.absent(),
                 Value<DietType?> dietType = const Value.absent(),
+                Value<DateTime?> lastCheckInAt = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -8782,6 +9218,7 @@ class $$SettingsTableTableManager
                 goalSetAt: goalSetAt,
                 trainingDaysPerWeek: trainingDaysPerWeek,
                 dietType: dietType,
+                lastCheckInAt: lastCheckInAt,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -12435,6 +12872,7 @@ typedef $$WorkoutSetsTableCreateCompanionBuilder =
       Value<int?> durationSeconds,
       Value<bool> done,
       Value<DateTime?> completedAt,
+      Value<int?> rir,
     });
 typedef $$WorkoutSetsTableUpdateCompanionBuilder =
     WorkoutSetsCompanion Function({
@@ -12446,6 +12884,7 @@ typedef $$WorkoutSetsTableUpdateCompanionBuilder =
       Value<int?> durationSeconds,
       Value<bool> done,
       Value<DateTime?> completedAt,
+      Value<int?> rir,
     });
 
 final class $$WorkoutSetsTableReferences
@@ -12519,6 +12958,11 @@ class $$WorkoutSetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get rir => $composableBuilder(
+    column: $table.rir,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkoutExercisesTableFilterComposer get workoutExerciseId {
     final $$WorkoutExercisesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -12587,6 +13031,11 @@ class $$WorkoutSetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get rir => $composableBuilder(
+    column: $table.rir,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkoutExercisesTableOrderingComposer get workoutExerciseId {
     final $$WorkoutExercisesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -12646,6 +13095,9 @@ class $$WorkoutSetsTableAnnotationComposer
     column: $table.completedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get rir =>
+      $composableBuilder(column: $table.rir, builder: (column) => column);
 
   $$WorkoutExercisesTableAnnotationComposer get workoutExerciseId {
     final $$WorkoutExercisesTableAnnotationComposer composer = $composerBuilder(
@@ -12707,6 +13159,7 @@ class $$WorkoutSetsTableTableManager
                 Value<int?> durationSeconds = const Value.absent(),
                 Value<bool> done = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
+                Value<int?> rir = const Value.absent(),
               }) => WorkoutSetsCompanion(
                 id: id,
                 workoutExerciseId: workoutExerciseId,
@@ -12716,6 +13169,7 @@ class $$WorkoutSetsTableTableManager
                 durationSeconds: durationSeconds,
                 done: done,
                 completedAt: completedAt,
+                rir: rir,
               ),
           createCompanionCallback:
               ({
@@ -12727,6 +13181,7 @@ class $$WorkoutSetsTableTableManager
                 Value<int?> durationSeconds = const Value.absent(),
                 Value<bool> done = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
+                Value<int?> rir = const Value.absent(),
               }) => WorkoutSetsCompanion.insert(
                 id: id,
                 workoutExerciseId: workoutExerciseId,
@@ -12736,6 +13191,7 @@ class $$WorkoutSetsTableTableManager
                 durationSeconds: durationSeconds,
                 done: done,
                 completedAt: completedAt,
+                rir: rir,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -14564,6 +15020,181 @@ typedef $$PlacesTableProcessedTableManager =
       PlaceRow,
       PrefetchHooks Function()
     >;
+typedef $$SleepLogsTableCreateCompanionBuilder =
+    SleepLogsCompanion Function({
+      Value<int> id,
+      required DateTime sleptAt,
+      required DateTime wokeAt,
+      Value<int?> quality,
+    });
+typedef $$SleepLogsTableUpdateCompanionBuilder =
+    SleepLogsCompanion Function({
+      Value<int> id,
+      Value<DateTime> sleptAt,
+      Value<DateTime> wokeAt,
+      Value<int?> quality,
+    });
+
+class $$SleepLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $SleepLogsTable> {
+  $$SleepLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sleptAt => $composableBuilder(
+    column: $table.sleptAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get wokeAt => $composableBuilder(
+    column: $table.wokeAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quality => $composableBuilder(
+    column: $table.quality,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SleepLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SleepLogsTable> {
+  $$SleepLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sleptAt => $composableBuilder(
+    column: $table.sleptAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get wokeAt => $composableBuilder(
+    column: $table.wokeAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quality => $composableBuilder(
+    column: $table.quality,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SleepLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SleepLogsTable> {
+  $$SleepLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sleptAt =>
+      $composableBuilder(column: $table.sleptAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get wokeAt =>
+      $composableBuilder(column: $table.wokeAt, builder: (column) => column);
+
+  GeneratedColumn<int> get quality =>
+      $composableBuilder(column: $table.quality, builder: (column) => column);
+}
+
+class $$SleepLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SleepLogsTable,
+          SleepLogRow,
+          $$SleepLogsTableFilterComposer,
+          $$SleepLogsTableOrderingComposer,
+          $$SleepLogsTableAnnotationComposer,
+          $$SleepLogsTableCreateCompanionBuilder,
+          $$SleepLogsTableUpdateCompanionBuilder,
+          (
+            SleepLogRow,
+            BaseReferences<_$AppDatabase, $SleepLogsTable, SleepLogRow>,
+          ),
+          SleepLogRow,
+          PrefetchHooks Function()
+        > {
+  $$SleepLogsTableTableManager(_$AppDatabase db, $SleepLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SleepLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SleepLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SleepLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> sleptAt = const Value.absent(),
+                Value<DateTime> wokeAt = const Value.absent(),
+                Value<int?> quality = const Value.absent(),
+              }) => SleepLogsCompanion(
+                id: id,
+                sleptAt: sleptAt,
+                wokeAt: wokeAt,
+                quality: quality,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime sleptAt,
+                required DateTime wokeAt,
+                Value<int?> quality = const Value.absent(),
+              }) => SleepLogsCompanion.insert(
+                id: id,
+                sleptAt: sleptAt,
+                wokeAt: wokeAt,
+                quality: quality,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SleepLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SleepLogsTable,
+      SleepLogRow,
+      $$SleepLogsTableFilterComposer,
+      $$SleepLogsTableOrderingComposer,
+      $$SleepLogsTableAnnotationComposer,
+      $$SleepLogsTableCreateCompanionBuilder,
+      $$SleepLogsTableUpdateCompanionBuilder,
+      (
+        SleepLogRow,
+        BaseReferences<_$AppDatabase, $SleepLogsTable, SleepLogRow>,
+      ),
+      SleepLogRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -14602,4 +15233,6 @@ class $AppDatabaseManager {
       $$FoodLogsTableTableManager(_db, _db.foodLogs);
   $$PlacesTableTableManager get places =>
       $$PlacesTableTableManager(_db, _db.places);
+  $$SleepLogsTableTableManager get sleepLogs =>
+      $$SleepLogsTableTableManager(_db, _db.sleepLogs);
 }

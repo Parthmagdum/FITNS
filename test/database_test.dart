@@ -37,6 +37,19 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 9) {
+      await db.customStatement('DROP TABLE sleep_logs');
+      // Before the second batch of ready-made routines.
+      await db.customStatement(
+        "DELETE FROM routine_exercises WHERE routine_id IN "
+        "(SELECT id FROM routines WHERE name != 'Leg day')",
+      );
+      await db.customStatement("DELETE FROM routines WHERE name != 'Leg day'");
+      await db.customStatement('ALTER TABLE workout_sets DROP COLUMN rir');
+      await db.customStatement(
+        'ALTER TABLE settings DROP COLUMN last_check_in_at',
+      );
+    }
     if (schema < 8) {
       // Before ready-made routines.
       await db.customStatement('DELETE FROM routine_exercises');
@@ -121,6 +134,7 @@ void main() {
     (5, '0.0.4'),
     (6, '0.0.5'),
     (7, '0.0.6'),
+    (8, '0.0.7'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
@@ -179,7 +193,12 @@ void main() {
         // Schema v8: the ready-made Leg day arrives with the update.
         expect(
           (await upgraded.watchRoutines().first).map((r) => r.routine.name),
-          contains('Leg day'),
+          containsAll(['Leg day', 'Push day', 'Pull day']),
+        );
+        // Schema v9: sleep logs work.
+        await upgraded.addSleep(
+          sleptAt: DateTime(2026, 11, 1, 23),
+          wokeAt: DateTime(2026, 11, 2, 7),
         );
       },
     );

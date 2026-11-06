@@ -99,8 +99,15 @@ void main() {
 
   group('ready-made routines', () {
     test('a new install has Leg day, all of it built in', () async {
-      final legDay = (await db.watchRoutines().first).single;
-      expect(legDay.routine.name, 'Leg day');
+      final routines = await db.watchRoutines().first;
+      expect(routines.map((r) => r.routine.name), [
+        'Leg day',
+        'Push day',
+        'Pull day',
+        'Home full body',
+        '20-minute express',
+      ]);
+      final legDay = routines.first;
       expect(legDay.items.map((i) => i.exercise.seedKey), [
         'squat_bb',
         'rdl_bb',
@@ -115,7 +122,7 @@ void main() {
 
     test('seeding again never duplicates it', () async {
       await db.seedStarterRoutines();
-      expect(await db.watchRoutines().first, hasLength(1));
+      expect(await db.watchRoutines().first, hasLength(5));
     });
 
     test('Box Jump is high impact; low impact swaps it', () async {

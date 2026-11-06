@@ -245,6 +245,17 @@ final restAlertStatusProvider = FutureProvider.autoDispose<RestAlertStatus>(
   (ref) => ref.watch(restAlertsProvider).status(),
 );
 
+// ── Sleep ───────────────────────────────────────────────────────────────────
+
+/// The last 14 nights, newest first.
+final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
+  (ref) => ref
+      .watch(dbProvider)
+      .watchSleepSince(
+        ref.watch(todayProvider).subtract(const Duration(days: 13)),
+      ),
+);
+
 // ── Food & water ────────────────────────────────────────────────────────────
 
 /// The day the Food tab shows. Follows "today" until the user moves it.
