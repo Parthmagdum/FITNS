@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.7 — 2026-11-06
 
 - **Your goal & plan.** FITNS now asks what you're aiming for — on Today
   and Body, and pointedly when your BMI is under or over the healthy range.
