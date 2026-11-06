@@ -111,6 +111,7 @@ int setVolumeGrams(WorkoutSetRow s) => (s.weightGrams ?? 0) * (s.reps ?? 0);
     Programs,
     ProgramDays,
     SleepLogs,
+    CycleStarts,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -197,6 +198,8 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(settings, column);
         }
         await m.createTable(sleepLogs);
+        await m.createTable(cycleStarts);
+        await m.addColumn(settings, settings.cycleTracking);
         await m.createIndex(sleepLogsWoke);
       }
     },
@@ -1566,6 +1569,22 @@ class AppDatabase extends _$AppDatabase {
             ..where((s) => s.wokeAt.isBiggerOrEqualValue(startOfDay(from)))
             ..orderBy([(s) => OrderingTerm.desc(s.wokeAt)]))
           .watch();
+
+  // ── Cycle ──────────────────────────────────────────────────────────────────
+
+  Future<void> addCycleStart(DateTime day) => into(cycleStarts).insert(
+    CycleStartsCompanion.insert(day: dayKey(day)),
+    mode: InsertMode.insertOrIgnore,
+  );
+
+  Future<void> deleteCycleStart(String day) =>
+      (delete(cycleStarts)..where((c) => c.day.equals(day))).go();
+
+  /// Every period start, oldest first.
+  Stream<List<DateTime>> watchCycleStarts() =>
+      (select(cycleStarts)..orderBy([(c) => OrderingTerm.asc(c.day)]))
+          .watch()
+          .map((rows) => [for (final r in rows) DateTime.parse(r.day)]);
 
   // ── Water ──────────────────────────────────────────────────────────────────
 

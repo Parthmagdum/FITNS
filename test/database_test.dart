@@ -39,6 +39,7 @@ void main() {
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
     if (schema < 9) {
       await db.customStatement('DROP TABLE sleep_logs');
+      await db.customStatement('DROP TABLE cycle_starts');
       // Before the second batch of ready-made routines.
       await db.customStatement(
         "DELETE FROM routine_exercises WHERE routine_id IN "
@@ -53,6 +54,7 @@ void main() {
         'water_reminders',
         'weigh_in_reminder_minute',
         'weigh_in_reminder_weekday',
+        'cycle_tracking',
       ]) {
         await db.customStatement('ALTER TABLE settings DROP COLUMN $column');
       }

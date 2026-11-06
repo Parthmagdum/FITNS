@@ -11,6 +11,7 @@ import '../body/body_screen.dart';
 import '../food/calories_card.dart';
 import '../food/water_card.dart';
 import '../plan/check_in_card.dart';
+import '../plan/cycle_card.dart';
 import '../plan/goal_card.dart';
 import '../sleep/sleep_card.dart';
 import '../steps/steps_card.dart';
@@ -44,6 +45,7 @@ class TodayScreen extends ConsumerWidget {
           ),
         ),
         const CheckInCard(),
+        const CycleCard(),
         const GoalCard(),
         const SizedBox(height: 12),
         const StepsCard(),

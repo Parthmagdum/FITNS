@@ -16,6 +16,10 @@ typedef CheckIn = ({
 
   /// The calorie goal after the change.
   int newKcal,
+
+  /// A cut was due but held back: the scale is likely high from water
+  /// before a period, so this week's number can't be trusted to go lower.
+  bool heldForCycle,
 });
 
 /// How far off the planned pace counts as on track, grams a week. Scales
@@ -36,6 +40,7 @@ CheckIn? weeklyCheckIn({
   required SettingRow settings,
   required List<WeighIn> weighIns,
   required DateTime now,
+  bool waterRetention = false,
 }) {
   final goal = settings.weightGoal;
   final kcal = settings.calorieGoal;
@@ -64,6 +69,8 @@ CheckIn? weeklyCheckIn({
     final perDay = -gap * 7700 / 1000 / 7;
     change = ((perDay / 50).round() * 50).clamp(-250, 250);
   }
+  final held = waterRetention && change < 0;
+  if (held) change = 0;
   final floor = settings.sex == Sex.female ? 1200 : 1500;
   final newKcal = math.max(floor, kcal + change);
   return (
@@ -71,5 +78,6 @@ CheckIn? weeklyCheckIn({
     plannedPerWeek: planned,
     kcalChange: newKcal - kcal,
     newKcal: newKcal,
+    heldForCycle: held,
   );
 }

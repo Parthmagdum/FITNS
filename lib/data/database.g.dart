@@ -353,6 +353,21 @@ class $SettingsTable extends Settings
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _cycleTrackingMeta = const VerificationMeta(
+    'cycleTracking',
+  );
+  @override
+  late final GeneratedColumn<bool> cycleTracking = GeneratedColumn<bool>(
+    'cycle_tracking',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("cycle_tracking" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -386,6 +401,7 @@ class $SettingsTable extends Settings
     waterReminders,
     weighInReminderMinute,
     weighInReminderWeekday,
+    cycleTracking,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -612,6 +628,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('cycle_tracking')) {
+      context.handle(
+        _cycleTrackingMeta,
+        cycleTracking.isAcceptableOrUnknown(
+          data['cycle_tracking']!,
+          _cycleTrackingMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -755,6 +780,10 @@ class $SettingsTable extends Settings
         DriftSqlType.int,
         data['${effectivePrefix}weigh_in_reminder_weekday'],
       )!,
+      cycleTracking: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}cycle_tracking'],
+      )!,
     );
   }
 
@@ -861,6 +890,11 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
 
   /// 1 = Monday … 7 = Sunday.
   final int weighInReminderWeekday;
+
+  /// Optional cycle tracking — phase notes on Today, and a check-in that
+  /// knows about water retention. Off unless the user turns it on.
+  /// Schema v9.
+  final bool cycleTracking;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -893,6 +927,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     required this.waterReminders,
     this.weighInReminderMinute,
     required this.weighInReminderWeekday,
+    required this.cycleTracking,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -976,6 +1011,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       map['weigh_in_reminder_minute'] = Variable<int>(weighInReminderMinute);
     }
     map['weigh_in_reminder_weekday'] = Variable<int>(weighInReminderWeekday);
+    map['cycle_tracking'] = Variable<bool>(cycleTracking);
     return map;
   }
 
@@ -1048,6 +1084,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ? const Value.absent()
           : Value(weighInReminderMinute),
       weighInReminderWeekday: Value(weighInReminderWeekday),
+      cycleTracking: Value(cycleTracking),
     );
   }
 
@@ -1110,6 +1147,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       weighInReminderWeekday: serializer.fromJson<int>(
         json['weighInReminderWeekday'],
       ),
+      cycleTracking: serializer.fromJson<bool>(json['cycleTracking']),
     );
   }
   @override
@@ -1157,6 +1195,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'waterReminders': serializer.toJson<bool>(waterReminders),
       'weighInReminderMinute': serializer.toJson<int?>(weighInReminderMinute),
       'weighInReminderWeekday': serializer.toJson<int>(weighInReminderWeekday),
+      'cycleTracking': serializer.toJson<bool>(cycleTracking),
     };
   }
 
@@ -1192,6 +1231,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     bool? waterReminders,
     Value<int?> weighInReminderMinute = const Value.absent(),
     int? weighInReminderWeekday,
+    bool? cycleTracking,
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -1243,6 +1283,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         : this.weighInReminderMinute,
     weighInReminderWeekday:
         weighInReminderWeekday ?? this.weighInReminderWeekday,
+    cycleTracking: cycleTracking ?? this.cycleTracking,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -1323,6 +1364,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       weighInReminderWeekday: data.weighInReminderWeekday.present
           ? data.weighInReminderWeekday.value
           : this.weighInReminderWeekday,
+      cycleTracking: data.cycleTracking.present
+          ? data.cycleTracking.value
+          : this.cycleTracking,
     );
   }
 
@@ -1359,7 +1403,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('workoutReminderDays: $workoutReminderDays, ')
           ..write('waterReminders: $waterReminders, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
-          ..write('weighInReminderWeekday: $weighInReminderWeekday')
+          ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
+          ..write('cycleTracking: $cycleTracking')
           ..write(')'))
         .toString();
   }
@@ -1397,6 +1442,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     waterReminders,
     weighInReminderMinute,
     weighInReminderWeekday,
+    cycleTracking,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1432,7 +1478,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.workoutReminderDays == this.workoutReminderDays &&
           other.waterReminders == this.waterReminders &&
           other.weighInReminderMinute == this.weighInReminderMinute &&
-          other.weighInReminderWeekday == this.weighInReminderWeekday);
+          other.weighInReminderWeekday == this.weighInReminderWeekday &&
+          other.cycleTracking == this.cycleTracking);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -1467,6 +1514,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<bool> waterReminders;
   final Value<int?> weighInReminderMinute;
   final Value<int> weighInReminderWeekday;
+  final Value<bool> cycleTracking;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -1499,6 +1547,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.waterReminders = const Value.absent(),
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
+    this.cycleTracking = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1532,6 +1581,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.waterReminders = const Value.absent(),
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
+    this.cycleTracking = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -1565,6 +1615,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<bool>? waterReminders,
     Expression<int>? weighInReminderMinute,
     Expression<int>? weighInReminderWeekday,
+    Expression<bool>? cycleTracking,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1605,6 +1656,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
         'weigh_in_reminder_minute': weighInReminderMinute,
       if (weighInReminderWeekday != null)
         'weigh_in_reminder_weekday': weighInReminderWeekday,
+      if (cycleTracking != null) 'cycle_tracking': cycleTracking,
     });
   }
 
@@ -1640,6 +1692,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<bool>? waterReminders,
     Value<int?>? weighInReminderMinute,
     Value<int>? weighInReminderWeekday,
+    Value<bool>? cycleTracking,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -1676,6 +1729,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           weighInReminderMinute ?? this.weighInReminderMinute,
       weighInReminderWeekday:
           weighInReminderWeekday ?? this.weighInReminderWeekday,
+      cycleTracking: cycleTracking ?? this.cycleTracking,
     );
   }
 
@@ -1793,6 +1847,9 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
         weighInReminderWeekday.value,
       );
     }
+    if (cycleTracking.present) {
+      map['cycle_tracking'] = Variable<bool>(cycleTracking.value);
+    }
     return map;
   }
 
@@ -1829,7 +1886,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('workoutReminderDays: $workoutReminderDays, ')
           ..write('waterReminders: $waterReminders, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
-          ..write('weighInReminderWeekday: $weighInReminderWeekday')
+          ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
+          ..write('cycleTracking: $cycleTracking')
           ..write(')'))
         .toString();
   }
@@ -8739,6 +8797,168 @@ class SleepLogsCompanion extends UpdateCompanion<SleepLogRow> {
   }
 }
 
+class $CycleStartsTable extends CycleStarts
+    with TableInfo<$CycleStartsTable, CycleStartRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CycleStartsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 10,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [day];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cycle_starts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CycleStartRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {day};
+  @override
+  CycleStartRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CycleStartRow(
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day'],
+      )!,
+    );
+  }
+
+  @override
+  $CycleStartsTable createAlias(String alias) {
+    return $CycleStartsTable(attachedDatabase, alias);
+  }
+}
+
+class CycleStartRow extends DataClass implements Insertable<CycleStartRow> {
+  /// A `dayKey` — `2026-11-06`.
+  final String day;
+  const CycleStartRow({required this.day});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['day'] = Variable<String>(day);
+    return map;
+  }
+
+  CycleStartsCompanion toCompanion(bool nullToAbsent) {
+    return CycleStartsCompanion(day: Value(day));
+  }
+
+  factory CycleStartRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CycleStartRow(day: serializer.fromJson<String>(json['day']));
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'day': serializer.toJson<String>(day)};
+  }
+
+  CycleStartRow copyWith({String? day}) => CycleStartRow(day: day ?? this.day);
+  CycleStartRow copyWithCompanion(CycleStartsCompanion data) {
+    return CycleStartRow(day: data.day.present ? data.day.value : this.day);
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CycleStartRow(')
+          ..write('day: $day')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => day.hashCode;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CycleStartRow && other.day == this.day);
+}
+
+class CycleStartsCompanion extends UpdateCompanion<CycleStartRow> {
+  final Value<String> day;
+  final Value<int> rowid;
+  const CycleStartsCompanion({
+    this.day = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CycleStartsCompanion.insert({
+    required String day,
+    this.rowid = const Value.absent(),
+  }) : day = Value(day);
+  static Insertable<CycleStartRow> custom({
+    Expression<String>? day,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (day != null) 'day': day,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CycleStartsCompanion copyWith({Value<String>? day, Value<int>? rowid}) {
+    return CycleStartsCompanion(
+      day: day ?? this.day,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CycleStartsCompanion(')
+          ..write('day: $day, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8764,6 +8984,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FoodLogsTable foodLogs = $FoodLogsTable(this);
   late final $PlacesTable places = $PlacesTable(this);
   late final $SleepLogsTable sleepLogs = $SleepLogsTable(this);
+  late final $CycleStartsTable cycleStarts = $CycleStartsTable(this);
   late final Index routineExercisesRoutine = Index(
     'routine_exercises_routine',
     'CREATE INDEX routine_exercises_routine ON routine_exercises (routine_id)',
@@ -8831,6 +9052,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foodLogs,
     places,
     sleepLogs,
+    cycleStarts,
     routineExercisesRoutine,
     workoutsEndedStarted,
     workoutExercisesWorkout,
@@ -8937,6 +9159,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<bool> waterReminders,
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
+      Value<bool> cycleTracking,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -8971,6 +9194,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<bool> waterReminders,
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
+      Value<bool> cycleTracking,
     });
 
 class $$SettingsTableFilterComposer
@@ -9141,6 +9365,11 @@ class $$SettingsTableFilterComposer
     column: $table.weighInReminderWeekday,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get cycleTracking => $composableBuilder(
+    column: $table.cycleTracking,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SettingsTableOrderingComposer
@@ -9306,6 +9535,11 @@ class $$SettingsTableOrderingComposer
     column: $table.weighInReminderWeekday,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get cycleTracking => $composableBuilder(
+    column: $table.cycleTracking,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -9458,6 +9692,11 @@ class $$SettingsTableAnnotationComposer
     column: $table.weighInReminderWeekday,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get cycleTracking => $composableBuilder(
+    column: $table.cycleTracking,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -9522,6 +9761,7 @@ class $$SettingsTableTableManager
                 Value<bool> waterReminders = const Value.absent(),
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
+                Value<bool> cycleTracking = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -9554,6 +9794,7 @@ class $$SettingsTableTableManager
                 waterReminders: waterReminders,
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
+                cycleTracking: cycleTracking,
               ),
           createCompanionCallback:
               ({
@@ -9588,6 +9829,7 @@ class $$SettingsTableTableManager
                 Value<bool> waterReminders = const Value.absent(),
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
+                Value<bool> cycleTracking = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -9620,6 +9862,7 @@ class $$SettingsTableTableManager
                 waterReminders: waterReminders,
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
+                cycleTracking: cycleTracking,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -15596,6 +15839,118 @@ typedef $$SleepLogsTableProcessedTableManager =
       SleepLogRow,
       PrefetchHooks Function()
     >;
+typedef $$CycleStartsTableCreateCompanionBuilder =
+    CycleStartsCompanion Function({required String day, Value<int> rowid});
+typedef $$CycleStartsTableUpdateCompanionBuilder =
+    CycleStartsCompanion Function({Value<String> day, Value<int> rowid});
+
+class $$CycleStartsTableFilterComposer
+    extends Composer<_$AppDatabase, $CycleStartsTable> {
+  $$CycleStartsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CycleStartsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CycleStartsTable> {
+  $$CycleStartsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CycleStartsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CycleStartsTable> {
+  $$CycleStartsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+}
+
+class $$CycleStartsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CycleStartsTable,
+          CycleStartRow,
+          $$CycleStartsTableFilterComposer,
+          $$CycleStartsTableOrderingComposer,
+          $$CycleStartsTableAnnotationComposer,
+          $$CycleStartsTableCreateCompanionBuilder,
+          $$CycleStartsTableUpdateCompanionBuilder,
+          (
+            CycleStartRow,
+            BaseReferences<_$AppDatabase, $CycleStartsTable, CycleStartRow>,
+          ),
+          CycleStartRow,
+          PrefetchHooks Function()
+        > {
+  $$CycleStartsTableTableManager(_$AppDatabase db, $CycleStartsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CycleStartsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CycleStartsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CycleStartsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> day = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CycleStartsCompanion(day: day, rowid: rowid),
+          createCompanionCallback:
+              ({
+                required String day,
+                Value<int> rowid = const Value.absent(),
+              }) => CycleStartsCompanion.insert(day: day, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CycleStartsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CycleStartsTable,
+      CycleStartRow,
+      $$CycleStartsTableFilterComposer,
+      $$CycleStartsTableOrderingComposer,
+      $$CycleStartsTableAnnotationComposer,
+      $$CycleStartsTableCreateCompanionBuilder,
+      $$CycleStartsTableUpdateCompanionBuilder,
+      (
+        CycleStartRow,
+        BaseReferences<_$AppDatabase, $CycleStartsTable, CycleStartRow>,
+      ),
+      CycleStartRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -15636,4 +15991,6 @@ class $AppDatabaseManager {
       $$PlacesTableTableManager(_db, _db.places);
   $$SleepLogsTableTableManager get sleepLogs =>
       $$SleepLogsTableTableManager(_db, _db.sleepLogs);
+  $$CycleStartsTableTableManager get cycleStarts =>
+      $$CycleStartsTableTableManager(_db, _db.cycleStarts);
 }

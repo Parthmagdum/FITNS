@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/plan/check_in.dart';
+import '../../core/plan/cycle.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
@@ -28,6 +29,14 @@ class CheckInCard extends ConsumerWidget {
           (at: w.measuredAt, grams: w.value),
       ],
       now: DateTime.now(),
+      waterRetention:
+          settings.cycleTracking &&
+          likelyWaterRetention(
+            cycleDay(
+              ref.watch(cycleStartsProvider).valueOrNull ?? const [],
+              DateTime.now(),
+            ),
+          ),
     );
     if (check == null) return const SizedBox.shrink();
     final db = ref.read(dbProvider);
@@ -37,7 +46,11 @@ class CheckInCard extends ConsumerWidget {
         : '${grams < 0 ? 'losing' : 'gaining'} '
               '${formatMass(grams.abs(), units)} a week';
     final onTrack = check.kcalChange == 0;
-    final message = onTrack
+    final message = check.heldForCycle
+        ? "You're ${rate(check.actualPerWeek)}, but your period is near — "
+              'water can hide fat loss this week. Keep your calories as they '
+              'are and check again next week.'
+        : onTrack
         ? "You're ${rate(check.actualPerWeek)} — right on plan. Keep going."
         : "You're ${rate(check.actualPerWeek)}; the plan is "
               '${rate(check.plannedPerWeek)}. Eat '

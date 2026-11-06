@@ -259,6 +259,12 @@ final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
       ),
 );
 
+// ── Cycle ───────────────────────────────────────────────────────────────────
+
+final cycleStartsProvider = StreamProvider<List<DateTime>>(
+  (ref) => ref.watch(dbProvider).watchCycleStarts(),
+);
+
 // ── Progress ────────────────────────────────────────────────────────────────
 
 /// Every night ever logged, newest first.

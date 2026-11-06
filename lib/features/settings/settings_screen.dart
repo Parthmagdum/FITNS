@@ -62,6 +62,20 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => editHeight(context, ref),
           ),
         ),
+        Card(
+          child: SwitchListTile(
+            secondary: const Icon(Icons.water_drop_outlined),
+            title: const Text('Cycle tracking'),
+            subtitle: const Text(
+              'Phase notes for training and food on Today, and a weekly '
+              'check-in that allows for water retention. Kept only on this '
+              'phone.',
+            ),
+            value: settings.cycleTracking,
+            onChanged: (on) =>
+                save(SettingsCompanion(cycleTracking: Value(on))),
+          ),
+        ),
         const SectionLabel('Activity'),
         Card(
           child: Column(

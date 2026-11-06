@@ -56,7 +56,8 @@ class BackupService {
   /// settings.
   /// 5 (0.0.7): adds each workout exercise's time, and the goal & plan
   /// settings.
-  /// 6 (0.0.8): adds sleepLogs, and reps in reserve on sets.
+  /// 6 (0.0.8): adds sleepLogs, cycleStarts, reps in reserve on sets, and
+  /// the reminder and cycle settings.
   static const formatVersion = 6;
 
   static String fileName(DateTime now) =>
@@ -93,6 +94,7 @@ class BackupService {
       'programs': await all(db.programs),
       'programDays': await all(db.programDays),
       'sleepLogs': await all(db.sleepLogs),
+      'cycleStarts': await all(db.cycleStarts),
     };
     return const JsonEncoder.withIndent(' ').convert(data);
   }
@@ -119,6 +121,7 @@ class BackupService {
     'programs',
     'programDays',
     'sleepLogs',
+    'cycleStarts',
   ];
 
   /// Checks [text] is a FITNS backup this version can read.
@@ -183,6 +186,7 @@ class BackupService {
           db.routines,
           db.places,
           db.sleepLogs,
+          db.cycleStarts,
           db.bodyEntries,
           db.dailySteps,
           db.hourlySteps,
@@ -213,6 +217,10 @@ class BackupService {
           b.insertAll(
             db.sleepLogs,
             rows('sleepLogs').map(SleepLogRow.fromJson),
+          );
+          b.insertAll(
+            db.cycleStarts,
+            rows('cycleStarts').map(CycleStartRow.fromJson),
           );
           b.insertAll(db.workouts, rows('workouts').map(WorkoutRow.fromJson));
           b.insertAll(

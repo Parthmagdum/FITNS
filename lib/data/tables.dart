@@ -285,6 +285,12 @@ class Settings extends Table {
   IntColumn get weighInReminderWeekday =>
       integer().withDefault(const Constant(1))();
 
+  /// Optional cycle tracking — phase notes on Today, and a check-in that
+  /// knows about water retention. Off unless the user turns it on.
+  /// Schema v9.
+  BoolColumn get cycleTracking =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -541,6 +547,16 @@ class SleepLogs extends Table {
 
   /// 1 (poor) – 5 (great). Optional.
   IntColumn get quality => integer().nullable()();
+}
+
+/// The first day of a period. Only ever kept on the phone. Schema v9.
+@DataClassName('CycleStartRow')
+class CycleStarts extends Table {
+  /// A `dayKey` — `2026-11-06`.
+  TextColumn get day => text().withLength(min: 10, max: 10)();
+
+  @override
+  Set<Column> get primaryKey => {day};
 }
 
 /// A drink of water. Schema v4.
