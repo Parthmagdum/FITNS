@@ -97,6 +97,36 @@ void main() {
     });
   });
 
+  group('ready-made routines', () {
+    test('a new install has Leg day, all of it built in', () async {
+      final legDay = (await db.watchRoutines().first).single;
+      expect(legDay.routine.name, 'Leg day');
+      expect(legDay.items.map((i) => i.exercise.seedKey), [
+        'squat_bb',
+        'rdl_bb',
+        'leg_press',
+        'walking_lunge_db',
+        'leg_curl',
+        'standing_calf_raise',
+      ]);
+      expect(legDay.items.first.item.targetSets, 4);
+      expect(legDay.items.first.item.targetReps, 8);
+    });
+
+    test('seeding again never duplicates it', () async {
+      await db.seedStarterRoutines();
+      expect(await db.watchRoutines().first, hasLength(1));
+    });
+
+    test('Box Jump is high impact; low impact swaps it', () async {
+      final boxJump = await byKey('box_jump');
+      expect(boxJump.highImpact, isTrue);
+      final swap = swapFor(boxJump, await library(), lowImpact)!;
+      expect(swap.highImpact, isFalse);
+      expect(swap.muscle, MuscleGroup.quads);
+    });
+  });
+
   group('places', () {
     test('a new install has a few to start from', () async {
       final places = await db.watchPlaces().first;

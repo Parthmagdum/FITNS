@@ -38,6 +38,9 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
     if (schema < 8) {
+      // Before ready-made routines.
+      await db.customStatement('DELETE FROM routine_exercises');
+      await db.customStatement('DELETE FROM routines');
       for (final column in ['timed_seconds', 'timer_since']) {
         await db.customStatement(
           'ALTER TABLE workout_exercises DROP COLUMN $column',
@@ -162,6 +165,11 @@ void main() {
         expect(settings.lowImpactOnly, isFalse);
         expect(settings.activePlaceId, isNull);
         await upgraded.saveProgram(name: 'P', routineIds: [null]);
+        // Schema v8: the ready-made Leg day arrives with the update.
+        expect(
+          (await upgraded.watchRoutines().first).map((r) => r.routine.name),
+          contains('Leg day'),
+        );
       },
     );
   }
@@ -406,7 +414,13 @@ void main() {
       final w = await detail(id);
       expect(w.workout.routineId, isNull);
       expect(w.entries, hasLength(2));
-      expect(await db.select(db.routineExercises).get(), isEmpty);
+      // Its lines went with it (only the ready-made Leg day's are left).
+      expect(
+        await (db.select(
+          db.routineExercises,
+        )..where((r) => r.routineId.equals(routineId))).get(),
+        isEmpty,
+      );
     });
 
     test('an exercise in use is archived, not deleted', () async {

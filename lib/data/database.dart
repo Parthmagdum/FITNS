@@ -6,6 +6,7 @@ import '../core/steps/step_math.dart';
 import '../core/training/swaps.dart';
 import '../core/units.dart';
 import 'seed_exercises.dart';
+import 'seed_routines.dart';
 import 'tables.dart';
 
 export 'tables.dart';
@@ -178,8 +179,41 @@ class AppDatabase extends _$AppDatabase {
       // exercises then needs no migration. Insert-or-ignore by key, so it
       // costs a few milliseconds and never duplicates.
       await seedExerciseLibrary();
+      // Ready-made routines once only: a new install, or the update that
+      // brings them (schema 8). After that they're the user's to delete.
+      final before = details.versionBefore;
+      if (before == null || before < 8) await seedStarterRoutines();
     },
   );
+
+  /// Adds each of [starterRoutines] unless a routine of that name exists.
+  Future<void> seedStarterRoutines() async {
+    final ids = {
+      for (final e in await (select(
+        exercises,
+      )..where((e) => e.seedKey.isNotNull())).get())
+        e.seedKey!: e.id,
+    };
+    final names = {
+      for (final r in await select(routines).get()) r.name.toLowerCase(),
+    };
+    for (final r in starterRoutines) {
+      if (names.contains(r.name.toLowerCase())) continue;
+      await saveRoutine(
+        name: r.name,
+        items: [
+          for (final i in r.items)
+            if (ids[i.key] case final id?)
+              (
+                exerciseId: id,
+                targetSets: i.sets,
+                targetReps: i.reps,
+                restSeconds: i.rest,
+              ),
+        ],
+      );
+    }
+  }
 
   /// A starting set of places on a new install, the upgrade that brings
   /// them, or a restore of a backup from before them — the user renames, edits or deletes them freely after.

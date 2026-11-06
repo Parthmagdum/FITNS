@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **A ready-made Leg day routine**: Squat, Romanian Deadlift, Leg Press,
+  Walking Lunge, Leg Curl and Calf Raise, with sets, reps and rest filled
+  in. Added once — edit it, rename it or delete it like your own.
+- **9 more leg exercises**: Hack Squat, Walking Lunge, Cossack Squat, Box
+  Jump (high impact), Sumo Deadlift, Hip Abduction, Seated Leg Curl,
+  Nordic Curl and Dumbbell Calf Raise.
 - **A timer for each exercise**, alongside the workout's overall clock. The
   first exercise's timer starts with the workout; ticking off an
   exercise's last set stops it and starts the next one from zero. Jump to

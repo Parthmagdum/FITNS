@@ -97,7 +97,7 @@ void main() {
     final backup = service.parse(await BackupService(source).export());
 
     expect(backup.workouts, 1);
-    expect(backup.routines, 1);
+    expect(backup.routines, 2); // the ready-made Leg day too
     expect(backup.bodyEntries, 2);
     expect(backup.stepDays, 1);
 
@@ -117,7 +117,16 @@ void main() {
     expect(w.entries.single.exercise.icon, ExerciseIcon.weights);
 
     final routines = await target.watchRoutines().first;
-    expect(routines.single.items.single.item.targetReps, 8);
+    expect(routines.map((r) => r.routine.name), contains('Leg day'));
+    expect(
+      routines
+          .singleWhere((r) => r.routine.name != 'Leg day')
+          .items
+          .single
+          .item
+          .targetReps,
+      8,
+    );
     expect(await target.watchBodyEntries().first, hasLength(2));
     expect(await target.watchStepsOn(DateTime(2026, 10, 28)).first, 6000);
     expect(

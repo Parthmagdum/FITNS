@@ -83,6 +83,14 @@ Future<void> settle(WidgetTester tester) async {
   }
 }
 
+/// Scrolls [finder] into the middle of the screen, clear of the bars at
+/// either edge, so a tap lands on it.
+Future<void> scrollToMiddle(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(finder, 200);
+  unawaited(Scrollable.ensureVisible(tester.element(finder), alignment: 0.5));
+  await settle(tester);
+}
+
 Future<void> unmount(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox());
   await tester.pump(const Duration(seconds: 1));
@@ -326,7 +334,7 @@ void main() {
 
     await tester.tap(find.text('Workouts').last);
     await settle(tester);
-    await tester.scrollUntilVisible(find.text('Evening workout'), 200);
+    await scrollToMiddle(tester, find.text('Evening workout'));
     await tester.tap(find.text('Evening workout'));
     await settle(tester);
     expect(find.text('6 kg × 8'), findsOneWidget); // meant 60
@@ -579,7 +587,7 @@ void main() {
 
     await tester.tap(find.text('Workouts').last);
     await settle(tester);
-    await tester.scrollUntilVisible(find.text('Bench 1'), 200);
+    await scrollToMiddle(tester, find.text('Bench 1'));
     await tester.tap(find.text('Bench 1'));
     await settle(tester);
     expect(find.text('1 personal record'), findsOneWidget);
@@ -714,7 +722,8 @@ void main() {
     await settle(tester);
     await tester.scrollUntilVisible(find.text('Simple'), 200);
     expect(find.text('Simple'), findsOneWidget);
-    expect(find.text('Up next: Day 1 of 2 · Legs'), findsOneWidget);
+    // A new day starts with the first routine — the ready-made Leg day.
+    expect(find.text('Up next: Day 1 of 2 · Leg day'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

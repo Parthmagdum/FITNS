@@ -542,6 +542,65 @@ final List<SeedExercise> seedExercises = [
     Equipment.bodyweight,
     ExerciseKind.duration,
   ),
+
+  // 0.0.7 — more for leg day.
+  _e(
+    'hack_squat',
+    'Hack Squat (Machine)',
+    MuscleGroup.quads,
+    Equipment.machine,
+  ),
+  _e(
+    'walking_lunge_db',
+    'Walking Lunge (Dumbbell)',
+    MuscleGroup.quads,
+    Equipment.dumbbell,
+  ),
+  _e(
+    'cossack_squat',
+    'Cossack Squat',
+    MuscleGroup.quads,
+    Equipment.bodyweight,
+    ExerciseKind.reps,
+  ),
+  _e(
+    'box_jump',
+    'Box Jump',
+    MuscleGroup.quads,
+    Equipment.bodyweight,
+    ExerciseKind.reps,
+  ),
+  _e(
+    'sumo_deadlift_bb',
+    'Sumo Deadlift (Barbell)',
+    MuscleGroup.glutes,
+    Equipment.barbell,
+  ),
+  _e(
+    'hip_abduction',
+    'Hip Abduction (Machine)',
+    MuscleGroup.glutes,
+    Equipment.machine,
+  ),
+  _e(
+    'seated_leg_curl',
+    'Seated Leg Curl (Machine)',
+    MuscleGroup.hamstrings,
+    Equipment.machine,
+  ),
+  _e(
+    'nordic_curl',
+    'Nordic Curl',
+    MuscleGroup.hamstrings,
+    Equipment.bodyweight,
+    ExerciseKind.reps,
+  ),
+  _e(
+    'calf_raise_db',
+    'Calf Raise (Dumbbell)',
+    MuscleGroup.calves,
+    Equipment.dumbbell,
+  ),
 ];
 
 /// Built-ins with jumps or hard landings — skipped on low-impact days.
@@ -551,4 +610,5 @@ const highImpactSeedKeys = {
   'jump_squat',
   'jumping_jacks',
   'jump_rope',
+  'box_jump',
 };

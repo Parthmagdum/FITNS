@@ -39,6 +39,7 @@ const seedIconOverrides = {
   'shadow_boxing': ExerciseIcon.combat,
   'inchworm': ExerciseIcon.stretch,
   'dead_bug': ExerciseIcon.core,
+  'box_jump': ExerciseIcon.jump,
 };
 
 /// The icon an exercise's shape implies — what a built-in shows, and what a
