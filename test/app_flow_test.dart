@@ -166,6 +166,10 @@ void main() {
     // Still setting up: no clock, no ticks, no rest timer yet.
     expect(find.text('Setting up · clock not started'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+    // Setup tools: a time estimate, warm-up and cool-down.
+    expect(find.textContaining('About '), findsOneWidget);
+    expect(find.text('Add warm-up'), findsOneWidget);
+    expect(find.text('Add cool-down'), findsOneWidget);
     await tester.tap(find.text('Start workout'));
     await settle(tester);
     expect(find.text('Setting up · clock not started'), findsNothing);
@@ -181,6 +185,11 @@ void main() {
     await settle(tester);
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
     expect(find.text('Rest'), findsOneWidget);
+    // How hard was it? One tap, then it goes away.
+    expect(find.text('Reps left in the tank?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ActionChip, '2'));
+    await settle(tester);
+    expect(find.text('Reps left in the tank?'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Finish'));
     await settle(tester);

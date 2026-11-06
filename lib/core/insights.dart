@@ -185,10 +185,15 @@ Set<PrKind> personalRecords(LiftedSet set, Iterable<LiftedSet> earlier) {
 /// The weight to try this session, if last session earned a step up: every
 /// set reached [targetReps] (or, with no target, the first set's reps) at the
 /// same top weight. The step is [increment] grams — 2.5 kg or 5 lb.
+///
+/// [lastRir] — reps in reserve per set, where the user said — refines it: a
+/// set taken to failure (0) means hold the weight, and every set with 3 or
+/// more left means the step can be doubled.
 int? suggestedWeight({
   required List<LiftedSet> lastTime,
   required int? targetReps,
   required int increment,
+  List<int?> lastRir = const [],
 }) {
   if (lastTime.isEmpty) return null;
   final top = lastTime.fold(0, (m, s) => math.max(m, s.weightGrams));
@@ -198,7 +203,11 @@ int? suggestedWeight({
   final allHit = lastTime.every(
     (s) => s.weightGrams == top && s.reps >= target,
   );
-  return allHit ? top + increment : null;
+  if (!allHit || lastRir.contains(0)) return null;
+  final easy =
+      lastRir.length == lastTime.length &&
+      lastRir.every((r) => r != null && r >= 3);
+  return top + increment * (easy ? 2 : 1);
 }
 
 /// Records for one session's sets of an exercise against [history]: only

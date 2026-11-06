@@ -601,6 +601,82 @@ final List<SeedExercise> seedExercises = [
     MuscleGroup.calves,
     Equipment.dumbbell,
   ),
+
+  // 0.0.8 — warm-ups and stretches.
+  _e(
+    'arm_circles',
+    'Arm Circles',
+    MuscleGroup.shoulders,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'leg_swings',
+    'Leg Swings',
+    MuscleGroup.hamstrings,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'hip_circles',
+    'Hip Circles',
+    MuscleGroup.glutes,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'hamstring_stretch',
+    'Hamstring Stretch',
+    MuscleGroup.hamstrings,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'quad_stretch',
+    'Quad Stretch',
+    MuscleGroup.quads,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'chest_stretch',
+    'Chest Stretch',
+    MuscleGroup.chest,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'hip_flexor_stretch',
+    'Hip Flexor Stretch',
+    MuscleGroup.glutes,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+  _e(
+    'childs_pose',
+    "Child's Pose",
+    MuscleGroup.back,
+    Equipment.bodyweight,
+    ExerciseKind.duration,
+  ),
+];
+
+/// A few minutes to get warm before lifting: pulse up, joints moving.
+const warmUpKeys = [
+  'march_in_place',
+  'arm_circles',
+  'leg_swings',
+  'hip_circles',
+  'bodyweight_squat',
+];
+
+/// Stretches to finish on.
+const coolDownKeys = [
+  'hamstring_stretch',
+  'quad_stretch',
+  'hip_flexor_stretch',
+  'chest_stretch',
+  'childs_pose',
 ];
 
 /// Built-ins with jumps or hard landings — skipped on low-impact days.

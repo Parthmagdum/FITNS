@@ -769,6 +769,49 @@ class AppDatabase extends _$AppDatabase {
         }
       });
 
+  /// Puts [exerciseIds] at the start of a workout — a warm-up — one set
+  /// each, moving the rest down.
+  Future<void> prependExercisesToWorkout(
+    int workoutId,
+    List<int> exerciseIds,
+  ) => transaction(() async {
+    await customUpdate(
+      'UPDATE workout_exercises SET sort = sort + ? WHERE workout_id = ?',
+      variables: [
+        Variable.withInt(exerciseIds.length),
+        Variable.withInt(workoutId),
+      ],
+      updates: {workoutExercises},
+    );
+    for (final (i, exerciseId) in exerciseIds.indexed) {
+      final itemId = await into(workoutExercises).insert(
+        WorkoutExercisesCompanion.insert(
+          workoutId: workoutId,
+          exerciseId: exerciseId,
+          sort: i,
+          restSeconds: const Value(0),
+        ),
+      );
+      await _insertEmptySets(itemId, 1);
+    }
+  });
+
+  /// Cuts a workout down: each item in [keep] keeps that many sets — the
+  /// first ones, done or not — and an item kept at 0 is removed.
+  Future<void> trimWorkout(Map<int, int> keep) => transaction(() async {
+    for (final MapEntry(key: itemId, value: count) in keep.entries) {
+      if (count <= 0) {
+        await removeWorkoutExercise(itemId);
+        continue;
+      }
+      final sets = await _setsOf(itemId);
+      final extra = [for (final s in sets.skip(count)) s.id];
+      if (extra.isNotEmpty) {
+        await (delete(workoutSets)..where((s) => s.id.isIn(extra))).go();
+      }
+    }
+  });
+
   Future<void> _insertEmptySets(int itemId, int count) => batch((b) {
     b.insertAll(workoutSets, [
       for (var i = 0; i < count; i++)

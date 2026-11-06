@@ -13,6 +13,8 @@ import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_icons.dart';
+import '../../core/training/time_box.dart';
+import '../../data/seed_exercises.dart';
 import 'rep_profiles.dart';
 import 'swap_sheet.dart';
 import 'rest_timer.dart';
@@ -169,17 +171,7 @@ class _WorkoutLog extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
-            if (setup)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
-                child: Text(
-                  'Add your exercises and set them up first. The clock and '
-                  'rest timer start when you tap Start workout.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.muted,
-                  ),
-                ),
-              ),
+            if (setup) _SetupTools(detail: detail, defaultRest: defaultRest),
             if (editing)
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
@@ -508,6 +500,126 @@ class _ExerciseCard extends ConsumerWidget {
   }
 }
 
+/// While a workout is being set up: how long it should take, and ways to
+/// shape it — a warm-up first, stretches last, or trimmed to fit the time.
+class _SetupTools extends ConsumerWidget {
+  const _SetupTools({required this.detail, required this.defaultRest});
+
+  final WorkoutDetail detail;
+  final int defaultRest;
+
+  List<TimedItem> get _items => [
+    for (final e in detail.entries)
+      (
+        id: e.item.id,
+        sets: e.sets.length,
+        secondsPerSet:
+            (e.exercise.kind == ExerciseKind.duration
+                ? timedSetSeconds
+                : repSetSeconds) +
+            (e.item.restSeconds ?? defaultRest),
+      ),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final db = ref.read(dbProvider);
+    final library = ref.watch(exercisesProvider).valueOrNull ?? const [];
+    List<int> ids(List<String> keys) => [
+      for (final k in keys)
+        ?library.where((e) => e.seedKey == k).firstOrNull?.id,
+    ];
+    final minutes = (estimateSeconds(_items) / 60).round();
+    final present = {for (final e in detail.entries) e.exercise.seedKey};
+    final hasWarmUp = warmUpKeys.any(present.contains);
+    final hasCoolDown = coolDownKeys.any(present.contains);
+
+    Future<void> shorten() async {
+      final messenger = ScaffoldMessenger.of(context);
+      final budget = await showDialog<int>(
+        context: context,
+        builder: (context) => SimpleDialog(
+          title: const Text('How long have you got?'),
+          children: [
+            for (final m in [20, 30, 45, 60])
+              if (m < minutes)
+                ListTile(
+                  title: Text('$m minutes'),
+                  onTap: () => Navigator.pop(context, m),
+                ),
+          ],
+        ),
+      );
+      if (budget == null) return;
+      final keep = fitToTime(_items, budget * 60);
+      final before = _items.fold(0, (s, i) => s + i.sets);
+      final after = _items.fold(0, (s, i) => s + (keep[i.id] ?? i.sets));
+      await db.trimWorkout(keep);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              'Trimmed to about $budget minutes — ${before - after} '
+              '${before - after == 1 ? 'set' : 'sets'} fewer.',
+            ),
+          ),
+        );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Text(
+              detail.entries.isEmpty
+                  ? 'Add your exercises and set them up first. The clock and '
+                        'rest timer start when you tap Start workout.'
+                  : 'About $minutes min. The clock starts when you tap Start '
+                        'workout.',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
+            ),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              if (!hasWarmUp)
+                ActionChip(
+                  avatar: const Icon(Icons.local_fire_department_outlined),
+                  label: const Text('Add warm-up'),
+                  onPressed: () => db.prependExercisesToWorkout(
+                    detail.workout.id,
+                    ids(warmUpKeys),
+                  ),
+                ),
+              if (!hasCoolDown)
+                ActionChip(
+                  avatar: const Icon(Icons.self_improvement),
+                  label: const Text('Add cool-down'),
+                  onPressed: () => db.addExercisesToWorkout(
+                    detail.workout.id,
+                    ids(coolDownKeys),
+                  ),
+                ),
+              if (minutes > 20)
+                ActionChip(
+                  avatar: const Icon(Icons.timer_outlined),
+                  label: const Text('Short on time?'),
+                  onPressed: shorten,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// How long this exercise has taken. Counting up while it's the one being
 /// done (tap to pause); paused or finished, tap to carry on; not begun, a
 /// Start button — starting one stops whichever was running.
@@ -773,8 +885,18 @@ class _SetRowState extends ConsumerState<_SetRow> {
     final theme = Theme.of(context);
     final done = _set.done;
     final previous = widget.previous;
+    // Just ticked: ask how hard it was, once — skippable, it only sharpens
+    // next session's weight suggestion.
+    final askEffort =
+        done &&
+        !widget.editing &&
+        widget.kind != ExerciseKind.duration &&
+        _set.rir == null &&
+        _set.completedAt != null &&
+        DateTime.now().difference(_set.completedAt!) <
+            const Duration(minutes: 3);
 
-    return Container(
+    final row = Container(
       margin: const EdgeInsets.symmetric(vertical: 2),
       padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
@@ -888,6 +1010,32 @@ class _SetRowState extends ConsumerState<_SetRow> {
             ),
         ],
       ),
+    );
+    if (!askEffort) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(36, 0, 0, 4),
+          child: Wrap(
+            spacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                'Reps left in the tank?',
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
+              ),
+              for (final r in [0, 1, 2, 3, 4])
+                ActionChip(
+                  visualDensity: VisualDensity.compact,
+                  label: Text(r == 4 ? '4+' : '$r'),
+                  onPressed: () => _write(WorkoutSetsCompanion(rir: Value(r))),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1050,6 +1198,7 @@ class _ProgressHint extends ConsumerWidget {
           (weightGrams: s.weightGrams ?? 0, reps: s.reps ?? 0),
       ],
       targetReps: entry.item.targetReps,
+      lastRir: [for (final s in previous) s.rir],
       increment: switch (units) {
         UnitSystem.metric => 2500,
         UnitSystem.imperial => (5 * gramsPerPound).round(),

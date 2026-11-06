@@ -40,6 +40,14 @@ const seedIconOverrides = {
   'inchworm': ExerciseIcon.stretch,
   'dead_bug': ExerciseIcon.core,
   'box_jump': ExerciseIcon.jump,
+  'arm_circles': ExerciseIcon.stretch,
+  'leg_swings': ExerciseIcon.stretch,
+  'hip_circles': ExerciseIcon.stretch,
+  'hamstring_stretch': ExerciseIcon.stretch,
+  'quad_stretch': ExerciseIcon.stretch,
+  'chest_stretch': ExerciseIcon.stretch,
+  'hip_flexor_stretch': ExerciseIcon.stretch,
+  'childs_pose': ExerciseIcon.stretch,
 };
 
 /// The icon an exercise's shape implies — what a built-in shows, and what a

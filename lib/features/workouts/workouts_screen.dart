@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
+import '../../core/progress.dart';
 import '../../core/training/programs.dart';
 import '../../data/providers.dart';
 import '../places/training_setup_card.dart';
@@ -48,6 +49,30 @@ class WorkoutsScreen extends ConsumerWidget {
           ),
         const SizedBox(height: 12),
         const TrainingSetupCard(),
+        if (weekStreak([
+              for (final h in history) h.workout.startedAt,
+            ], DateTime.now())
+            case final streak when streak >= 6 && streak % 6 == 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: SectionCard(
+              child: Row(
+                children: [
+                  Icon(Icons.spa_outlined, color: Theme.of(context).accent),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      '$streak weeks of training in a row — well done. Make '
+                      'this a lighter week: the same routines with about half '
+                      'the sets and a little less weight. Muscles grow while '
+                      "they recover; you'll come back stronger.",
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SectionLabel(
           'Programs',
           trailing: TextButton.icon(
