@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased
+
+**Your plan, kept on track**
+- **Weekly check-in.** Once a week while a goal is set, Today compares your
+  real weight trend with the plan's pace and offers a calorie change to
+  apply in one tap — small steps (at most 250 kcal), never below the floor.
+- **Food search.** 123 common foods — Indian staples and everyday basics —
+  with typical calories and macros, found as you type in any meal. Pick one
+  and it's saved to your foods (editable) and logged.
+
+**Training**
+- **How hard was that set?** After ticking a set, an optional "reps left in
+  the tank" (0–4+). Taken to failure, the next session holds the weight;
+  easy every set, it suggests a double step.
+- **Lighter week.** After every 6 weeks of training in a row, the Workouts
+  tab suggests a deload week.
+- **Short on time?** While setting up, see roughly how long the workout
+  will take and trim it to 20, 30, 45 or 60 minutes — sets come off evenly
+  first, whole exercises from the end last.
+- **Warm-up and cool-down** in one tap while setting up, with 8 new warm-up
+  and stretch exercises.
+- **4 more ready-made routines**: Push day, Pull day, Home full body (no
+  equipment) and a 20-minute express.
+- Today's quick-start buttons put your recent and your own routines first.
+
+**Progress** (the chart button on Today)
+- **Streaks**: weeks trained in a row, days at your step goal, days with
+  food logged.
+- **Any month at a glance**: workouts, time, volume, average calories,
+  steps and sleep, and weight change.
+- **Muscle balance**: sets per muscle over the last week against the usual
+  10–20, with the gaps named.
+- **12 badges** to earn.
+
+**Body & sleep**
+- **Sleep logging**: bedtime, wake time and how it felt; Today shows last
+  night and the week's average.
+- **Body-fat estimate** from your waist and neck (and hips) measurements —
+  the US Navy method, a better guide than BMI if you lift.
+
+**Under the hood**
+- Schema v9 and backup format 6 (sleep, effort per set). Older backups
+  still restore.
+- Release builds use actions/setup-java@v5.
+
 ## 0.0.7 — 2026-11-06
 
 - **Your goal & plan.** FITNS now asks what you're aiming for — on Today
