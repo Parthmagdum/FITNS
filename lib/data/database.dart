@@ -201,6 +201,8 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(sleepLogs);
         await m.createTable(cycleStarts);
         await m.createTable(progressPhotos);
+        // Created whole (barcode included) by the v4 step on older files.
+        if (from >= 4) await m.addColumn(foods, foods.barcode);
         await m.addColumn(settings, settings.cycleTracking);
         await m.createIndex(sleepLogsWoke);
       }
@@ -1670,6 +1672,23 @@ class AppDatabase extends _$AppDatabase {
     await (update(foods)..where((f) => f.id.equals(id))).write(row);
     return id;
   }
+
+  /// The saved food scanned with [code] before, if any.
+  Future<FoodRow?> foodByBarcode(String code) =>
+      (select(foods)
+            ..where((f) => f.barcode.equals(code))
+            ..limit(1))
+          .getSingleOrNull();
+
+  Future<void> setFoodBarcode(int id, String code) => transaction(() async {
+    // One food per barcode: a rescan that's saved as a new food moves it.
+    await (update(foods)..where((f) => f.barcode.equals(code))).write(
+      const FoodsCompanion(barcode: Value(null)),
+    );
+    await (update(foods)..where((f) => f.id.equals(id))).write(
+      FoodsCompanion(barcode: Value(code)),
+    );
+  });
 
   Future<FoodRow?> foodById(int id) =>
       (select(foods)..where((f) => f.id.equals(id))).getSingleOrNull();

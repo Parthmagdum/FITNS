@@ -6,6 +6,7 @@ import '../core/insights.dart';
 import '../core/motion/motion_sensors.dart';
 import '../core/notifications/reminders.dart';
 import '../core/notifications/rest_alerts.dart';
+import '../core/platform/barcode_scanner.dart';
 import '../core/platform/document_files.dart';
 import '../core/platform/home_widget.dart';
 import '../core/platform/photo_source.dart';
@@ -265,6 +266,10 @@ final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
 // ── Home-screen widget ──────────────────────────────────────────────────────
 
 final homeWidgetProvider = Provider<HomeWidget>((ref) => const HomeWidget());
+
+final barcodeScannerProvider = Provider<BarcodeScanner>(
+  (ref) => const BarcodeScanner(),
+);
 
 /// What the home-screen widget should show right now. Null until the data
 /// it's made from has loaded, so a half-loaded state never reaches it.

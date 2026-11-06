@@ -7069,6 +7069,17 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, FoodRow> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _barcodeMeta = const VerificationMeta(
+    'barcode',
+  );
+  @override
+  late final GeneratedColumn<String> barcode = GeneratedColumn<String>(
+    'barcode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7079,6 +7090,7 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, FoodRow> {
     carbsTenths,
     fatTenths,
     createdAt,
+    barcode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7150,6 +7162,12 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, FoodRow> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('barcode')) {
+      context.handle(
+        _barcodeMeta,
+        barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
+      );
+    }
     return context;
   }
 
@@ -7191,6 +7209,10 @@ class $FoodsTable extends Foods with TableInfo<$FoodsTable, FoodRow> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      barcode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barcode'],
+      ),
     );
   }
 
@@ -7211,6 +7233,10 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
   final int carbsTenths;
   final int fatTenths;
   final DateTime createdAt;
+
+  /// The packet's barcode, once the user has scanned it — scanning it again
+  /// finds this food. Schema v9.
+  final String? barcode;
   const FoodRow({
     required this.id,
     required this.name,
@@ -7220,6 +7246,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
     required this.carbsTenths,
     required this.fatTenths,
     required this.createdAt,
+    this.barcode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7232,6 +7259,9 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
     map['carbs_tenths'] = Variable<int>(carbsTenths);
     map['fat_tenths'] = Variable<int>(fatTenths);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || barcode != null) {
+      map['barcode'] = Variable<String>(barcode);
+    }
     return map;
   }
 
@@ -7245,6 +7275,9 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
       carbsTenths: Value(carbsTenths),
       fatTenths: Value(fatTenths),
       createdAt: Value(createdAt),
+      barcode: barcode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barcode),
     );
   }
 
@@ -7262,6 +7295,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
       carbsTenths: serializer.fromJson<int>(json['carbsTenths']),
       fatTenths: serializer.fromJson<int>(json['fatTenths']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      barcode: serializer.fromJson<String?>(json['barcode']),
     );
   }
   @override
@@ -7276,6 +7310,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
       'carbsTenths': serializer.toJson<int>(carbsTenths),
       'fatTenths': serializer.toJson<int>(fatTenths),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'barcode': serializer.toJson<String?>(barcode),
     };
   }
 
@@ -7288,6 +7323,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
     int? carbsTenths,
     int? fatTenths,
     DateTime? createdAt,
+    Value<String?> barcode = const Value.absent(),
   }) => FoodRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -7297,6 +7333,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
     carbsTenths: carbsTenths ?? this.carbsTenths,
     fatTenths: fatTenths ?? this.fatTenths,
     createdAt: createdAt ?? this.createdAt,
+    barcode: barcode.present ? barcode.value : this.barcode,
   );
   FoodRow copyWithCompanion(FoodsCompanion data) {
     return FoodRow(
@@ -7314,6 +7351,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
           : this.carbsTenths,
       fatTenths: data.fatTenths.present ? data.fatTenths.value : this.fatTenths,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      barcode: data.barcode.present ? data.barcode.value : this.barcode,
     );
   }
 
@@ -7327,7 +7365,8 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
           ..write('proteinTenths: $proteinTenths, ')
           ..write('carbsTenths: $carbsTenths, ')
           ..write('fatTenths: $fatTenths, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('barcode: $barcode')
           ..write(')'))
         .toString();
   }
@@ -7342,6 +7381,7 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
     carbsTenths,
     fatTenths,
     createdAt,
+    barcode,
   );
   @override
   bool operator ==(Object other) =>
@@ -7354,7 +7394,8 @@ class FoodRow extends DataClass implements Insertable<FoodRow> {
           other.proteinTenths == this.proteinTenths &&
           other.carbsTenths == this.carbsTenths &&
           other.fatTenths == this.fatTenths &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.barcode == this.barcode);
 }
 
 class FoodsCompanion extends UpdateCompanion<FoodRow> {
@@ -7366,6 +7407,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
   final Value<int> carbsTenths;
   final Value<int> fatTenths;
   final Value<DateTime> createdAt;
+  final Value<String?> barcode;
   const FoodsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -7375,6 +7417,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
     this.carbsTenths = const Value.absent(),
     this.fatTenths = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.barcode = const Value.absent(),
   });
   FoodsCompanion.insert({
     this.id = const Value.absent(),
@@ -7385,6 +7428,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
     this.carbsTenths = const Value.absent(),
     this.fatTenths = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.barcode = const Value.absent(),
   }) : name = Value(name),
        kcal = Value(kcal);
   static Insertable<FoodRow> custom({
@@ -7396,6 +7440,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
     Expression<int>? carbsTenths,
     Expression<int>? fatTenths,
     Expression<DateTime>? createdAt,
+    Expression<String>? barcode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -7406,6 +7451,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
       if (carbsTenths != null) 'carbs_tenths': carbsTenths,
       if (fatTenths != null) 'fat_tenths': fatTenths,
       if (createdAt != null) 'created_at': createdAt,
+      if (barcode != null) 'barcode': barcode,
     });
   }
 
@@ -7418,6 +7464,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
     Value<int>? carbsTenths,
     Value<int>? fatTenths,
     Value<DateTime>? createdAt,
+    Value<String?>? barcode,
   }) {
     return FoodsCompanion(
       id: id ?? this.id,
@@ -7428,6 +7475,7 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
       carbsTenths: carbsTenths ?? this.carbsTenths,
       fatTenths: fatTenths ?? this.fatTenths,
       createdAt: createdAt ?? this.createdAt,
+      barcode: barcode ?? this.barcode,
     );
   }
 
@@ -7458,6 +7506,9 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (barcode.present) {
+      map['barcode'] = Variable<String>(barcode.value);
+    }
     return map;
   }
 
@@ -7471,7 +7522,8 @@ class FoodsCompanion extends UpdateCompanion<FoodRow> {
           ..write('proteinTenths: $proteinTenths, ')
           ..write('carbsTenths: $carbsTenths, ')
           ..write('fatTenths: $fatTenths, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('barcode: $barcode')
           ..write(')'))
         .toString();
   }
@@ -14956,6 +15008,7 @@ typedef $$FoodsTableCreateCompanionBuilder =
       Value<int> carbsTenths,
       Value<int> fatTenths,
       Value<DateTime> createdAt,
+      Value<String?> barcode,
     });
 typedef $$FoodsTableUpdateCompanionBuilder =
     FoodsCompanion Function({
@@ -14967,6 +15020,7 @@ typedef $$FoodsTableUpdateCompanionBuilder =
       Value<int> carbsTenths,
       Value<int> fatTenths,
       Value<DateTime> createdAt,
+      Value<String?> barcode,
     });
 
 final class $$FoodsTableReferences
@@ -15037,6 +15091,11 @@ class $$FoodsTableFilterComposer extends Composer<_$AppDatabase, $FoodsTable> {
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get barcode => $composableBuilder(
+    column: $table.barcode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15114,6 +15173,11 @@ class $$FoodsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get barcode => $composableBuilder(
+    column: $table.barcode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodsTableAnnotationComposer
@@ -15154,6 +15218,9 @@ class $$FoodsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get barcode =>
+      $composableBuilder(column: $table.barcode, builder: (column) => column);
 
   Expression<T> foodLogsRefs<T extends Object>(
     Expression<T> Function($$FoodLogsTableAnnotationComposer a) f,
@@ -15217,6 +15284,7 @@ class $$FoodsTableTableManager
                 Value<int> carbsTenths = const Value.absent(),
                 Value<int> fatTenths = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
               }) => FoodsCompanion(
                 id: id,
                 name: name,
@@ -15226,6 +15294,7 @@ class $$FoodsTableTableManager
                 carbsTenths: carbsTenths,
                 fatTenths: fatTenths,
                 createdAt: createdAt,
+                barcode: barcode,
               ),
           createCompanionCallback:
               ({
@@ -15237,6 +15306,7 @@ class $$FoodsTableTableManager
                 Value<int> carbsTenths = const Value.absent(),
                 Value<int> fatTenths = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> barcode = const Value.absent(),
               }) => FoodsCompanion.insert(
                 id: id,
                 name: name,
@@ -15246,6 +15316,7 @@ class $$FoodsTableTableManager
                 carbsTenths: carbsTenths,
                 fatTenths: fatTenths,
                 createdAt: createdAt,
+                barcode: barcode,
               ),
           withReferenceMapper: (p0) => p0
               .map(

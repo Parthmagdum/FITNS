@@ -597,6 +597,10 @@ class Foods extends Table {
   IntColumn get fatTenths => integer().withDefault(const Constant(0))();
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// The packet's barcode, once the user has scanned it — scanning it again
+  /// finds this food. Schema v9.
+  TextColumn get barcode => text().nullable()();
 }
 
 /// One thing eaten. Name and nutrition are copied in at logging time, so

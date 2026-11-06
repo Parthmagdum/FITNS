@@ -12,6 +12,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
 import android.view.WindowManager
+import com.google.zxing.integration.android.IntentIntegrator
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -37,6 +38,7 @@ class MainActivity : FlutterActivity() {
     /** A progress photo being taken or picked, and the camera's target. */
     private var pendingPhoto: MethodChannel.Result? = null
     private var cameraUri: Uri? = null
+    private var pendingScan: MethodChannel.Result? = null
 
     override fun onResume() {
         super.onResume()
@@ -192,6 +194,26 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // Food barcodes, with ZXing's scanner screen — it asks for the
+        // camera itself, the first time.
+        MethodChannel(messenger, BARCODE_METHODS).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "scan" -> {
+                    pendingScan?.success(null)
+                    pendingScan = result
+                    IntentIntegrator(this).apply {
+                        setDesiredBarcodeFormats(
+                            listOf("EAN_13", "EAN_8", "UPC_A", "UPC_E", "CODE_128"),
+                        )
+                        setPrompt("Point at the barcode on the packet")
+                        setBeepEnabled(false)
+                        setOrientationLocked(false)
+                    }.initiateScan()
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(messenger, WIDGET_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "update" -> {
@@ -317,6 +339,12 @@ class MainActivity : FlutterActivity() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == IntentIntegrator.REQUEST_CODE) {
+            val result = pendingScan ?: return
+            pendingScan = null
+            result.success(IntentIntegrator.parseActivityResult(resultCode, data)?.contents)
+            return
+        }
         val uri = if (resultCode == RESULT_OK) data?.data else null
         when (requestCode) {
             CAMERA_REQUEST -> {
@@ -392,6 +420,7 @@ class MainActivity : FlutterActivity() {
         private const val REMINDER_METHODS = "fitns/reminders"
         private const val PHOTO_METHODS = "fitns/photos"
         private const val WIDGET_METHODS = "fitns/widget"
+        private const val BARCODE_METHODS = "fitns/barcode"
         private const val CAMERA_REQUEST = 4108
         private const val PICK_PHOTO_REQUEST = 4109
         private const val PERMISSION_REQUEST = 4101

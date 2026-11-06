@@ -86,3 +86,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Barcode scanning for food packets. ZXing is open source (Apache 2.0)
+    // and works offline — chosen over Google's ML Kit, which is closed and
+    // would keep FITNS out of F-Droid.
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+}

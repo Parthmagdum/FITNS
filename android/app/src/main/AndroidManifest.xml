@@ -31,6 +31,13 @@
          Debug builds keep it via src/debug for hot reload. -->
     <uses-permission android:name="android.permission.INTERNET"
         tools:node="remove"/>
+    <!-- Scanning food barcodes (ZXing). Asked for only when the user first
+         taps Scan; the app works fully without it. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera"
+        android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus"
+        android:required="false"/>
     <application
         android:label="FITNS"
         android:name="${applicationName}"
@@ -74,6 +81,11 @@
         <receiver
             android:name=".ReminderReceiver"
             android:exported="false"/>
+        <!-- ZXing's scanner, allowed to turn with the phone. -->
+        <activity
+            android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="fullSensor"
+            tools:replace="android:screenOrientation"/>
         <!-- The home-screen widget. -->
         <receiver
             android:name=".FitnsWidget"

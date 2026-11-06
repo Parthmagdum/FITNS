@@ -80,6 +80,33 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
     if (food != null && mounted) await _logFood(food);
   }
 
+  /// Scans a packet: a food scanned before is logged straight away; a new
+  /// barcode opens the new-food form, and the food is tied to the code so
+  /// next time is one scan.
+  Future<void> _scan() async {
+    final db = ref.read(dbProvider);
+    final code = await ref.read(barcodeScannerProvider).scan();
+    if (code == null || !mounted) return;
+    final known = await db.foodByBarcode(code);
+    if (!mounted) return;
+    if (known != null) return _logFood(known);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            'New barcode — enter what the label says once, and it will be '
+            'remembered.',
+          ),
+        ),
+      );
+    final id = await showFoodEditorSheet(context);
+    if (id == null || !mounted) return;
+    await db.setFoodBarcode(id, code);
+    final food = await db.foodById(id);
+    if (food != null && mounted) await _logFood(food);
+  }
+
   Future<void> _newFood() async {
     final id = await showFoodEditorSheet(context, initialName: _query.trim());
     if (id == null || !mounted) return;
@@ -146,6 +173,11 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
       appBar: AppBar(
         title: Text('Add to ${widget.meal.label}'),
         actions: [
+          IconButton(
+            tooltip: 'Scan a barcode',
+            onPressed: _scan,
+            icon: const Icon(Icons.qr_code_scanner),
+          ),
           TextButton.icon(
             onPressed: _newFood,
             icon: const Icon(Icons.add),

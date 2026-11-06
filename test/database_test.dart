@@ -41,6 +41,7 @@ void main() {
       await db.customStatement('DROP TABLE sleep_logs');
       await db.customStatement('DROP TABLE cycle_starts');
       await db.customStatement('DROP TABLE progress_photos');
+      await db.customStatement('ALTER TABLE foods DROP COLUMN barcode');
       // Before the second batch of ready-made routines.
       await db.customStatement(
         "DELETE FROM routine_exercises WHERE routine_id IN "
