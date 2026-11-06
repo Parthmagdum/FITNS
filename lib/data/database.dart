@@ -187,6 +187,15 @@ class AppDatabase extends _$AppDatabase {
       if (from < 9) {
         await m.addColumn(workoutSets, workoutSets.rir);
         await m.addColumn(settings, settings.lastCheckInAt);
+        for (final column in <GeneratedColumn>[
+          settings.workoutReminderMinute,
+          settings.workoutReminderDays,
+          settings.waterReminders,
+          settings.weighInReminderMinute,
+          settings.weighInReminderWeekday,
+        ]) {
+          await m.addColumn(settings, column);
+        }
         await m.createTable(sleepLogs);
         await m.createIndex(sleepLogsWoke);
       }

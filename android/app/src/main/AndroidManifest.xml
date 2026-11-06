@@ -71,6 +71,9 @@
         <receiver
             android:name=".RestAlarmReceiver"
             android:exported="false"/>
+        <receiver
+            android:name=".ReminderReceiver"
+            android:exported="false"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/dates.dart';
 import '../core/insights.dart';
 import '../core/motion/motion_sensors.dart';
+import '../core/notifications/reminders.dart';
 import '../core/notifications/rest_alerts.dart';
 import '../core/platform/document_files.dart';
 import '../core/steps/step_sensor.dart';
@@ -238,6 +239,8 @@ final stepStatusProvider = StateProvider<StepSensorStatus?>((ref) => null);
 // ── Rest alerts ─────────────────────────────────────────────────────────────
 
 final restAlertsProvider = Provider<RestAlerts>((ref) => const RestAlerts());
+
+final remindersProvider = Provider<Reminders>((ref) => const Reminders());
 
 /// Whether rest alerts can reach a locked phone. Invalidated on resume — the
 /// user may have just changed it in system settings.

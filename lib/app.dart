@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/branding/app_info.dart';
 import 'core/dates.dart';
+import 'core/notifications/reminders.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers.dart';
@@ -47,8 +48,21 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
     if (mounted) await syncStepTracking(ref);
   }
 
+  /// What Android was last told, so unrelated settings changes don't
+  /// reschedule every reminder.
+  String? _syncedReminders;
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(settingsProvider, (_, next) {
+      final settings = next.valueOrNull;
+      if (settings == null) return;
+      final reminders = remindersFor(settings);
+      final key = reminders.toString();
+      if (key == _syncedReminders) return;
+      _syncedReminders = key;
+      ref.read(remindersProvider).sync(reminders);
+    });
     return MaterialApp.router(
       title: AppInfo.name,
       debugShowCheckedModeBanner: false,

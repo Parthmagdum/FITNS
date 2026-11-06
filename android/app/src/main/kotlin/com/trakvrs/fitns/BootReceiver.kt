@@ -14,5 +14,7 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         if (StepLog.isAllDay(context)) StepCounterService.start(context)
+        // Alarms don't survive a reboot; reminders must be set again.
+        Reminders.rescheduleAll(context)
     }
 }

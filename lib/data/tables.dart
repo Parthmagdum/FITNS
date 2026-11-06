@@ -265,6 +265,26 @@ class Settings extends Table {
   /// When the weekly plan check-in was last done or dismissed. Schema v9.
   DateTimeColumn get lastCheckInAt => dateTime().nullable()();
 
+  // ── Reminders (schema v9) ─────────────────────────────────────────────────
+
+  /// Minutes after midnight for the workout reminder; null = off.
+  IntColumn get workoutReminderMinute => integer().nullable()();
+
+  /// Days it fires: bit 0 Monday … bit 6 Sunday.
+  IntColumn get workoutReminderDays =>
+      integer().withDefault(const Constant(0x7f))();
+
+  /// A drink reminder every two hours from 9:00 to 21:00.
+  BoolColumn get waterReminders =>
+      boolean().withDefault(const Constant(false))();
+
+  /// Minutes after midnight for the weekly weigh-in reminder; null = off.
+  IntColumn get weighInReminderMinute => integer().nullable()();
+
+  /// 1 = Monday … 7 = Sunday.
+  IntColumn get weighInReminderWeekday =>
+      integer().withDefault(const Constant(1))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

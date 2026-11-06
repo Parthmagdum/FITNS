@@ -174,6 +174,16 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        MethodChannel(messenger, REMINDER_METHODS).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "sync" -> {
+                    Reminders.sync(this, call.arguments as? String ?: "[]")
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // 100 Hz: a landing impact lasts only a few tens of milliseconds.
         EventChannel(messenger, ACCELEROMETER_EVENTS)
             .setStreamHandler(MotionStream(sensors, Sensor.TYPE_ACCELEROMETER, 10_000))
@@ -277,6 +287,7 @@ class MainActivity : FlutterActivity() {
         private const val PROXIMITY_EVENTS = "fitns/motion/proximity"
         private const val FILE_METHODS = "fitns/files"
         private const val REST_METHODS = "fitns/rest"
+        private const val REMINDER_METHODS = "fitns/reminders"
         private const val PERMISSION_REQUEST = 4101
         private const val SAVE_REQUEST = 4105
         private const val OPEN_REQUEST = 4106

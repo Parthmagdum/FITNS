@@ -46,9 +46,16 @@ void main() {
       );
       await db.customStatement("DELETE FROM routines WHERE name != 'Leg day'");
       await db.customStatement('ALTER TABLE workout_sets DROP COLUMN rir');
-      await db.customStatement(
-        'ALTER TABLE settings DROP COLUMN last_check_in_at',
-      );
+      for (final column in [
+        'last_check_in_at',
+        'workout_reminder_minute',
+        'workout_reminder_days',
+        'water_reminders',
+        'weigh_in_reminder_minute',
+        'weigh_in_reminder_weekday',
+      ]) {
+        await db.customStatement('ALTER TABLE settings DROP COLUMN $column');
+      }
     }
     if (schema < 8) {
       // Before ready-made routines.

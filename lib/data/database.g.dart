@@ -296,6 +296,63 @@ class $SettingsTable extends Settings
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _workoutReminderMinuteMeta =
+      const VerificationMeta('workoutReminderMinute');
+  @override
+  late final GeneratedColumn<int> workoutReminderMinute = GeneratedColumn<int>(
+    'workout_reminder_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _workoutReminderDaysMeta =
+      const VerificationMeta('workoutReminderDays');
+  @override
+  late final GeneratedColumn<int> workoutReminderDays = GeneratedColumn<int>(
+    'workout_reminder_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0x7f),
+  );
+  static const VerificationMeta _waterRemindersMeta = const VerificationMeta(
+    'waterReminders',
+  );
+  @override
+  late final GeneratedColumn<bool> waterReminders = GeneratedColumn<bool>(
+    'water_reminders',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("water_reminders" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _weighInReminderMinuteMeta =
+      const VerificationMeta('weighInReminderMinute');
+  @override
+  late final GeneratedColumn<int> weighInReminderMinute = GeneratedColumn<int>(
+    'weigh_in_reminder_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weighInReminderWeekdayMeta =
+      const VerificationMeta('weighInReminderWeekday');
+  @override
+  late final GeneratedColumn<int> weighInReminderWeekday = GeneratedColumn<int>(
+    'weigh_in_reminder_weekday',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -324,6 +381,11 @@ class $SettingsTable extends Settings
     trainingDaysPerWeek,
     dietType,
     lastCheckInAt,
+    workoutReminderMinute,
+    workoutReminderDays,
+    waterReminders,
+    weighInReminderMinute,
+    weighInReminderWeekday,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -505,6 +567,51 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('workout_reminder_minute')) {
+      context.handle(
+        _workoutReminderMinuteMeta,
+        workoutReminderMinute.isAcceptableOrUnknown(
+          data['workout_reminder_minute']!,
+          _workoutReminderMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('workout_reminder_days')) {
+      context.handle(
+        _workoutReminderDaysMeta,
+        workoutReminderDays.isAcceptableOrUnknown(
+          data['workout_reminder_days']!,
+          _workoutReminderDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('water_reminders')) {
+      context.handle(
+        _waterRemindersMeta,
+        waterReminders.isAcceptableOrUnknown(
+          data['water_reminders']!,
+          _waterRemindersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weigh_in_reminder_minute')) {
+      context.handle(
+        _weighInReminderMinuteMeta,
+        weighInReminderMinute.isAcceptableOrUnknown(
+          data['weigh_in_reminder_minute']!,
+          _weighInReminderMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weigh_in_reminder_weekday')) {
+      context.handle(
+        _weighInReminderWeekdayMeta,
+        weighInReminderWeekday.isAcceptableOrUnknown(
+          data['weigh_in_reminder_weekday']!,
+          _weighInReminderWeekdayMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -628,6 +735,26 @@ class $SettingsTable extends Settings
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_check_in_at'],
       ),
+      workoutReminderMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}workout_reminder_minute'],
+      ),
+      workoutReminderDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}workout_reminder_days'],
+      )!,
+      waterReminders: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}water_reminders'],
+      )!,
+      weighInReminderMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weigh_in_reminder_minute'],
+      ),
+      weighInReminderWeekday: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weigh_in_reminder_weekday'],
+      )!,
     );
   }
 
@@ -719,6 +846,21 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
 
   /// When the weekly plan check-in was last done or dismissed. Schema v9.
   final DateTime? lastCheckInAt;
+
+  /// Minutes after midnight for the workout reminder; null = off.
+  final int? workoutReminderMinute;
+
+  /// Days it fires: bit 0 Monday … bit 6 Sunday.
+  final int workoutReminderDays;
+
+  /// A drink reminder every two hours from 9:00 to 21:00.
+  final bool waterReminders;
+
+  /// Minutes after midnight for the weekly weigh-in reminder; null = off.
+  final int? weighInReminderMinute;
+
+  /// 1 = Monday … 7 = Sunday.
+  final int weighInReminderWeekday;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -746,6 +888,11 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     this.trainingDaysPerWeek,
     this.dietType,
     this.lastCheckInAt,
+    this.workoutReminderMinute,
+    required this.workoutReminderDays,
+    required this.waterReminders,
+    this.weighInReminderMinute,
+    required this.weighInReminderWeekday,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -820,6 +967,15 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     if (!nullToAbsent || lastCheckInAt != null) {
       map['last_check_in_at'] = Variable<DateTime>(lastCheckInAt);
     }
+    if (!nullToAbsent || workoutReminderMinute != null) {
+      map['workout_reminder_minute'] = Variable<int>(workoutReminderMinute);
+    }
+    map['workout_reminder_days'] = Variable<int>(workoutReminderDays);
+    map['water_reminders'] = Variable<bool>(waterReminders);
+    if (!nullToAbsent || weighInReminderMinute != null) {
+      map['weigh_in_reminder_minute'] = Variable<int>(weighInReminderMinute);
+    }
+    map['weigh_in_reminder_weekday'] = Variable<int>(weighInReminderWeekday);
     return map;
   }
 
@@ -883,6 +1039,15 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       lastCheckInAt: lastCheckInAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastCheckInAt),
+      workoutReminderMinute: workoutReminderMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workoutReminderMinute),
+      workoutReminderDays: Value(workoutReminderDays),
+      waterReminders: Value(waterReminders),
+      weighInReminderMinute: weighInReminderMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weighInReminderMinute),
+      weighInReminderWeekday: Value(weighInReminderWeekday),
     );
   }
 
@@ -932,6 +1097,19 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         serializer.fromJson<String?>(json['dietType']),
       ),
       lastCheckInAt: serializer.fromJson<DateTime?>(json['lastCheckInAt']),
+      workoutReminderMinute: serializer.fromJson<int?>(
+        json['workoutReminderMinute'],
+      ),
+      workoutReminderDays: serializer.fromJson<int>(
+        json['workoutReminderDays'],
+      ),
+      waterReminders: serializer.fromJson<bool>(json['waterReminders']),
+      weighInReminderMinute: serializer.fromJson<int?>(
+        json['weighInReminderMinute'],
+      ),
+      weighInReminderWeekday: serializer.fromJson<int>(
+        json['weighInReminderWeekday'],
+      ),
     );
   }
   @override
@@ -974,6 +1152,11 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         $SettingsTable.$converterdietTypen.toJson(dietType),
       ),
       'lastCheckInAt': serializer.toJson<DateTime?>(lastCheckInAt),
+      'workoutReminderMinute': serializer.toJson<int?>(workoutReminderMinute),
+      'workoutReminderDays': serializer.toJson<int>(workoutReminderDays),
+      'waterReminders': serializer.toJson<bool>(waterReminders),
+      'weighInReminderMinute': serializer.toJson<int?>(weighInReminderMinute),
+      'weighInReminderWeekday': serializer.toJson<int>(weighInReminderWeekday),
     };
   }
 
@@ -1004,6 +1187,11 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     Value<int?> trainingDaysPerWeek = const Value.absent(),
     Value<DietType?> dietType = const Value.absent(),
     Value<DateTime?> lastCheckInAt = const Value.absent(),
+    Value<int?> workoutReminderMinute = const Value.absent(),
+    int? workoutReminderDays,
+    bool? waterReminders,
+    Value<int?> weighInReminderMinute = const Value.absent(),
+    int? weighInReminderWeekday,
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -1045,6 +1233,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     lastCheckInAt: lastCheckInAt.present
         ? lastCheckInAt.value
         : this.lastCheckInAt,
+    workoutReminderMinute: workoutReminderMinute.present
+        ? workoutReminderMinute.value
+        : this.workoutReminderMinute,
+    workoutReminderDays: workoutReminderDays ?? this.workoutReminderDays,
+    waterReminders: waterReminders ?? this.waterReminders,
+    weighInReminderMinute: weighInReminderMinute.present
+        ? weighInReminderMinute.value
+        : this.weighInReminderMinute,
+    weighInReminderWeekday:
+        weighInReminderWeekday ?? this.weighInReminderWeekday,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -1110,6 +1308,21 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       lastCheckInAt: data.lastCheckInAt.present
           ? data.lastCheckInAt.value
           : this.lastCheckInAt,
+      workoutReminderMinute: data.workoutReminderMinute.present
+          ? data.workoutReminderMinute.value
+          : this.workoutReminderMinute,
+      workoutReminderDays: data.workoutReminderDays.present
+          ? data.workoutReminderDays.value
+          : this.workoutReminderDays,
+      waterReminders: data.waterReminders.present
+          ? data.waterReminders.value
+          : this.waterReminders,
+      weighInReminderMinute: data.weighInReminderMinute.present
+          ? data.weighInReminderMinute.value
+          : this.weighInReminderMinute,
+      weighInReminderWeekday: data.weighInReminderWeekday.present
+          ? data.weighInReminderWeekday.value
+          : this.weighInReminderWeekday,
     );
   }
 
@@ -1141,7 +1354,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('goalSetAt: $goalSetAt, ')
           ..write('trainingDaysPerWeek: $trainingDaysPerWeek, ')
           ..write('dietType: $dietType, ')
-          ..write('lastCheckInAt: $lastCheckInAt')
+          ..write('lastCheckInAt: $lastCheckInAt, ')
+          ..write('workoutReminderMinute: $workoutReminderMinute, ')
+          ..write('workoutReminderDays: $workoutReminderDays, ')
+          ..write('waterReminders: $waterReminders, ')
+          ..write('weighInReminderMinute: $weighInReminderMinute, ')
+          ..write('weighInReminderWeekday: $weighInReminderWeekday')
           ..write(')'))
         .toString();
   }
@@ -1174,6 +1392,11 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     trainingDaysPerWeek,
     dietType,
     lastCheckInAt,
+    workoutReminderMinute,
+    workoutReminderDays,
+    waterReminders,
+    weighInReminderMinute,
+    weighInReminderWeekday,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1204,7 +1427,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.goalSetAt == this.goalSetAt &&
           other.trainingDaysPerWeek == this.trainingDaysPerWeek &&
           other.dietType == this.dietType &&
-          other.lastCheckInAt == this.lastCheckInAt);
+          other.lastCheckInAt == this.lastCheckInAt &&
+          other.workoutReminderMinute == this.workoutReminderMinute &&
+          other.workoutReminderDays == this.workoutReminderDays &&
+          other.waterReminders == this.waterReminders &&
+          other.weighInReminderMinute == this.weighInReminderMinute &&
+          other.weighInReminderWeekday == this.weighInReminderWeekday);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -1234,6 +1462,11 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<int?> trainingDaysPerWeek;
   final Value<DietType?> dietType;
   final Value<DateTime?> lastCheckInAt;
+  final Value<int?> workoutReminderMinute;
+  final Value<int> workoutReminderDays;
+  final Value<bool> waterReminders;
+  final Value<int?> weighInReminderMinute;
+  final Value<int> weighInReminderWeekday;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -1261,6 +1494,11 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.trainingDaysPerWeek = const Value.absent(),
     this.dietType = const Value.absent(),
     this.lastCheckInAt = const Value.absent(),
+    this.workoutReminderMinute = const Value.absent(),
+    this.workoutReminderDays = const Value.absent(),
+    this.waterReminders = const Value.absent(),
+    this.weighInReminderMinute = const Value.absent(),
+    this.weighInReminderWeekday = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1289,6 +1527,11 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.trainingDaysPerWeek = const Value.absent(),
     this.dietType = const Value.absent(),
     this.lastCheckInAt = const Value.absent(),
+    this.workoutReminderMinute = const Value.absent(),
+    this.workoutReminderDays = const Value.absent(),
+    this.waterReminders = const Value.absent(),
+    this.weighInReminderMinute = const Value.absent(),
+    this.weighInReminderWeekday = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -1317,6 +1560,11 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<int>? trainingDaysPerWeek,
     Expression<String>? dietType,
     Expression<DateTime>? lastCheckInAt,
+    Expression<int>? workoutReminderMinute,
+    Expression<int>? workoutReminderDays,
+    Expression<bool>? waterReminders,
+    Expression<int>? weighInReminderMinute,
+    Expression<int>? weighInReminderWeekday,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1348,6 +1596,15 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
         'training_days_per_week': trainingDaysPerWeek,
       if (dietType != null) 'diet_type': dietType,
       if (lastCheckInAt != null) 'last_check_in_at': lastCheckInAt,
+      if (workoutReminderMinute != null)
+        'workout_reminder_minute': workoutReminderMinute,
+      if (workoutReminderDays != null)
+        'workout_reminder_days': workoutReminderDays,
+      if (waterReminders != null) 'water_reminders': waterReminders,
+      if (weighInReminderMinute != null)
+        'weigh_in_reminder_minute': weighInReminderMinute,
+      if (weighInReminderWeekday != null)
+        'weigh_in_reminder_weekday': weighInReminderWeekday,
     });
   }
 
@@ -1378,6 +1635,11 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<int?>? trainingDaysPerWeek,
     Value<DietType?>? dietType,
     Value<DateTime?>? lastCheckInAt,
+    Value<int?>? workoutReminderMinute,
+    Value<int>? workoutReminderDays,
+    Value<bool>? waterReminders,
+    Value<int?>? weighInReminderMinute,
+    Value<int>? weighInReminderWeekday,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -1406,6 +1668,14 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       trainingDaysPerWeek: trainingDaysPerWeek ?? this.trainingDaysPerWeek,
       dietType: dietType ?? this.dietType,
       lastCheckInAt: lastCheckInAt ?? this.lastCheckInAt,
+      workoutReminderMinute:
+          workoutReminderMinute ?? this.workoutReminderMinute,
+      workoutReminderDays: workoutReminderDays ?? this.workoutReminderDays,
+      waterReminders: waterReminders ?? this.waterReminders,
+      weighInReminderMinute:
+          weighInReminderMinute ?? this.weighInReminderMinute,
+      weighInReminderWeekday:
+          weighInReminderWeekday ?? this.weighInReminderWeekday,
     );
   }
 
@@ -1502,6 +1772,27 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (lastCheckInAt.present) {
       map['last_check_in_at'] = Variable<DateTime>(lastCheckInAt.value);
     }
+    if (workoutReminderMinute.present) {
+      map['workout_reminder_minute'] = Variable<int>(
+        workoutReminderMinute.value,
+      );
+    }
+    if (workoutReminderDays.present) {
+      map['workout_reminder_days'] = Variable<int>(workoutReminderDays.value);
+    }
+    if (waterReminders.present) {
+      map['water_reminders'] = Variable<bool>(waterReminders.value);
+    }
+    if (weighInReminderMinute.present) {
+      map['weigh_in_reminder_minute'] = Variable<int>(
+        weighInReminderMinute.value,
+      );
+    }
+    if (weighInReminderWeekday.present) {
+      map['weigh_in_reminder_weekday'] = Variable<int>(
+        weighInReminderWeekday.value,
+      );
+    }
     return map;
   }
 
@@ -1533,7 +1824,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('goalSetAt: $goalSetAt, ')
           ..write('trainingDaysPerWeek: $trainingDaysPerWeek, ')
           ..write('dietType: $dietType, ')
-          ..write('lastCheckInAt: $lastCheckInAt')
+          ..write('lastCheckInAt: $lastCheckInAt, ')
+          ..write('workoutReminderMinute: $workoutReminderMinute, ')
+          ..write('workoutReminderDays: $workoutReminderDays, ')
+          ..write('waterReminders: $waterReminders, ')
+          ..write('weighInReminderMinute: $weighInReminderMinute, ')
+          ..write('weighInReminderWeekday: $weighInReminderWeekday')
           ..write(')'))
         .toString();
   }
@@ -8636,6 +8932,11 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<int?> trainingDaysPerWeek,
       Value<DietType?> dietType,
       Value<DateTime?> lastCheckInAt,
+      Value<int?> workoutReminderMinute,
+      Value<int> workoutReminderDays,
+      Value<bool> waterReminders,
+      Value<int?> weighInReminderMinute,
+      Value<int> weighInReminderWeekday,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -8665,6 +8966,11 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<int?> trainingDaysPerWeek,
       Value<DietType?> dietType,
       Value<DateTime?> lastCheckInAt,
+      Value<int?> workoutReminderMinute,
+      Value<int> workoutReminderDays,
+      Value<bool> waterReminders,
+      Value<int?> weighInReminderMinute,
+      Value<int> weighInReminderWeekday,
     });
 
 class $$SettingsTableFilterComposer
@@ -8810,6 +9116,31 @@ class $$SettingsTableFilterComposer
     column: $table.lastCheckInAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<int> get workoutReminderMinute => $composableBuilder(
+    column: $table.workoutReminderMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get workoutReminderDays => $composableBuilder(
+    column: $table.workoutReminderDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get waterReminders => $composableBuilder(
+    column: $table.waterReminders,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weighInReminderMinute => $composableBuilder(
+    column: $table.weighInReminderMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weighInReminderWeekday => $composableBuilder(
+    column: $table.weighInReminderWeekday,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SettingsTableOrderingComposer
@@ -8950,6 +9281,31 @@ class $$SettingsTableOrderingComposer
     column: $table.lastCheckInAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get workoutReminderMinute => $composableBuilder(
+    column: $table.workoutReminderMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get workoutReminderDays => $composableBuilder(
+    column: $table.workoutReminderDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get waterReminders => $composableBuilder(
+    column: $table.waterReminders,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weighInReminderMinute => $composableBuilder(
+    column: $table.weighInReminderMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weighInReminderWeekday => $composableBuilder(
+    column: $table.weighInReminderWeekday,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -9077,6 +9433,31 @@ class $$SettingsTableAnnotationComposer
     column: $table.lastCheckInAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get workoutReminderMinute => $composableBuilder(
+    column: $table.workoutReminderMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get workoutReminderDays => $composableBuilder(
+    column: $table.workoutReminderDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get waterReminders => $composableBuilder(
+    column: $table.waterReminders,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get weighInReminderMinute => $composableBuilder(
+    column: $table.weighInReminderMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get weighInReminderWeekday => $composableBuilder(
+    column: $table.weighInReminderWeekday,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -9136,6 +9517,11 @@ class $$SettingsTableTableManager
                 Value<int?> trainingDaysPerWeek = const Value.absent(),
                 Value<DietType?> dietType = const Value.absent(),
                 Value<DateTime?> lastCheckInAt = const Value.absent(),
+                Value<int?> workoutReminderMinute = const Value.absent(),
+                Value<int> workoutReminderDays = const Value.absent(),
+                Value<bool> waterReminders = const Value.absent(),
+                Value<int?> weighInReminderMinute = const Value.absent(),
+                Value<int> weighInReminderWeekday = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -9163,6 +9549,11 @@ class $$SettingsTableTableManager
                 trainingDaysPerWeek: trainingDaysPerWeek,
                 dietType: dietType,
                 lastCheckInAt: lastCheckInAt,
+                workoutReminderMinute: workoutReminderMinute,
+                workoutReminderDays: workoutReminderDays,
+                waterReminders: waterReminders,
+                weighInReminderMinute: weighInReminderMinute,
+                weighInReminderWeekday: weighInReminderWeekday,
               ),
           createCompanionCallback:
               ({
@@ -9192,6 +9583,11 @@ class $$SettingsTableTableManager
                 Value<int?> trainingDaysPerWeek = const Value.absent(),
                 Value<DietType?> dietType = const Value.absent(),
                 Value<DateTime?> lastCheckInAt = const Value.absent(),
+                Value<int?> workoutReminderMinute = const Value.absent(),
+                Value<int> workoutReminderDays = const Value.absent(),
+                Value<bool> waterReminders = const Value.absent(),
+                Value<int?> weighInReminderMinute = const Value.absent(),
+                Value<int> weighInReminderWeekday = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -9219,6 +9615,11 @@ class $$SettingsTableTableManager
                 trainingDaysPerWeek: trainingDaysPerWeek,
                 dietType: dietType,
                 lastCheckInAt: lastCheckInAt,
+                workoutReminderMinute: workoutReminderMinute,
+                workoutReminderDays: workoutReminderDays,
+                waterReminders: waterReminders,
+                weighInReminderMinute: weighInReminderMinute,
+                weighInReminderWeekday: weighInReminderWeekday,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
