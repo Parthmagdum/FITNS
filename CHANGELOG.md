@@ -40,9 +40,33 @@
 - **Body-fat estimate** from your waist and neck (and hips) measurements —
   the US Navy method, a better guide than BMI if you lift.
 
+**On your phone**
+- **Reminders** (Settings): a workout reminder at your time on your days,
+  water every two hours from 9 to 9, and a weekly weigh-in. Restored after
+  a reboot; no extra permission.
+- **Home-screen widget**: today's steps against your goal, calories left
+  and your next program workout.
+- **Progress photos** (Body tab): take one or pick from your gallery, see
+  it beside your first. Kept privately on the phone, shrunk to save space —
+  not in backups, so keep copies if you switch phones. No camera or storage
+  permission needed.
+- **Barcode scanning** in the food picker: scan a packet, enter its label
+  once, and it's one scan from then on. Uses the open-source ZXing scanner
+  and works offline; asks for the camera on first scan only.
+- **Health Connect** (Settings, Android 8+): bring in steps and weight from
+  your watch or scale, and share workouts. Off until you connect it; steps
+  only ever go up when imported, weigh-ins aren't doubled.
+- **Cycle-aware plans** (Settings, optional, off by default): log period
+  starts to see your cycle day and phase on Today with training and food
+  notes; the weekly check-in won't cut calories when the scale is likely
+  high from water. Kept only on the phone.
+
 **Under the hood**
-- Schema v9 and backup format 6 (sleep, effort per set). Older backups
-  still restore.
+- Schema v9 and backup format 6 (sleep, cycle, effort per set, reminder
+  and cycle settings). Older backups still restore.
+- New permissions: camera (barcode scanning only, asked on first use) and
+  Health Connect's steps, weight and exercise (asked only when you
+  connect). FITNS still has no internet access.
 - Release builds use actions/setup-java@v5.
 
 ## 0.0.7 — 2026-11-06
