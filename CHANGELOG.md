@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.6 — 2026-11-06
 
 **Train anywhere, your way**
 - **Programs.** Put routines in a cycle of days — Push, Pull, Legs, Rest —
