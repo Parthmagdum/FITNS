@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#F7F7F9</color>
+    <color name="widget_text">#1C1C1E</color>
+    <color name="widget_muted">#6E6E73</color>
+    <string name="widget_title">FITNS · TODAY</string>
+    <string name="widget_open_app">Open FITNS to start</string>
+    <string name="widget_label">FITNS today</string>
+    <string name="widget_description">Steps, calories left and your next workout</string>
+</resources>

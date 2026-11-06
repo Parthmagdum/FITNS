@@ -192,6 +192,16 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        MethodChannel(messenger, WIDGET_METHODS).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    FitnsWidget.save(this, call.arguments as? Map<*, *> ?: emptyMap<String, Any>())
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(messenger, REMINDER_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "sync" -> {
@@ -381,6 +391,7 @@ class MainActivity : FlutterActivity() {
         private const val REST_METHODS = "fitns/rest"
         private const val REMINDER_METHODS = "fitns/reminders"
         private const val PHOTO_METHODS = "fitns/photos"
+        private const val WIDGET_METHODS = "fitns/widget"
         private const val CAMERA_REQUEST = 4108
         private const val PICK_PHOTO_REQUEST = 4109
         private const val PERMISSION_REQUEST = 4101

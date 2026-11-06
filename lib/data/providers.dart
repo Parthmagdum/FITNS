@@ -7,9 +7,11 @@ import '../core/motion/motion_sensors.dart';
 import '../core/notifications/reminders.dart';
 import '../core/notifications/rest_alerts.dart';
 import '../core/platform/document_files.dart';
+import '../core/platform/home_widget.dart';
 import '../core/platform/photo_source.dart';
 import '../core/steps/step_sensor.dart';
 import '../core/steps/step_tracker.dart';
+import '../core/training/programs.dart';
 import '../core/training/swaps.dart';
 import '../core/units.dart';
 import 'backup.dart';
@@ -259,6 +261,38 @@ final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
         ref.watch(todayProvider).subtract(const Duration(days: 13)),
       ),
 );
+
+// ── Home-screen widget ──────────────────────────────────────────────────────
+
+final homeWidgetProvider = Provider<HomeWidget>((ref) => const HomeWidget());
+
+/// What the home-screen widget should show right now. Null until the data
+/// it's made from has loaded, so a half-loaded state never reaches it.
+final widgetDataProvider = Provider<WidgetData?>((ref) {
+  final today = ref.watch(todayProvider);
+  final settings = ref.watch(settingsProvider).valueOrNull;
+  final steps = ref.watch(todayStepsProvider).valueOrNull;
+  final logs = ref.watch(foodLogsProvider(today)).valueOrNull;
+  final programs = ref.watch(programsProvider).valueOrNull;
+  final lastDays = ref.watch(lastProgramDaysProvider).valueOrNull;
+  if (settings == null || steps == null || logs == null) return null;
+  String? next;
+  for (final p in programs ?? const <ProgramDetail>[]) {
+    final n = nextProgramDay(p, lastDays?[p.program.id]);
+    if (n != null) {
+      next = p.days[n.index].routine!.name;
+      break;
+    }
+  }
+  return widgetData(
+    day: today,
+    steps: steps,
+    stepGoal: settings.dailyStepGoal,
+    kcalEaten: logs.fold(0, (sum, l) => sum + l.kcal),
+    kcalGoal: settings.calorieGoal,
+    nextWorkout: next,
+  );
+});
 
 // ── Progress photos ─────────────────────────────────────────────────────────
 
