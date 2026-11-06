@@ -52,7 +52,9 @@ class BackupService {
   /// 2 (0.0.3): adds waterLogs, foods, foodLogs and the food & water
   /// settings.
   /// 3 (0.0.4): adds hourlySteps.
-  static const formatVersion = 3;
+  /// 4 (0.0.6): adds places, programs and programDays, and the training
+  /// settings.
+  static const formatVersion = 4;
 
   static String fileName(DateTime now) =>
       'fitns-backup-${now.year}-${_two(now.month)}-${_two(now.day)}.json';
@@ -84,6 +86,9 @@ class BackupService {
       'waterLogs': await all(db.waterLogs),
       'foods': await all(db.foods),
       'foodLogs': await all(db.foodLogs),
+      'places': await all(db.places),
+      'programs': await all(db.programs),
+      'programDays': await all(db.programDays),
     };
     return const JsonEncoder.withIndent(' ').convert(data);
   }
@@ -101,7 +106,15 @@ class BackupService {
   ];
 
   /// Added in format 2 or later; an older backup simply has none.
-  static const _laterTables = ['waterLogs', 'foods', 'foodLogs', 'hourlySteps'];
+  static const _laterTables = [
+    'waterLogs',
+    'foods',
+    'foodLogs',
+    'hourlySteps',
+    'places',
+    'programs',
+    'programDays',
+  ];
 
   /// Checks [text] is a FITNS backup this version can read.
   BackupPreview parse(String text) {
@@ -159,8 +172,11 @@ class BackupService {
           db.workoutSets,
           db.workoutExercises,
           db.workouts,
+          db.programDays,
+          db.programs,
           db.routineExercises,
           db.routines,
+          db.places,
           db.bodyEntries,
           db.dailySteps,
           db.hourlySteps,
@@ -182,6 +198,12 @@ class BackupService {
             db.routineExercises,
             rows('routineExercises').map(RoutineExerciseRow.fromJson),
           );
+          b.insertAll(db.programs, rows('programs').map(ProgramRow.fromJson));
+          b.insertAll(
+            db.programDays,
+            rows('programDays').map(ProgramDayRow.fromJson),
+          );
+          b.insertAll(db.places, rows('places').map(PlaceRow.fromJson));
           b.insertAll(db.workouts, rows('workouts').map(WorkoutRow.fromJson));
           b.insertAll(
             db.workoutExercises,
@@ -212,6 +234,8 @@ class BackupService {
         });
         // A backup from an older FITNS lacks any built-ins added since.
         await db.seedExerciseLibrary();
+        // …and places, which came in 0.0.6.
+        if (data['places'] == null) await db.seedPlaces();
       });
     } on BackupException {
       rethrow;

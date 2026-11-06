@@ -7,6 +7,9 @@ An offline, open-source fitness tracking app.
 - Step counting with daily, weekly and monthly totals
 - Workout logging (exercises, sets, reps, weight, rest timer)
 - Reusable workout routines and templates
+- Programs: routines in a repeating cycle of days, always showing what's next
+- Places with their equipment — routines swap exercises to fit where you train
+- Low-impact mode that swaps out jumps and hard landings
 - Diet tracking with calories and macros (offline food database and custom foods)
 - GPS activity tracking for walking, running and cycling
 - Body metrics: weight, height, BMI and measurements

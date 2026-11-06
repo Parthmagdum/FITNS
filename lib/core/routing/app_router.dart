@@ -8,6 +8,8 @@ import '../../features/exercises/exercise_picker_screen.dart';
 import '../../features/food/food_picker_screen.dart';
 import '../../features/food/food_screen.dart';
 import '../../features/food/goals_screen.dart';
+import '../../features/places/places_screen.dart';
+import '../../features/programs/program_editor_screen.dart';
 import '../../features/routines/routine_editor_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/steps/steps_screen.dart';
@@ -83,6 +85,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/routine/:id',
         builder: (_, state) => RoutineEditorScreen(routineId: _id(state, 'id')),
       ),
+      GoRoute(
+        path: '/program/new',
+        builder: (_, _) => const ProgramEditorScreen(),
+      ),
+      GoRoute(
+        path: '/program/:id',
+        builder: (_, state) => ProgramEditorScreen(programId: _id(state, 'id')),
+      ),
+      GoRoute(path: '/places', builder: (_, _) => const PlacesScreen()),
       GoRoute(
         path: '/exercises/pick',
         builder: (_, _) => const ExercisePickerScreen(),

@@ -3,6 +3,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import '../core/dates.dart';
 import '../core/steps/step_math.dart';
+import '../core/training/swaps.dart';
 import '../core/units.dart';
 import 'seed_exercises.dart';
 import 'tables.dart';
@@ -54,6 +55,16 @@ class WorkoutDetail {
   int get volumeGrams => doneSets.fold(0, (sum, s) => sum + setVolumeGrams(s));
 }
 
+/// One day of a program, with its routine (null on a rest day).
+typedef ProgramDayEntry = ({ProgramDayRow day, RoutineRow? routine});
+
+class ProgramDetail {
+  const ProgramDetail(this.program, this.days);
+
+  final ProgramRow program;
+  final List<ProgramDayEntry> days;
+}
+
 typedef WorkoutSummary = ({
   WorkoutRow workout,
   int exerciseCount,
@@ -83,6 +94,9 @@ int setVolumeGrams(WorkoutSetRow s) => (s.weightGrams ?? 0) * (s.reps ?? 0);
     WaterLogs,
     Foods,
     FoodLogs,
+    Places,
+    Programs,
+    ProgramDays,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -92,11 +106,14 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) => m.createAll(),
+    onCreate: (m) async {
+      await m.createAll();
+      await seedPlaces();
+    },
     onUpgrade: (m, from, to) async {
       if (from < 2) await m.addColumn(settings, settings.allDaySteps);
       if (from < 3) await m.addColumn(exercises, exercises.icon);
@@ -125,6 +142,18 @@ class AppDatabase extends _$AppDatabase {
           await m.createIndex(index);
         }
       }
+      if (from < 7) {
+        await m.addColumn(exercises, exercises.highImpact);
+        await m.addColumn(settings, settings.activePlaceId);
+        await m.addColumn(settings, settings.lowImpactOnly);
+        await m.createTable(places);
+        await m.createTable(programs);
+        await m.createTable(programDays);
+        await m.createIndex(programDaysProgram);
+        await m.addColumn(workouts, workouts.programDayId);
+        await m.addColumn(workoutExercises, workoutExercises.swappedFromId);
+        await seedPlaces();
+      }
     },
     beforeOpen: (details) async {
       // SQLite leaves foreign keys off unless asked, and the cascades in
@@ -136,6 +165,32 @@ class AppDatabase extends _$AppDatabase {
       await seedExerciseLibrary();
     },
   );
+
+  /// A starting set of places on a new install, the upgrade that brings
+  /// them, or a restore of a backup from before them — the user renames, edits or deletes them freely after.
+  Future<void> seedPlaces() => batch((b) {
+    b.insertAll(places, [
+      PlacesCompanion.insert(
+        name: 'Gym',
+        equipment: Value(
+          encodeEquipment(Equipment.values.where((e) => e != Equipment.other)),
+        ),
+        sort: const Value(0),
+      ),
+      PlacesCompanion.insert(
+        name: 'Home',
+        equipment: Value(
+          encodeEquipment(const [Equipment.dumbbell, Equipment.band]),
+        ),
+        sort: const Value(1),
+      ),
+      PlacesCompanion.insert(
+        name: 'Park or hotel',
+        equipment: const Value(''),
+        sort: const Value(2),
+      ),
+    ]);
+  });
 
   /// Added in schema v6 — see the note in tables.dart.
   List<Index> get _v6Indexes => [
@@ -180,6 +235,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Inserts every built-in exercise whose key isn't already present. Safe to
   /// run again on any upgrade that adds to [seedExercises].
+  ///
+  /// Also brings every built-in's [Exercises.highImpact] in line with
+  /// [highImpactSeedKeys].
   Future<void> seedExerciseLibrary() => batch((b) {
     b.insertAll(exercises, [
       for (final e in seedExercises)
@@ -189,9 +247,27 @@ class AppDatabase extends _$AppDatabase {
           equipment: e.equipment,
           kind: e.kind,
           seedKey: Value(e.key),
+          highImpact: Value(highImpactSeedKeys.contains(e.key)),
         ),
     ], mode: InsertMode.insertOrIgnore);
+    b.update(
+      exercises,
+      const ExercisesCompanion(highImpact: Value(true)),
+      where: (e) =>
+          e.seedKey.isIn(highImpactSeedKeys) & e.highImpact.equals(false),
+    );
+    b.update(
+      exercises,
+      const ExercisesCompanion(highImpact: Value(false)),
+      where: (e) =>
+          e.seedKey.isNotNull() &
+          e.seedKey.isNotIn(highImpactSeedKeys) &
+          e.highImpact.equals(true),
+    );
   });
+
+  /// Archived ones too — what a swapped exercise's original is looked up in.
+  Stream<List<ExerciseRow>> watchAllExercises() => select(exercises).watch();
 
   Stream<List<ExerciseRow>> watchExercises() =>
       (select(exercises)
@@ -205,6 +281,7 @@ class AppDatabase extends _$AppDatabase {
     required Equipment equipment,
     required ExerciseKind kind,
     ExerciseIcon? icon,
+    bool highImpact = false,
   }) => into(exercises).insert(
     ExercisesCompanion.insert(
       name: name.trim(),
@@ -213,6 +290,7 @@ class AppDatabase extends _$AppDatabase {
       kind: kind,
       icon: Value(icon),
       isCustom: const Value(true),
+      highImpact: Value(highImpact),
     ),
   );
 
@@ -222,7 +300,9 @@ class AppDatabase extends _$AppDatabase {
   Future<bool> removeExercise(int id) => transaction(() async {
     final inWorkout =
         await (select(workoutExercises)
-              ..where((w) => w.exerciseId.equals(id))
+              ..where(
+                (w) => w.exerciseId.equals(id) | w.swappedFromId.equals(id),
+              )
               ..limit(1))
             .get();
     final inRoutine =
@@ -368,33 +448,85 @@ class AppDatabase extends _$AppDatabase {
 
   /// Starts a workout, from a routine or empty. If one is already in progress
   /// that one's id comes back instead — there is only ever one.
-  Future<int> startWorkout({int? routineId, DateTime? now}) => transaction(
-    () async {
-      final active = await activeWorkout();
-      if (active != null) return active.id;
+  ///
+  /// A routine's exercises are fitted to [conditions] (by default, the place
+  /// and low-impact setting in [Settings]): any that can't be done there is
+  /// swapped for the best stand-in that trains the same muscle, remembering
+  /// the original. One with no stand-in at all is kept as it is.
+  Future<int> startWorkout({
+    int? routineId,
+    int? programDayId,
+    DateTime? now,
+    TrainingConditions? conditions,
+  }) => transaction(() async {
+    final active = await activeWorkout();
+    if (active != null) return active.id;
 
-      final start = now ?? DateTime.now();
-      final routine = routineId == null ? null : await routineDetail(routineId);
-      final workoutId = await into(workouts).insert(
-        WorkoutsCompanion.insert(
-          routineId: Value(routine?.routine.id),
-          name: routine?.routine.name ?? workoutNameFor(start),
-          startedAt: start,
+    final start = now ?? DateTime.now();
+    final routine = routineId == null ? null : await routineDetail(routineId);
+    final fit = conditions ?? await trainingConditions();
+    final library = fit.isUnrestricted
+        ? const <ExerciseRow>[]
+        : await (select(
+            exercises,
+          )..where((e) => e.isArchived.equals(false))).get();
+    final workoutId = await into(workouts).insert(
+      WorkoutsCompanion.insert(
+        routineId: Value(routine?.routine.id),
+        name: routine?.routine.name ?? workoutNameFor(start),
+        startedAt: start,
+        programDayId: Value(programDayId),
+      ),
+    );
+    for (final (i, entry)
+        in (routine?.items ?? const <RoutineItem>[]).indexed) {
+      final original = entry.exercise;
+      final chosen = swapFor(original, library, fit) ?? original;
+      final itemId = await into(workoutExercises).insert(
+        WorkoutExercisesCompanion.insert(
+          workoutId: workoutId,
+          exerciseId: chosen.id,
+          sort: i,
+          targetReps: Value(entry.item.targetReps),
+          restSeconds: Value(entry.item.restSeconds),
+          swappedFromId: Value(chosen.id == original.id ? null : original.id),
         ),
       );
-      for (final (i, entry) in (routine?.items ?? const []).indexed) {
-        final itemId = await into(workoutExercises).insert(
-          WorkoutExercisesCompanion.insert(
-            workoutId: workoutId,
-            exerciseId: entry.exercise.id,
-            sort: i,
-            targetReps: Value(entry.item.targetReps),
-            restSeconds: Value(entry.item.restSeconds),
-          ),
-        );
-        await _insertEmptySets(itemId, entry.item.targetSets.clamp(1, 20));
-      }
-      return workoutId;
+      await _insertEmptySets(itemId, entry.item.targetSets.clamp(1, 20));
+    }
+    return workoutId;
+  });
+
+  /// Replaces the exercise of a workout line with [exerciseId], keeping its
+  /// sets but clearing what they held — numbers for one exercise mean nothing
+  /// for another. Refused (false) once any set is ticked off: those belong to
+  /// the exercise that was done. Swapping back to the original clears the
+  /// "instead of" link.
+  Future<bool> swapWorkoutExercise(int itemId, int exerciseId) => transaction(
+    () async {
+      final item = await (select(
+        workoutExercises,
+      )..where((w) => w.id.equals(itemId))).getSingleOrNull();
+      if (item == null) return false;
+      final sets = await _setsOf(itemId);
+      if (sets.any((s) => s.done)) return false;
+      final original = item.swappedFromId ?? item.exerciseId;
+      await (update(workoutExercises)..where((w) => w.id.equals(itemId))).write(
+        WorkoutExercisesCompanion(
+          exerciseId: Value(exerciseId),
+          swappedFromId: Value(exerciseId == original ? null : original),
+        ),
+      );
+      await (update(
+        workoutSets,
+      )..where((s) => s.workoutExerciseId.equals(itemId))).write(
+        const WorkoutSetsCompanion(
+          reps: Value(null),
+          weightGrams: Value(null),
+          durationSeconds: Value(null),
+        ),
+      );
+      return true;
     },
   );
 
@@ -799,6 +931,195 @@ class AppDatabase extends _$AppDatabase {
           .add(row.readTable(workoutSets));
     }
     return byExercise;
+  }
+
+  // ── Places & training conditions ───────────────────────────────────────────
+
+  Stream<List<PlaceRow>> watchPlaces() =>
+      (select(places)..orderBy([
+            (p) => OrderingTerm.asc(p.sort),
+            (p) => OrderingTerm.asc(p.id),
+          ]))
+          .watch();
+
+  /// Creates a place ([id] null) or updates one. Returns its id.
+  Future<int> savePlace({
+    int? id,
+    required String name,
+    required Set<Equipment> equipment,
+  }) async {
+    if (id == null) {
+      final max = places.sort.max();
+      final last = await (selectOnly(
+        places,
+      )..addColumns([max])).map((r) => r.read(max)).getSingle();
+      return into(places).insert(
+        PlacesCompanion.insert(
+          name: name.trim(),
+          equipment: Value(encodeEquipment(equipment)),
+          sort: Value((last ?? -1) + 1),
+        ),
+      );
+    }
+    await (update(places)..where((p) => p.id.equals(id))).write(
+      PlacesCompanion(
+        name: Value(name.trim()),
+        equipment: Value(encodeEquipment(equipment)),
+      ),
+    );
+    return id;
+  }
+
+  /// Training there again falls back to "anywhere".
+  Future<void> deletePlace(int id) => transaction(() async {
+    await (delete(places)..where((p) => p.id.equals(id))).go();
+    final s = await getSettings();
+    if (s.activePlaceId == id) {
+      await updateSettings(const SettingsCompanion(activePlaceId: Value(null)));
+    }
+  });
+
+  /// What today's workouts must fit, from [Settings]: the active place's
+  /// equipment (anything, if none is set or it was deleted) and low impact.
+  Future<TrainingConditions> trainingConditions() async {
+    final s = await getSettings();
+    final place = s.activePlaceId == null
+        ? null
+        : await (select(
+            places,
+          )..where((p) => p.id.equals(s.activePlaceId!))).getSingleOrNull();
+    return TrainingConditions(
+      place: place?.name,
+      equipment: place == null ? null : parseEquipment(place.equipment),
+      lowImpactOnly: s.lowImpactOnly,
+    );
+  }
+
+  // ── Programs ───────────────────────────────────────────────────────────────
+
+  Stream<List<ProgramDetail>> watchPrograms() {
+    final query =
+        select(programs).join([
+          leftOuterJoin(
+            programDays,
+            programDays.programId.equalsExp(programs.id),
+          ),
+          leftOuterJoin(routines, routines.id.equalsExp(programDays.routineId)),
+        ])..orderBy([
+          OrderingTerm.asc(programs.sort),
+          OrderingTerm.asc(programs.id),
+          OrderingTerm.asc(programDays.sort),
+        ]);
+    return query.watch().map((rows) {
+      final byId = <int, ProgramDetail>{};
+      for (final row in rows) {
+        final program = row.readTable(programs);
+        final detail = byId.putIfAbsent(
+          program.id,
+          () => ProgramDetail(program, []),
+        );
+        final day = row.readTableOrNull(programDays);
+        if (day != null) {
+          detail.days.add((day: day, routine: row.readTableOrNull(routines)));
+        }
+      }
+      return byId.values.toList();
+    });
+  }
+
+  Future<ProgramDetail?> programDetail(int id) async =>
+      (await watchPrograms().first)
+          .where((p) => p.program.id == id)
+          .firstOrNull;
+
+  /// Creates a program ([id] null) or replaces an existing one's name and
+  /// days — one per entry of [routineIds], null for a rest day. Days keep
+  /// their ids by position, so editing a program keeps its place in the
+  /// cycle. Returns the program's id.
+  Future<int> saveProgram({
+    int? id,
+    required String name,
+    required List<int?> routineIds,
+  }) => transaction(() async {
+    final int programId;
+    var existing = const <ProgramDayRow>[];
+    if (id == null) {
+      final max = programs.sort.max();
+      final last = await (selectOnly(
+        programs,
+      )..addColumns([max])).map((r) => r.read(max)).getSingle();
+      programId = await into(programs).insert(
+        ProgramsCompanion.insert(
+          name: name.trim(),
+          sort: Value((last ?? -1) + 1),
+        ),
+      );
+    } else {
+      programId = id;
+      await (update(programs)..where((p) => p.id.equals(id))).write(
+        ProgramsCompanion(name: Value(name.trim())),
+      );
+      existing =
+          await (select(programDays)
+                ..where((d) => d.programId.equals(id))
+                ..orderBy([(d) => OrderingTerm.asc(d.sort)]))
+              .get();
+    }
+    for (final (i, routineId) in routineIds.indexed) {
+      if (i < existing.length) {
+        await (update(
+          programDays,
+        )..where((d) => d.id.equals(existing[i].id))).write(
+          ProgramDaysCompanion(sort: Value(i), routineId: Value(routineId)),
+        );
+      } else {
+        await into(programDays).insert(
+          ProgramDaysCompanion.insert(
+            programId: programId,
+            sort: i,
+            routineId: Value(routineId),
+          ),
+        );
+      }
+    }
+    if (existing.length > routineIds.length) {
+      await (delete(programDays)..where(
+            (d) => d.id.isIn([
+              for (final day in existing.skip(routineIds.length)) day.id,
+            ]),
+          ))
+          .go();
+    }
+    return programId;
+  });
+
+  /// Workouts done with it stay in history.
+  Future<void> deleteProgram(int id) =>
+      (delete(programs)..where((p) => p.id.equals(id))).go();
+
+  /// For each program, the day of its most recent finished workout — where
+  /// the cycle picks up from.
+  Stream<Map<int, int>> watchLastProgramDays() {
+    final query =
+        select(workouts).join([
+            innerJoin(
+              programDays,
+              programDays.id.equalsExp(workouts.programDayId),
+            ),
+          ])
+          ..where(workouts.endedAt.isNotNull())
+          ..orderBy([
+            OrderingTerm.desc(workouts.startedAt),
+            OrderingTerm.desc(workouts.id),
+          ]);
+    return query.watch().map((rows) {
+      final last = <int, int>{};
+      for (final row in rows) {
+        final day = row.readTable(programDays);
+        last.putIfAbsent(day.programId, () => day.id);
+      }
+      return last;
+    });
   }
 
   // ── Body ───────────────────────────────────────────────────────────────────

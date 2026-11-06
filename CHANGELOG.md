@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+**Train anywhere, your way**
+- **Programs.** Put routines in a cycle of days — Push, Pull, Legs, Rest —
+  and the Workouts tab always shows what's up next, picking up after the
+  last day you trained. Edit a routine and every program using it follows.
+- **Places.** Say what equipment each place has (Gym, Home and Park or
+  hotel to start with). Pick where you're training once on the Workouts
+  tab; it stays until you change it.
+- **Automatic swaps.** Start a routine somewhere without a barbell and
+  Bench Press (Barbell) becomes Bench Press (Dumbbell) — same muscle, the
+  closest movement, the same kind of sets. The routine itself never
+  changes, and each swap shows "Instead of …".
+- **Low-impact only.** One switch skips jumps and hard landings (burpees,
+  jump squats, jumping jacks, jump rope) for gentler moves that train the
+  same muscles. Custom exercises can be marked high impact.
+- **Swap by hand.** Any exercise in a workout in progress can be swapped
+  for a ranked list of alternatives, or back to the routine's own.
+- **Add exercises** filters to what fits where you are, and labels high
+  impact ones.
+- 24 new built-in exercises for home, travel and low-impact days — bands,
+  bodyweight and dumbbell alternatives.
+- Backups include places and programs (format 4).
+
 ## 0.0.5 — 2026-11-02
 
 **Smarter tracking**

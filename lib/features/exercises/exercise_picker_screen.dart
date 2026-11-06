@@ -23,6 +23,10 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
   String _query = '';
   MuscleGroup? _muscle;
 
+  /// Only what can be done where the user is training. Null until toggled:
+  /// on whenever a place or low impact is set.
+  bool? _onlyFitting;
+
   void _toggle(int id) => setState(
     () => _selected.contains(id) ? _selected.remove(id) : _selected.add(id),
   );
@@ -51,13 +55,21 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final all = ref.watch(exercisesProvider).valueOrNull ?? const [];
+    final conditions = ref.watch(trainingConditionsProvider);
+    final restricted = !conditions.isUnrestricted;
+    final onlyFitting = restricted && (_onlyFitting ?? true);
     final query = _query.trim().toLowerCase();
     final shown = [
       for (final e in all)
         if ((_muscle == null || e.muscle == _muscle) &&
+            (!onlyFitting || conditions.fits(e)) &&
             (query.isEmpty || e.name.toLowerCase().contains(query)))
           e,
     ];
+    final fitsLabel = [
+      if (conditions.place != null) 'Fits ${conditions.place}',
+      if (conditions.lowImpactOnly) 'Low impact',
+    ].join(' · ');
 
     return Scaffold(
       appBar: AppBar(
@@ -89,6 +101,16 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
+                    if (restricted)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          avatar: const Icon(Icons.place_outlined, size: 18),
+                          label: Text(fitsLabel),
+                          selected: onlyFitting,
+                          onSelected: (on) => setState(() => _onlyFitting = on),
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
@@ -124,7 +146,10 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
       body: shown.isEmpty
           ? EmptyHint(
               icon: Icons.search_off,
-              message: 'No exercise matches.',
+              message: onlyFitting
+                  ? 'No exercise matches that fits here. Turn off '
+                        '"$fitsLabel" to see them all.'
+                  : 'No exercise matches.',
               action: OutlinedButton(
                 onPressed: _createCustom,
                 child: Text(
@@ -145,6 +170,7 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
                   title: Text(e.name),
                   subtitle: Text(
                     '${e.muscle.label} · ${e.equipment.label}'
+                    '${e.highImpact ? ' · High impact' : ''}'
                     '${e.isCustom ? ' · Custom' : ''}',
                   ),
                   onTap: () => _toggle(e.id),

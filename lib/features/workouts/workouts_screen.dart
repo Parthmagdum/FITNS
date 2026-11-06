@@ -8,7 +8,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
+import '../../core/training/programs.dart';
 import '../../data/providers.dart';
+import '../places/training_setup_card.dart';
 import 'set_format.dart';
 import 'workout_actions.dart';
 
@@ -19,6 +21,8 @@ class WorkoutsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeWorkoutProvider).valueOrNull;
     final routines = ref.watch(routinesProvider).valueOrNull ?? const [];
+    final programs = ref.watch(programsProvider).valueOrNull ?? const [];
+    final lastDays = ref.watch(lastProgramDaysProvider).valueOrNull ?? const {};
     final history = ref.watch(workoutHistoryProvider).valueOrNull ?? const [];
     final units = ref.watch(unitsProvider);
     final perMonth = <(int, int), int>{};
@@ -41,6 +45,37 @@ class WorkoutsScreen extends ConsumerWidget {
             onPressed: () => context.push('/workout/${active.id}/log'),
             icon: const Icon(Icons.timer_outlined),
             label: Text('Resume ${active.name}'),
+          ),
+        const SizedBox(height: 12),
+        const TrainingSetupCard(),
+        SectionLabel(
+          'Programs',
+          trailing: TextButton.icon(
+            onPressed: () => context.push('/program/new'),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('New'),
+          ),
+        ),
+        if (programs.isEmpty)
+          SectionCard(
+            child: EmptyHint(
+              icon: Icons.calendar_view_week_outlined,
+              message:
+                  'Put your routines in a weekly cycle — Push, Pull, Legs, '
+                  'Rest — and always know what is next.',
+              action: OutlinedButton(
+                onPressed: () => context.push('/program/new'),
+                child: const Text('Create a program'),
+              ),
+            ),
+          ),
+        for (final p in programs)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _ProgramCard(
+              program: p,
+              next: nextProgramDay(p, lastDays[p.program.id]),
+            ),
           ),
         SectionLabel(
           'Routines',
@@ -166,6 +201,69 @@ class _RoutineCard extends ConsumerWidget {
                 ? null
                 : () =>
                       startWorkout(context, ref, routineId: routine.routine.id),
+            icon: const Icon(Icons.play_arrow_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgramCard extends ConsumerWidget {
+  const _ProgramCard({required this.program, required this.next});
+
+  final ProgramDetail program;
+  final ProgramNext? next;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final next = this.next;
+    final day = next == null ? null : program.days[next.index];
+    final String status;
+    if (next == null || day == null) {
+      status = 'No workout days yet';
+    } else {
+      final up =
+          'Day ${next.index + 1} of ${program.days.length} · '
+          '${day.routine!.name}';
+      status = next.restDaysBefore == 0
+          ? 'Up next: $up'
+          : next.restDaysBefore == 1
+          ? 'Rest day — then $up'
+          : '${next.restDaysBefore} rest days — then $up';
+    }
+    return SectionCard(
+      padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+      onTap: () => context.push('/program/${program.program.id}'),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(program.program.name, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text(
+                  status,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            tooltip: day == null ? null : 'Start ${day.routine!.name}',
+            onPressed: day == null
+                ? null
+                : () => startWorkout(
+                    context,
+                    ref,
+                    routineId: day.routine!.id,
+                    programDayId: day.day.id,
+                  ),
             icon: const Icon(Icons.play_arrow_rounded),
           ),
         ],

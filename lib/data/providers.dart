@@ -8,6 +8,7 @@ import '../core/notifications/rest_alerts.dart';
 import '../core/platform/document_files.dart';
 import '../core/steps/step_sensor.dart';
 import '../core/steps/step_tracker.dart';
+import '../core/training/swaps.dart';
 import '../core/units.dart';
 import 'backup.dart';
 import 'database.dart';
@@ -54,6 +55,44 @@ final exercisesProvider = StreamProvider<List<ExerciseRow>>(
 final routinesProvider = StreamProvider<List<RoutineDetail>>(
   (ref) => ref.watch(dbProvider).watchRoutines(),
 );
+
+/// Every exercise by id, archived ones too — to name what a swap replaced.
+final allExercisesByIdProvider = StreamProvider<Map<int, ExerciseRow>>(
+  (ref) => ref
+      .watch(dbProvider)
+      .watchAllExercises()
+      .map((rows) => {for (final e in rows) e.id: e}),
+);
+
+// ── Places, programs & training conditions ──────────────────────────────────
+
+final placesProvider = StreamProvider<List<PlaceRow>>(
+  (ref) => ref.watch(dbProvider).watchPlaces(),
+);
+
+final programsProvider = StreamProvider<List<ProgramDetail>>(
+  (ref) => ref.watch(dbProvider).watchPrograms(),
+);
+
+/// Program id → the day of its latest finished workout.
+final lastProgramDaysProvider = StreamProvider<Map<int, int>>(
+  (ref) => ref.watch(dbProvider).watchLastProgramDays(),
+);
+
+/// Where the user trains today and how — the same answer
+/// `AppDatabase.trainingConditions` gives, kept live for the screens.
+final trainingConditionsProvider = Provider<TrainingConditions>((ref) {
+  final settings = ref.watch(settingsProvider).valueOrNull;
+  final places = ref.watch(placesProvider).valueOrNull ?? const [];
+  final place = places
+      .where((p) => p.id == settings?.activePlaceId)
+      .firstOrNull;
+  return TrainingConditions(
+    place: place?.name,
+    equipment: place == null ? null : parseEquipment(place.equipment),
+    lowImpactOnly: settings?.lowImpactOnly ?? false,
+  );
+});
 
 // ── Workouts ────────────────────────────────────────────────────────────────
 

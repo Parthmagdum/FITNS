@@ -166,6 +166,7 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('Workouts').last);
     await settle(tester);
+    await tester.scrollUntilVisible(find.textContaining('· 1 workout'), 200);
     expect(find.textContaining('· 1 workout'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
@@ -312,6 +313,7 @@ void main() {
 
     await tester.tap(find.text('Workouts').last);
     await settle(tester);
+    await tester.scrollUntilVisible(find.text('Evening workout'), 200);
     await tester.tap(find.text('Evening workout'));
     await settle(tester);
     expect(find.text('6 kg × 8'), findsOneWidget); // meant 60
@@ -564,6 +566,7 @@ void main() {
 
     await tester.tap(find.text('Workouts').last);
     await settle(tester);
+    await tester.scrollUntilVisible(find.text('Bench 1'), 200);
     await tester.tap(find.text('Bench 1'));
     await settle(tester);
     expect(find.text('1 personal record'), findsOneWidget);
@@ -589,6 +592,116 @@ void main() {
     await settle(tester);
     expect(find.text('Oats'), findsOneWidget);
     expect(find.text('Same as the day before?'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('a program day at home swaps the barbell, and back', (
+    tester,
+  ) async {
+    final db = await pumpApp(
+      tester,
+      seed: (db) async {
+        final bench = await (db.select(
+          db.exercises,
+        )..where((e) => e.seedKey.equals('bench_press_bb'))).getSingle();
+        final routine = await db.saveRoutine(
+          name: 'Chest day',
+          items: [
+            (
+              exerciseId: bench.id,
+              targetSets: 3,
+              targetReps: 8,
+              restSeconds: null,
+            ),
+          ],
+        );
+        await db.saveProgram(name: 'My week', routineIds: [routine, null]);
+      },
+    );
+
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    expect(find.text('Training at'), findsOneWidget);
+    expect(find.text('My week'), findsOneWidget);
+    expect(find.text('Up next: Day 1 of 2 · Chest day'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Home'));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.activePlaceId, isNotNull);
+
+    await tester.scrollUntilVisible(find.text('My week'), 200);
+    await settle(tester);
+    await tester.tap(find.byTooltip('Start Chest day').first);
+    await settle(tester);
+    expect(find.text('Bench Press (Dumbbell)'), findsOneWidget);
+    expect(find.text('Instead of Bench Press (Barbell)'), findsOneWidget);
+
+    // Back to the routine's own, by hand.
+    await tester.tap(
+      find.descendant(
+        of: find
+            .ancestor(
+              of: find.text('Bench Press (Dumbbell)'),
+              matching: find.byType(Row),
+            )
+            .last,
+        matching: find.byType(PopupMenuButton<String>),
+      ),
+    );
+    await settle(tester);
+    await tester.tap(find.text('Swap exercise'));
+    await settle(tester);
+    expect(find.text('Back to Bench Press (Barbell)'), findsOneWidget);
+    await tester.tap(find.text('Back to Bench Press (Barbell)'));
+    await settle(tester);
+    expect(find.text('Instead of Bench Press (Barbell)'), findsNothing);
+    expect(find.textContaining('No barbell at Home'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('places and programs can be created', (tester) async {
+    await pumpApp(
+      tester,
+      seed: (db) => db.saveRoutine(
+        name: 'Legs',
+        items: [
+          (exerciseId: 1, targetSets: 3, targetReps: null, restSeconds: null),
+        ],
+      ),
+    );
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+
+    await tester.tap(find.text('Edit places'));
+    await settle(tester);
+    await tester.tap(find.text('New place'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Hotel');
+    await tester.tap(find.widgetWithText(FilterChip, 'Band'));
+    await settle(tester);
+    await tester.tap(find.text('Create'));
+    await settle(tester);
+    expect(find.text('Hotel'), findsOneWidget);
+    expect(find.text('Band'), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
+
+    await tester.scrollUntilVisible(find.text('Create a program'), 200);
+    await settle(tester);
+    await tester.tap(find.text('Create a program'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Simple');
+    await tester.tap(find.text('Workout day'));
+    await settle(tester);
+    await tester.tap(find.text('Rest day').last);
+    await settle(tester);
+    await tester.tap(find.text('Save'));
+    await settle(tester);
+    await tester.scrollUntilVisible(find.text('Simple'), 200);
+    expect(find.text('Simple'), findsOneWidget);
+    expect(find.text('Up next: Day 1 of 2 · Legs'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

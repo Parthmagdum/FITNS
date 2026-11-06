@@ -30,6 +30,7 @@ class _CustomExerciseSheetState extends ConsumerState<_CustomExerciseSheet> {
   var _muscle = MuscleGroup.chest;
   var _equipment = Equipment.barbell;
   var _kind = ExerciseKind.weightReps;
+  var _highImpact = false;
 
   /// Null until the user taps one — the icon then follows the choices above.
   ExerciseIcon? _icon;
@@ -55,6 +56,7 @@ class _CustomExerciseSheetState extends ConsumerState<_CustomExerciseSheet> {
           equipment: _equipment,
           kind: _kind,
           icon: _shownIcon,
+          highImpact: _highImpact,
         );
     if (mounted) Navigator.pop(context, id);
   }
@@ -124,7 +126,17 @@ class _CustomExerciseSheetState extends ConsumerState<_CustomExerciseSheet> {
             selected: {_kind},
             onSelectionChanged: (s) => setState(() => _kind = s.first),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('High impact'),
+            subtitle: const Text(
+              'Jumps or hard landings — skipped on low-impact days',
+            ),
+            value: _highImpact,
+            onChanged: (on) => setState(() => _highImpact = on),
+          ),
+          const SizedBox(height: 8),
           Text('Icon', style: theme.textTheme.labelLarge),
           const SizedBox(height: 8),
           SizedBox(

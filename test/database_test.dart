@@ -37,6 +37,21 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 7) {
+      await db.customStatement('DROP INDEX program_days_program');
+      for (final (table, column) in [
+        ('workouts', 'program_day_id'),
+        ('workout_exercises', 'swapped_from_id'),
+        ('settings', 'active_place_id'),
+        ('settings', 'low_impact_only'),
+        ('exercises', 'high_impact'),
+      ]) {
+        await db.customStatement('ALTER TABLE $table DROP COLUMN $column');
+      }
+      for (final table in ['program_days', 'programs', 'places']) {
+        await db.customStatement('DROP TABLE $table');
+      }
+    }
     if (schema < 6) {
       for (final index in [
         'routine_exercises_routine',
@@ -82,6 +97,7 @@ void main() {
     (3, '0.0.2'),
     (4, '0.0.3'),
     (5, '0.0.4'),
+    (6, '0.0.5'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
@@ -128,6 +144,15 @@ void main() {
           kind: ExerciseKind.reps,
           icon: ExerciseIcon.core,
         );
+        // Schema v7: places seeded, impact flags applied, programs work.
+        expect(await upgraded.watchPlaces().first, hasLength(3));
+        final burpee = await (upgraded.select(
+          upgraded.exercises,
+        )..where((e) => e.seedKey.equals('burpee'))).getSingle();
+        expect(burpee.highImpact, isTrue);
+        expect(settings.lowImpactOnly, isFalse);
+        expect(settings.activePlaceId, isNull);
+        await upgraded.saveProgram(name: 'P', routineIds: [null]);
       },
     );
   }

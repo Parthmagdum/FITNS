@@ -35,6 +35,10 @@ const seedIconOverrides = {
   'mountain_climber': ExerciseIcon.bodyweight,
   'stationary_bike': ExerciseIcon.bike,
   'rowing_machine': ExerciseIcon.row,
+  'march_in_place': ExerciseIcon.walk,
+  'shadow_boxing': ExerciseIcon.combat,
+  'inchworm': ExerciseIcon.stretch,
+  'dead_bug': ExerciseIcon.core,
 };
 
 /// The icon an exercise's shape implies — what a built-in shows, and what a

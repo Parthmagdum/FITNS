@@ -14,6 +14,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_icons.dart';
 import 'rep_profiles.dart';
+import 'swap_sheet.dart';
 import 'rest_timer.dart';
 import 'set_format.dart';
 
@@ -310,6 +311,14 @@ class _ExerciseCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final db = ref.read(dbProvider);
     final exercise = entry.exercise;
+    final conditions = ref.watch(trainingConditionsProvider);
+    final swappedFrom = entry.item.swappedFromId == null
+        ? null
+        : ref
+              .watch(allExercisesByIdProvider)
+              .valueOrNull?[entry.item.swappedFromId];
+    // Only while training: history isn't judged against today's place.
+    final problem = editing ? null : conditions.problemWith(exercise);
     final previous =
         ref
             .watch(
@@ -349,6 +358,20 @@ class _ExerciseCard extends ConsumerWidget {
                             color: theme.muted,
                           ),
                         ),
+                        if (swappedFrom != null)
+                          Text(
+                            'Instead of ${swappedFrom.name}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.accent,
+                            ),
+                          ),
+                        if (problem != null)
+                          Text(
+                            '$problem — tap ⋮ to swap',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -363,7 +386,11 @@ class _ExerciseCard extends ConsumerWidget {
                     icon: const Icon(Icons.sensors),
                   ),
                 PopupMenuButton<String>(
-                  onSelected: (_) async {
+                  onSelected: (value) async {
+                    if (value == 'swap') {
+                      await showSwapSheet(context, entry);
+                      return;
+                    }
                     final messenger = ScaffoldMessenger.of(context);
                     await db.removeWorkoutExercise(entry.item.id);
                     showUndo(
@@ -372,8 +399,13 @@ class _ExerciseCard extends ConsumerWidget {
                       () => db.restoreWorkoutEntry(entry),
                     );
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
+                  itemBuilder: (_) => [
+                    if (!editing)
+                      const PopupMenuItem(
+                        value: 'swap',
+                        child: Text('Swap exercise'),
+                      ),
+                    const PopupMenuItem(
                       value: 'remove',
                       child: Text('Remove exercise'),
                     ),

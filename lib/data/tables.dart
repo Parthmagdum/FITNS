@@ -206,6 +206,18 @@ class Settings extends Table {
   TextColumn get sex => textEnum<Sex>().nullable()();
   TextColumn get activityLevel => textEnum<ActivityLevel>().nullable()();
 
+  // ── Training conditions (schema v7) ───────────────────────────────────────
+
+  /// Where the user is training now — a [Places] id. Null = anywhere: every
+  /// exercise counts as available. Not a foreign key, so deleting a place or
+  /// restoring a backup without it simply falls back to "anywhere".
+  IntColumn get activePlaceId => integer().nullable()();
+
+  /// Skip jumps and hard landings: high-impact exercises are swapped for
+  /// low-impact ones that train the same muscle.
+  BoolColumn get lowImpactOnly =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -228,6 +240,11 @@ class Exercises extends Table {
   TextColumn get seedKey => text().nullable().unique()();
 
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
+
+  /// Jumps or hard landings — left out when the user asks for low-impact
+  /// only. Built-ins get theirs from `highImpactSeedKeys` on every open, so a
+  /// correction in an app update reaches existing installs. Schema v7.
+  BoolColumn get highImpact => boolean().withDefault(const Constant(false))();
 
   /// Hidden from the picker. Used instead of deleting once an exercise is in
   /// any workout, so history never loses a name.
@@ -280,6 +297,14 @@ class Workouts extends Table {
   DateTimeColumn get startedAt => dateTime()();
   DateTimeColumn get endedAt => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
+
+  /// The program day it was started as — how a program knows what's next.
+  /// Survives the program being deleted. Schema v7.
+  IntColumn get programDayId => integer().nullable().references(
+    ProgramDays,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 }
 
 @DataClassName('WorkoutExerciseRow')
@@ -297,6 +322,13 @@ class WorkoutExercises extends Table {
 
   /// Null → [Settings.defaultRestSeconds].
   IntColumn get restSeconds => integer().nullable()();
+
+  /// The routine's exercise this one stands in for, when it was swapped to
+  /// suit the place or a low-impact day. Null when it is the original.
+  /// Schema v7.
+  @ReferenceName('swappedInWorkoutExercises')
+  IntColumn get swappedFromId =>
+      integer().nullable().references(Exercises, #id)();
 }
 
 /// A logged set. Which of [reps]/[weightGrams]/[durationSeconds] are used
@@ -317,6 +349,45 @@ class WorkoutSets extends Table {
   IntColumn get durationSeconds => integer().nullable()();
   BoolColumn get done => boolean().withDefault(const Constant(false))();
   DateTimeColumn get completedAt => dateTime().nullable()();
+}
+
+/// Somewhere the user trains — a gym, home, a park, a hotel room — and the
+/// equipment it has. Bodyweight exercises fit everywhere. Schema v7.
+@DataClassName('PlaceRow')
+class Places extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 40)();
+
+  /// [Equipment] names, comma-separated: `dumbbell,band`.
+  TextColumn get equipment => text().withDefault(const Constant(''))();
+
+  IntColumn get sort => integer().withDefault(const Constant(0))();
+}
+
+/// A plan of routines across days: Push, Pull, Legs, Rest, repeat. Its
+/// workouts change as its routines do. Schema v7.
+@DataClassName('ProgramRow')
+class Programs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 60)();
+  IntColumn get sort => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// One day of a [Programs] cycle: a routine, or a rest day ([routineId]
+/// null). A routine deleted later leaves a rest day behind. Schema v7.
+@DataClassName('ProgramDayRow')
+@TableIndex(name: 'program_days_program', columns: {#programId})
+class ProgramDays extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get programId =>
+      integer().references(Programs, #id, onDelete: KeyAction.cascade)();
+  IntColumn get sort => integer()();
+  IntColumn get routineId => integer().nullable().references(
+    Routines,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 }
 
 /// One measurement of one [BodyMetric]. A weigh-in with a waist measurement
