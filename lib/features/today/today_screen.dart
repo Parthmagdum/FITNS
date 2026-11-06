@@ -10,6 +10,7 @@ import '../../data/providers.dart';
 import '../body/body_screen.dart';
 import '../food/calories_card.dart';
 import '../food/water_card.dart';
+import '../plan/goal_card.dart';
 import '../steps/steps_card.dart';
 import '../workouts/workout_actions.dart';
 import '../workouts/workouts_screen.dart';
@@ -33,6 +34,8 @@ class TodayScreen extends ConsumerWidget {
             style: theme.textTheme.titleMedium?.copyWith(color: theme.muted),
           ),
         ),
+        const GoalCard(),
+        const SizedBox(height: 12),
         const StepsCard(),
         const SectionLabel('Workout'),
         const _WorkoutSection(),

@@ -214,6 +214,77 @@ class $SettingsTable extends Settings
     defaultValue: const Constant(false),
   );
   @override
+  late final GeneratedColumnWithTypeConverter<WeightGoal?, String> weightGoal =
+      GeneratedColumn<String>(
+        'weight_goal',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<WeightGoal?>($SettingsTable.$converterweightGoaln);
+  static const VerificationMeta _targetWeightGramsMeta = const VerificationMeta(
+    'targetWeightGrams',
+  );
+  @override
+  late final GeneratedColumn<int> targetWeightGrams = GeneratedColumn<int>(
+    'target_weight_grams',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weeklyChangeGramsMeta = const VerificationMeta(
+    'weeklyChangeGrams',
+  );
+  @override
+  late final GeneratedColumn<int> weeklyChangeGrams = GeneratedColumn<int>(
+    'weekly_change_grams',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _goalStartWeightGramsMeta =
+      const VerificationMeta('goalStartWeightGrams');
+  @override
+  late final GeneratedColumn<int> goalStartWeightGrams = GeneratedColumn<int>(
+    'goal_start_weight_grams',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _goalSetAtMeta = const VerificationMeta(
+    'goalSetAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> goalSetAt = GeneratedColumn<DateTime>(
+    'goal_set_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _trainingDaysPerWeekMeta =
+      const VerificationMeta('trainingDaysPerWeek');
+  @override
+  late final GeneratedColumn<int> trainingDaysPerWeek = GeneratedColumn<int>(
+    'training_days_per_week',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DietType?, String> dietType =
+      GeneratedColumn<String>(
+        'diet_type',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<DietType?>($SettingsTable.$converterdietTypen);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     themeMode,
@@ -233,6 +304,13 @@ class $SettingsTable extends Settings
     activityLevel,
     activePlaceId,
     lowImpactOnly,
+    weightGoal,
+    targetWeightGrams,
+    weeklyChangeGrams,
+    goalStartWeightGrams,
+    goalSetAt,
+    trainingDaysPerWeek,
+    dietType,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -363,6 +441,48 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('target_weight_grams')) {
+      context.handle(
+        _targetWeightGramsMeta,
+        targetWeightGrams.isAcceptableOrUnknown(
+          data['target_weight_grams']!,
+          _targetWeightGramsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weekly_change_grams')) {
+      context.handle(
+        _weeklyChangeGramsMeta,
+        weeklyChangeGrams.isAcceptableOrUnknown(
+          data['weekly_change_grams']!,
+          _weeklyChangeGramsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('goal_start_weight_grams')) {
+      context.handle(
+        _goalStartWeightGramsMeta,
+        goalStartWeightGrams.isAcceptableOrUnknown(
+          data['goal_start_weight_grams']!,
+          _goalStartWeightGramsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('goal_set_at')) {
+      context.handle(
+        _goalSetAtMeta,
+        goalSetAt.isAcceptableOrUnknown(data['goal_set_at']!, _goalSetAtMeta),
+      );
+    }
+    if (data.containsKey('training_days_per_week')) {
+      context.handle(
+        _trainingDaysPerWeekMeta,
+        trainingDaysPerWeek.isAcceptableOrUnknown(
+          data['training_days_per_week']!,
+          _trainingDaysPerWeekMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -450,6 +570,38 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}low_impact_only'],
       )!,
+      weightGoal: $SettingsTable.$converterweightGoaln.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}weight_goal'],
+        ),
+      ),
+      targetWeightGrams: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_weight_grams'],
+      ),
+      weeklyChangeGrams: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekly_change_grams'],
+      ),
+      goalStartWeightGrams: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}goal_start_weight_grams'],
+      ),
+      goalSetAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}goal_set_at'],
+      ),
+      trainingDaysPerWeek: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}training_days_per_week'],
+      ),
+      dietType: $SettingsTable.$converterdietTypen.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}diet_type'],
+        ),
+      ),
     );
   }
 
@@ -472,6 +624,14 @@ class $SettingsTable extends Settings
   $converteractivityLeveln = JsonTypeConverter2.asNullable(
     $converteractivityLevel,
   );
+  static JsonTypeConverter2<WeightGoal, String, String> $converterweightGoal =
+      const EnumNameConverter<WeightGoal>(WeightGoal.values);
+  static JsonTypeConverter2<WeightGoal?, String?, String?>
+  $converterweightGoaln = JsonTypeConverter2.asNullable($converterweightGoal);
+  static JsonTypeConverter2<DietType, String, String> $converterdietType =
+      const EnumNameConverter<DietType>(DietType.values);
+  static JsonTypeConverter2<DietType?, String?, String?> $converterdietTypen =
+      JsonTypeConverter2.asNullable($converterdietType);
 }
 
 class SettingRow extends DataClass implements Insertable<SettingRow> {
@@ -516,6 +676,20 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// Skip jumps and hard landings: high-impact exercises are swapped for
   /// low-impact ones that train the same muscle.
   final bool lowImpactOnly;
+
+  /// Null until the user sets a goal — then the Today and Body tabs stop
+  /// asking.
+  final WeightGoal? weightGoal;
+  final int? targetWeightGrams;
+
+  /// How fast to get there, grams a week. Null when maintaining.
+  final int? weeklyChangeGrams;
+
+  /// The weight and day the goal was set — where progress counts from.
+  final int? goalStartWeightGrams;
+  final DateTime? goalSetAt;
+  final int? trainingDaysPerWeek;
+  final DietType? dietType;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -535,6 +709,13 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     this.activityLevel,
     this.activePlaceId,
     required this.lowImpactOnly,
+    this.weightGoal,
+    this.targetWeightGrams,
+    this.weeklyChangeGrams,
+    this.goalStartWeightGrams,
+    this.goalSetAt,
+    this.trainingDaysPerWeek,
+    this.dietType,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -581,6 +762,31 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       map['active_place_id'] = Variable<int>(activePlaceId);
     }
     map['low_impact_only'] = Variable<bool>(lowImpactOnly);
+    if (!nullToAbsent || weightGoal != null) {
+      map['weight_goal'] = Variable<String>(
+        $SettingsTable.$converterweightGoaln.toSql(weightGoal),
+      );
+    }
+    if (!nullToAbsent || targetWeightGrams != null) {
+      map['target_weight_grams'] = Variable<int>(targetWeightGrams);
+    }
+    if (!nullToAbsent || weeklyChangeGrams != null) {
+      map['weekly_change_grams'] = Variable<int>(weeklyChangeGrams);
+    }
+    if (!nullToAbsent || goalStartWeightGrams != null) {
+      map['goal_start_weight_grams'] = Variable<int>(goalStartWeightGrams);
+    }
+    if (!nullToAbsent || goalSetAt != null) {
+      map['goal_set_at'] = Variable<DateTime>(goalSetAt);
+    }
+    if (!nullToAbsent || trainingDaysPerWeek != null) {
+      map['training_days_per_week'] = Variable<int>(trainingDaysPerWeek);
+    }
+    if (!nullToAbsent || dietType != null) {
+      map['diet_type'] = Variable<String>(
+        $SettingsTable.$converterdietTypen.toSql(dietType),
+      );
+    }
     return map;
   }
 
@@ -620,6 +826,27 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ? const Value.absent()
           : Value(activePlaceId),
       lowImpactOnly: Value(lowImpactOnly),
+      weightGoal: weightGoal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightGoal),
+      targetWeightGrams: targetWeightGrams == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetWeightGrams),
+      weeklyChangeGrams: weeklyChangeGrams == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weeklyChangeGrams),
+      goalStartWeightGrams: goalStartWeightGrams == null && nullToAbsent
+          ? const Value.absent()
+          : Value(goalStartWeightGrams),
+      goalSetAt: goalSetAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(goalSetAt),
+      trainingDaysPerWeek: trainingDaysPerWeek == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trainingDaysPerWeek),
+      dietType: dietType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dietType),
     );
   }
 
@@ -653,6 +880,21 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       ),
       activePlaceId: serializer.fromJson<int?>(json['activePlaceId']),
       lowImpactOnly: serializer.fromJson<bool>(json['lowImpactOnly']),
+      weightGoal: $SettingsTable.$converterweightGoaln.fromJson(
+        serializer.fromJson<String?>(json['weightGoal']),
+      ),
+      targetWeightGrams: serializer.fromJson<int?>(json['targetWeightGrams']),
+      weeklyChangeGrams: serializer.fromJson<int?>(json['weeklyChangeGrams']),
+      goalStartWeightGrams: serializer.fromJson<int?>(
+        json['goalStartWeightGrams'],
+      ),
+      goalSetAt: serializer.fromJson<DateTime?>(json['goalSetAt']),
+      trainingDaysPerWeek: serializer.fromJson<int?>(
+        json['trainingDaysPerWeek'],
+      ),
+      dietType: $SettingsTable.$converterdietTypen.fromJson(
+        serializer.fromJson<String?>(json['dietType']),
+      ),
     );
   }
   @override
@@ -683,6 +925,17 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       ),
       'activePlaceId': serializer.toJson<int?>(activePlaceId),
       'lowImpactOnly': serializer.toJson<bool>(lowImpactOnly),
+      'weightGoal': serializer.toJson<String?>(
+        $SettingsTable.$converterweightGoaln.toJson(weightGoal),
+      ),
+      'targetWeightGrams': serializer.toJson<int?>(targetWeightGrams),
+      'weeklyChangeGrams': serializer.toJson<int?>(weeklyChangeGrams),
+      'goalStartWeightGrams': serializer.toJson<int?>(goalStartWeightGrams),
+      'goalSetAt': serializer.toJson<DateTime?>(goalSetAt),
+      'trainingDaysPerWeek': serializer.toJson<int?>(trainingDaysPerWeek),
+      'dietType': serializer.toJson<String?>(
+        $SettingsTable.$converterdietTypen.toJson(dietType),
+      ),
     };
   }
 
@@ -705,6 +958,13 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     Value<ActivityLevel?> activityLevel = const Value.absent(),
     Value<int?> activePlaceId = const Value.absent(),
     bool? lowImpactOnly,
+    Value<WeightGoal?> weightGoal = const Value.absent(),
+    Value<int?> targetWeightGrams = const Value.absent(),
+    Value<int?> weeklyChangeGrams = const Value.absent(),
+    Value<int?> goalStartWeightGrams = const Value.absent(),
+    Value<DateTime?> goalSetAt = const Value.absent(),
+    Value<int?> trainingDaysPerWeek = const Value.absent(),
+    Value<DietType?> dietType = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -728,6 +988,21 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         ? activePlaceId.value
         : this.activePlaceId,
     lowImpactOnly: lowImpactOnly ?? this.lowImpactOnly,
+    weightGoal: weightGoal.present ? weightGoal.value : this.weightGoal,
+    targetWeightGrams: targetWeightGrams.present
+        ? targetWeightGrams.value
+        : this.targetWeightGrams,
+    weeklyChangeGrams: weeklyChangeGrams.present
+        ? weeklyChangeGrams.value
+        : this.weeklyChangeGrams,
+    goalStartWeightGrams: goalStartWeightGrams.present
+        ? goalStartWeightGrams.value
+        : this.goalStartWeightGrams,
+    goalSetAt: goalSetAt.present ? goalSetAt.value : this.goalSetAt,
+    trainingDaysPerWeek: trainingDaysPerWeek.present
+        ? trainingDaysPerWeek.value
+        : this.trainingDaysPerWeek,
+    dietType: dietType.present ? dietType.value : this.dietType,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -773,6 +1048,23 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       lowImpactOnly: data.lowImpactOnly.present
           ? data.lowImpactOnly.value
           : this.lowImpactOnly,
+      weightGoal: data.weightGoal.present
+          ? data.weightGoal.value
+          : this.weightGoal,
+      targetWeightGrams: data.targetWeightGrams.present
+          ? data.targetWeightGrams.value
+          : this.targetWeightGrams,
+      weeklyChangeGrams: data.weeklyChangeGrams.present
+          ? data.weeklyChangeGrams.value
+          : this.weeklyChangeGrams,
+      goalStartWeightGrams: data.goalStartWeightGrams.present
+          ? data.goalStartWeightGrams.value
+          : this.goalStartWeightGrams,
+      goalSetAt: data.goalSetAt.present ? data.goalSetAt.value : this.goalSetAt,
+      trainingDaysPerWeek: data.trainingDaysPerWeek.present
+          ? data.trainingDaysPerWeek.value
+          : this.trainingDaysPerWeek,
+      dietType: data.dietType.present ? data.dietType.value : this.dietType,
     );
   }
 
@@ -796,13 +1088,20 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('sex: $sex, ')
           ..write('activityLevel: $activityLevel, ')
           ..write('activePlaceId: $activePlaceId, ')
-          ..write('lowImpactOnly: $lowImpactOnly')
+          ..write('lowImpactOnly: $lowImpactOnly, ')
+          ..write('weightGoal: $weightGoal, ')
+          ..write('targetWeightGrams: $targetWeightGrams, ')
+          ..write('weeklyChangeGrams: $weeklyChangeGrams, ')
+          ..write('goalStartWeightGrams: $goalStartWeightGrams, ')
+          ..write('goalSetAt: $goalSetAt, ')
+          ..write('trainingDaysPerWeek: $trainingDaysPerWeek, ')
+          ..write('dietType: $dietType')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     themeMode,
     unitSystem,
@@ -821,7 +1120,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     activityLevel,
     activePlaceId,
     lowImpactOnly,
-  );
+    weightGoal,
+    targetWeightGrams,
+    weeklyChangeGrams,
+    goalStartWeightGrams,
+    goalSetAt,
+    trainingDaysPerWeek,
+    dietType,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -843,7 +1149,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.sex == this.sex &&
           other.activityLevel == this.activityLevel &&
           other.activePlaceId == this.activePlaceId &&
-          other.lowImpactOnly == this.lowImpactOnly);
+          other.lowImpactOnly == this.lowImpactOnly &&
+          other.weightGoal == this.weightGoal &&
+          other.targetWeightGrams == this.targetWeightGrams &&
+          other.weeklyChangeGrams == this.weeklyChangeGrams &&
+          other.goalStartWeightGrams == this.goalStartWeightGrams &&
+          other.goalSetAt == this.goalSetAt &&
+          other.trainingDaysPerWeek == this.trainingDaysPerWeek &&
+          other.dietType == this.dietType);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -865,6 +1178,13 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<ActivityLevel?> activityLevel;
   final Value<int?> activePlaceId;
   final Value<bool> lowImpactOnly;
+  final Value<WeightGoal?> weightGoal;
+  final Value<int?> targetWeightGrams;
+  final Value<int?> weeklyChangeGrams;
+  final Value<int?> goalStartWeightGrams;
+  final Value<DateTime?> goalSetAt;
+  final Value<int?> trainingDaysPerWeek;
+  final Value<DietType?> dietType;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -884,6 +1204,13 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.activityLevel = const Value.absent(),
     this.activePlaceId = const Value.absent(),
     this.lowImpactOnly = const Value.absent(),
+    this.weightGoal = const Value.absent(),
+    this.targetWeightGrams = const Value.absent(),
+    this.weeklyChangeGrams = const Value.absent(),
+    this.goalStartWeightGrams = const Value.absent(),
+    this.goalSetAt = const Value.absent(),
+    this.trainingDaysPerWeek = const Value.absent(),
+    this.dietType = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -904,6 +1231,13 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.activityLevel = const Value.absent(),
     this.activePlaceId = const Value.absent(),
     this.lowImpactOnly = const Value.absent(),
+    this.weightGoal = const Value.absent(),
+    this.targetWeightGrams = const Value.absent(),
+    this.weeklyChangeGrams = const Value.absent(),
+    this.goalStartWeightGrams = const Value.absent(),
+    this.goalSetAt = const Value.absent(),
+    this.trainingDaysPerWeek = const Value.absent(),
+    this.dietType = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -924,6 +1258,13 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<String>? activityLevel,
     Expression<int>? activePlaceId,
     Expression<bool>? lowImpactOnly,
+    Expression<String>? weightGoal,
+    Expression<int>? targetWeightGrams,
+    Expression<int>? weeklyChangeGrams,
+    Expression<int>? goalStartWeightGrams,
+    Expression<DateTime>? goalSetAt,
+    Expression<int>? trainingDaysPerWeek,
+    Expression<String>? dietType,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -945,6 +1286,15 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (activityLevel != null) 'activity_level': activityLevel,
       if (activePlaceId != null) 'active_place_id': activePlaceId,
       if (lowImpactOnly != null) 'low_impact_only': lowImpactOnly,
+      if (weightGoal != null) 'weight_goal': weightGoal,
+      if (targetWeightGrams != null) 'target_weight_grams': targetWeightGrams,
+      if (weeklyChangeGrams != null) 'weekly_change_grams': weeklyChangeGrams,
+      if (goalStartWeightGrams != null)
+        'goal_start_weight_grams': goalStartWeightGrams,
+      if (goalSetAt != null) 'goal_set_at': goalSetAt,
+      if (trainingDaysPerWeek != null)
+        'training_days_per_week': trainingDaysPerWeek,
+      if (dietType != null) 'diet_type': dietType,
     });
   }
 
@@ -967,6 +1317,13 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<ActivityLevel?>? activityLevel,
     Value<int?>? activePlaceId,
     Value<bool>? lowImpactOnly,
+    Value<WeightGoal?>? weightGoal,
+    Value<int?>? targetWeightGrams,
+    Value<int?>? weeklyChangeGrams,
+    Value<int?>? goalStartWeightGrams,
+    Value<DateTime?>? goalSetAt,
+    Value<int?>? trainingDaysPerWeek,
+    Value<DietType?>? dietType,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -987,6 +1344,13 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       activityLevel: activityLevel ?? this.activityLevel,
       activePlaceId: activePlaceId ?? this.activePlaceId,
       lowImpactOnly: lowImpactOnly ?? this.lowImpactOnly,
+      weightGoal: weightGoal ?? this.weightGoal,
+      targetWeightGrams: targetWeightGrams ?? this.targetWeightGrams,
+      weeklyChangeGrams: weeklyChangeGrams ?? this.weeklyChangeGrams,
+      goalStartWeightGrams: goalStartWeightGrams ?? this.goalStartWeightGrams,
+      goalSetAt: goalSetAt ?? this.goalSetAt,
+      trainingDaysPerWeek: trainingDaysPerWeek ?? this.trainingDaysPerWeek,
+      dietType: dietType ?? this.dietType,
     );
   }
 
@@ -1053,6 +1417,33 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (lowImpactOnly.present) {
       map['low_impact_only'] = Variable<bool>(lowImpactOnly.value);
     }
+    if (weightGoal.present) {
+      map['weight_goal'] = Variable<String>(
+        $SettingsTable.$converterweightGoaln.toSql(weightGoal.value),
+      );
+    }
+    if (targetWeightGrams.present) {
+      map['target_weight_grams'] = Variable<int>(targetWeightGrams.value);
+    }
+    if (weeklyChangeGrams.present) {
+      map['weekly_change_grams'] = Variable<int>(weeklyChangeGrams.value);
+    }
+    if (goalStartWeightGrams.present) {
+      map['goal_start_weight_grams'] = Variable<int>(
+        goalStartWeightGrams.value,
+      );
+    }
+    if (goalSetAt.present) {
+      map['goal_set_at'] = Variable<DateTime>(goalSetAt.value);
+    }
+    if (trainingDaysPerWeek.present) {
+      map['training_days_per_week'] = Variable<int>(trainingDaysPerWeek.value);
+    }
+    if (dietType.present) {
+      map['diet_type'] = Variable<String>(
+        $SettingsTable.$converterdietTypen.toSql(dietType.value),
+      );
+    }
     return map;
   }
 
@@ -1076,7 +1467,14 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('sex: $sex, ')
           ..write('activityLevel: $activityLevel, ')
           ..write('activePlaceId: $activePlaceId, ')
-          ..write('lowImpactOnly: $lowImpactOnly')
+          ..write('lowImpactOnly: $lowImpactOnly, ')
+          ..write('weightGoal: $weightGoal, ')
+          ..write('targetWeightGrams: $targetWeightGrams, ')
+          ..write('weeklyChangeGrams: $weeklyChangeGrams, ')
+          ..write('goalStartWeightGrams: $goalStartWeightGrams, ')
+          ..write('goalSetAt: $goalSetAt, ')
+          ..write('trainingDaysPerWeek: $trainingDaysPerWeek, ')
+          ..write('dietType: $dietType')
           ..write(')'))
         .toString();
   }
@@ -7814,6 +8212,13 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<ActivityLevel?> activityLevel,
       Value<int?> activePlaceId,
       Value<bool> lowImpactOnly,
+      Value<WeightGoal?> weightGoal,
+      Value<int?> targetWeightGrams,
+      Value<int?> weeklyChangeGrams,
+      Value<int?> goalStartWeightGrams,
+      Value<DateTime?> goalSetAt,
+      Value<int?> trainingDaysPerWeek,
+      Value<DietType?> dietType,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -7835,6 +8240,13 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<ActivityLevel?> activityLevel,
       Value<int?> activePlaceId,
       Value<bool> lowImpactOnly,
+      Value<WeightGoal?> weightGoal,
+      Value<int?> targetWeightGrams,
+      Value<int?> weeklyChangeGrams,
+      Value<int?> goalStartWeightGrams,
+      Value<DateTime?> goalSetAt,
+      Value<int?> trainingDaysPerWeek,
+      Value<DietType?> dietType,
     });
 
 class $$SettingsTableFilterComposer
@@ -7938,6 +8350,43 @@ class $$SettingsTableFilterComposer
     column: $table.lowImpactOnly,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnWithTypeConverterFilters<WeightGoal?, WeightGoal, String>
+  get weightGoal => $composableBuilder(
+    column: $table.weightGoal,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get targetWeightGrams => $composableBuilder(
+    column: $table.targetWeightGrams,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weeklyChangeGrams => $composableBuilder(
+    column: $table.weeklyChangeGrams,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get goalStartWeightGrams => $composableBuilder(
+    column: $table.goalStartWeightGrams,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get goalSetAt => $composableBuilder(
+    column: $table.goalSetAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get trainingDaysPerWeek => $composableBuilder(
+    column: $table.trainingDaysPerWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DietType?, DietType, String> get dietType =>
+      $composableBuilder(
+        column: $table.dietType,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 }
 
 class $$SettingsTableOrderingComposer
@@ -8038,6 +8487,41 @@ class $$SettingsTableOrderingComposer
     column: $table.lowImpactOnly,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get weightGoal => $composableBuilder(
+    column: $table.weightGoal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetWeightGrams => $composableBuilder(
+    column: $table.targetWeightGrams,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weeklyChangeGrams => $composableBuilder(
+    column: $table.weeklyChangeGrams,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get goalStartWeightGrams => $composableBuilder(
+    column: $table.goalStartWeightGrams,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get goalSetAt => $composableBuilder(
+    column: $table.goalSetAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get trainingDaysPerWeek => $composableBuilder(
+    column: $table.trainingDaysPerWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dietType => $composableBuilder(
+    column: $table.dietType,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -8128,6 +8612,38 @@ class $$SettingsTableAnnotationComposer
     column: $table.lowImpactOnly,
     builder: (column) => column,
   );
+
+  GeneratedColumnWithTypeConverter<WeightGoal?, String> get weightGoal =>
+      $composableBuilder(
+        column: $table.weightGoal,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<int> get targetWeightGrams => $composableBuilder(
+    column: $table.targetWeightGrams,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get weeklyChangeGrams => $composableBuilder(
+    column: $table.weeklyChangeGrams,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get goalStartWeightGrams => $composableBuilder(
+    column: $table.goalStartWeightGrams,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get goalSetAt =>
+      $composableBuilder(column: $table.goalSetAt, builder: (column) => column);
+
+  GeneratedColumn<int> get trainingDaysPerWeek => $composableBuilder(
+    column: $table.trainingDaysPerWeek,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<DietType?, String> get dietType =>
+      $composableBuilder(column: $table.dietType, builder: (column) => column);
 }
 
 class $$SettingsTableTableManager
@@ -8179,6 +8695,13 @@ class $$SettingsTableTableManager
                 Value<ActivityLevel?> activityLevel = const Value.absent(),
                 Value<int?> activePlaceId = const Value.absent(),
                 Value<bool> lowImpactOnly = const Value.absent(),
+                Value<WeightGoal?> weightGoal = const Value.absent(),
+                Value<int?> targetWeightGrams = const Value.absent(),
+                Value<int?> weeklyChangeGrams = const Value.absent(),
+                Value<int?> goalStartWeightGrams = const Value.absent(),
+                Value<DateTime?> goalSetAt = const Value.absent(),
+                Value<int?> trainingDaysPerWeek = const Value.absent(),
+                Value<DietType?> dietType = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -8198,6 +8721,13 @@ class $$SettingsTableTableManager
                 activityLevel: activityLevel,
                 activePlaceId: activePlaceId,
                 lowImpactOnly: lowImpactOnly,
+                weightGoal: weightGoal,
+                targetWeightGrams: targetWeightGrams,
+                weeklyChangeGrams: weeklyChangeGrams,
+                goalStartWeightGrams: goalStartWeightGrams,
+                goalSetAt: goalSetAt,
+                trainingDaysPerWeek: trainingDaysPerWeek,
+                dietType: dietType,
               ),
           createCompanionCallback:
               ({
@@ -8219,6 +8749,13 @@ class $$SettingsTableTableManager
                 Value<ActivityLevel?> activityLevel = const Value.absent(),
                 Value<int?> activePlaceId = const Value.absent(),
                 Value<bool> lowImpactOnly = const Value.absent(),
+                Value<WeightGoal?> weightGoal = const Value.absent(),
+                Value<int?> targetWeightGrams = const Value.absent(),
+                Value<int?> weeklyChangeGrams = const Value.absent(),
+                Value<int?> goalStartWeightGrams = const Value.absent(),
+                Value<DateTime?> goalSetAt = const Value.absent(),
+                Value<int?> trainingDaysPerWeek = const Value.absent(),
+                Value<DietType?> dietType = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -8238,6 +8775,13 @@ class $$SettingsTableTableManager
                 activityLevel: activityLevel,
                 activePlaceId: activePlaceId,
                 lowImpactOnly: lowImpactOnly,
+                weightGoal: weightGoal,
+                targetWeightGrams: targetWeightGrams,
+                weeklyChangeGrams: weeklyChangeGrams,
+                goalStartWeightGrams: goalStartWeightGrams,
+                goalSetAt: goalSetAt,
+                trainingDaysPerWeek: trainingDaysPerWeek,
+                dietType: dietType,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

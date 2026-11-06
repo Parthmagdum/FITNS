@@ -52,18 +52,6 @@ NutritionTotals sumLogs(Iterable<FoodLogRow> logs) {
 
 // ── Calorie goal ─────────────────────────────────────────────────────────────
 
-enum WeightGoal {
-  lose('Lose', -500),
-  maintain('Maintain', 0),
-  gain('Gain', 300);
-
-  const WeightGoal(this.label, this.kcalPerDay);
-  final String label;
-
-  /// −500 a day is roughly 0.5 kg a week; +300 is a lean gain.
-  final int kcalPerDay;
-}
-
 /// Mifflin-St Jeor resting energy times activity, adjusted for the goal.
 /// An estimate — the best of the simple formulas, still often 10 % out.
 int estimateDailyCalories({

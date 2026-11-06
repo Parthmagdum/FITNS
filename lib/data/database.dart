@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../core/dates.dart';
+import '../core/plan/plan.dart';
+import '../core/plan/training.dart';
 import '../core/steps/step_math.dart';
 import '../core/training/swaps.dart';
 import '../core/units.dart';
@@ -169,6 +171,17 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         await m.addColumn(workoutExercises, workoutExercises.timedSeconds);
         await m.addColumn(workoutExercises, workoutExercises.timerSince);
+        for (final column in <GeneratedColumn>[
+          settings.weightGoal,
+          settings.targetWeightGrams,
+          settings.weeklyChangeGrams,
+          settings.goalStartWeightGrams,
+          settings.goalSetAt,
+          settings.trainingDaysPerWeek,
+          settings.dietType,
+        ]) {
+          await m.addColumn(settings, column);
+        }
       }
     },
     beforeOpen: (details) async {
@@ -1201,6 +1214,86 @@ class AppDatabase extends _$AppDatabase {
       lowImpactOnly: s.lowImpactOnly,
     );
   }
+
+  // ── Goal & plan ────────────────────────────────────────────────────────────
+
+  /// Saves the user's goal and puts [plan]'s numbers in place as the daily
+  /// calorie, macro, water and step goals — everything the other tabs track
+  /// against. Progress counts from [currentWeightGrams] today.
+  Future<void> saveGoal({
+    required WeightGoal goal,
+    required int? targetWeightGrams,
+    required int weeklyChangeGrams,
+    required int currentWeightGrams,
+    required int trainingDays,
+    required DietType diet,
+    required Plan plan,
+    DateTime? now,
+  }) => updateSettings(
+    SettingsCompanion(
+      weightGoal: Value(goal),
+      targetWeightGrams: Value(
+        goal == WeightGoal.maintain ? null : targetWeightGrams,
+      ),
+      weeklyChangeGrams: Value(
+        goal == WeightGoal.maintain ? null : weeklyChangeGrams,
+      ),
+      goalStartWeightGrams: Value(currentWeightGrams),
+      goalSetAt: Value(now ?? DateTime.now()),
+      trainingDaysPerWeek: Value(trainingDays),
+      dietType: Value(diet),
+      calorieGoal: Value(plan.dailyKcal),
+      proteinGoalG: Value(plan.proteinG),
+      carbsGoalG: Value(plan.carbsG),
+      fatGoalG: Value(plan.fatG),
+      waterGoalMl: Value(plan.waterMl),
+      dailyStepGoal: Value(plan.steps),
+    ),
+  );
+
+  /// Creates [program]'s routines and the program itself. A routine or
+  /// program of the same name — from setting this up before — is reused and
+  /// brought up to date rather than duplicated. Returns the program's id.
+  Future<int> setUpSuggestedProgram(SuggestedProgram program) => transaction(
+    () async {
+      final keys = {
+        for (final e in await (select(
+          exercises,
+        )..where((e) => e.seedKey.isNotNull())).get())
+          e.seedKey!: e.id,
+      };
+      final existing = {
+        for (final r in await select(routines).get()) r.name: r.id,
+      };
+      final routineIds = <String, int>{};
+      for (final r in program.routines) {
+        routineIds[r.name] = await saveRoutine(
+          id: existing[r.name],
+          name: r.name,
+          items: [
+            for (final i in r.items)
+              if (keys[i.key] case final id?)
+                (
+                  exerciseId: id,
+                  targetSets: i.sets,
+                  targetReps: i.reps,
+                  restSeconds: i.rest,
+                ),
+          ],
+        );
+      }
+      final sameName = await (select(
+        programs,
+      )..where((p) => p.name.equals(program.name))).getSingleOrNull();
+      return saveProgram(
+        id: sameName?.id,
+        name: program.name,
+        routineIds: [
+          for (final day in program.week) day == null ? null : routineIds[day],
+        ],
+      );
+    },
+  );
 
   // ── Programs ───────────────────────────────────────────────────────────────
 

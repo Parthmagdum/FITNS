@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- **Your goal & plan.** FITNS now asks what you're aiming for — on Today
+  and Body, and pointedly when your BMI is under or over the healthy range.
+  Choose lose, stay or gain, your target weight (one is suggested from the
+  healthy range for your height) and how fast, and get:
+  - **Daily targets** from your weight, height, age, sex and activity:
+    calories, protein, carbs, fat, water and steps — with when you'll reach
+    your target. Saving the plan sets all your daily goals to match.
+  - **Safety limits**: losing is capped at 1 % of body weight a week and
+    never below 1,200 / 1,500 kcal; gaining at 0.5 kg a week. It warns about
+    targets outside the healthy range, and under-18s.
+  - **A day of eating** sized to your calories — vegetarian, veg + eggs or
+    non-veg, Indian-friendly meals — with another day a tap away. Save any
+    meal to your foods to log it.
+  - **A training program** for your goal and the days you can train (full
+    body, upper/lower or push/pull/legs), set up on the Workouts tab in one
+    tap.
+  - **Progress** on Today and Body: how far you've come and what's left.
 - **A ready-made Leg day routine**: Squat, Romanian Deadlift, Leg Press,
   Walking Lunge, Leg Curl and Calf Raise, with sets, reps and rest filled
   in. Added once — edit it, rename it or delete it like your own.

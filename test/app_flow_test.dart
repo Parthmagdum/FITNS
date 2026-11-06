@@ -86,7 +86,12 @@ Future<void> settle(WidgetTester tester) async {
 /// Scrolls [finder] into the middle of the screen, clear of the bars at
 /// either edge, so a tap lands on it.
 Future<void> scrollToMiddle(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(finder, 200);
+  // The page's own list — the first scrollable — not one inside a field.
+  await tester.scrollUntilVisible(
+    finder,
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
   unawaited(Scrollable.ensureVisible(tester.element(finder), alignment: 0.5));
   await settle(tester);
 }
@@ -131,6 +136,7 @@ void main() {
     await pumpApp(tester);
     expect(find.text('Steps'), findsOneWidget);
 
+    await scrollToMiddle(tester, find.text('Start workout'));
     await tester.tap(find.text('Start workout'));
     await settle(tester);
     expect(find.text('Add an exercise to start logging.'), findsOneWidget);
@@ -214,6 +220,7 @@ void main() {
     );
     await settle(tester);
 
+    await scrollToMiddle(tester, find.text('Legs'));
     await tester.tap(find.text('Legs')); // the quick-start chip on Today
     await settle(tester);
     expect(find.text('Squat (Barbell)'), findsOneWidget);
@@ -268,6 +275,7 @@ void main() {
       },
     );
 
+    await scrollToMiddle(tester, find.text('Resume'));
     await tester.tap(find.text('Resume'));
     await settle(tester);
     await tester.tap(find.byTooltip('Count with sensors'));
@@ -597,6 +605,7 @@ void main() {
 
     await tester.tap(find.text('Body').last);
     await settle(tester);
+    await scrollToMiddle(tester, find.textContaining('Losing about'));
     expect(find.textContaining('Losing about'), findsOneWidget);
 
     await tester.tap(find.text('Food').last);
@@ -724,6 +733,71 @@ void main() {
     expect(find.text('Simple'), findsOneWidget);
     // A new day starts with the first routine — the ready-made Leg day.
     expect(find.text('Up next: Day 1 of 2 · Leg day'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('an overweight user is asked for a goal and gets a plan', (
+    tester,
+  ) async {
+    final db = await pumpApp(
+      tester,
+      seed: (db) async {
+        await db.addBodyEntries(DateTime(2026, 11, 1), {
+          BodyMetric.weight: 85000,
+        });
+        await db.updateSettings(
+          SettingsCompanion(
+            heightMm: const Value(1750),
+            birthYear: Value(DateTime.now().year - 30),
+            sex: const Value(Sex.male),
+            activityLevel: const Value(ActivityLevel.moderate),
+          ),
+        );
+      },
+    );
+
+    // Today asks, and says why.
+    expect(find.text("What's your goal?"), findsOneWidget);
+    expect(find.textContaining('above the healthy range'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Start'));
+    await settle(tester);
+
+    expect(find.text('Overweight'), findsOneWidget);
+    // Lose is suggested, with a target in range.
+    final target = tester.widget<TextField>(
+      find.widgetWithText(TextField, 'Target weight'),
+    );
+    expect(target.controller!.text, '76.5');
+
+    await scrollToMiddle(tester, find.text('Save my plan'));
+    expect(find.textContaining('kcal under the'), findsOneWidget);
+    await tester.tap(find.text('Save my plan'));
+    await settle(tester);
+    final s = (await tester.runAsync(db.getSettings))!;
+    expect(s.weightGoal, WeightGoal.lose);
+    expect(s.targetWeightGrams, 76500);
+    expect(s.calorieGoal, isNotNull);
+    expect(s.dailyStepGoal, 10000);
+
+    // Meals to save, and a program to set up.
+    await scrollToMiddle(tester, find.text('A day of eating'));
+    await tester.tap(find.byTooltip('Save to my foods').first);
+    await settle(tester);
+    expect((await tester.runAsync(() => db.watchFoods().first))!, hasLength(1));
+
+    await scrollToMiddle(tester, find.text('Set up this program'));
+    await tester.tap(find.text('Set up this program'));
+    await settle(tester);
+    final programs = (await tester.runAsync(() => db.watchPrograms().first))!;
+    expect(programs.single.program.name, 'Full body · 3 days');
+
+    // Back on Today: progress instead of the question.
+    await tester.pageBack();
+    await settle(tester);
+    expect(find.text("What's your goal?"), findsNothing);
+    expect(find.text('Goal: lose to 76.5 kg'), findsOneWidget);
+    expect(find.text('8.5 kg to go'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

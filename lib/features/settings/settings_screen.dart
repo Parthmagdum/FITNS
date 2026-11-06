@@ -144,6 +144,17 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               ListTile(
                 leading: const Icon(Icons.flag_outlined),
+                title: const Text('Your goal & plan'),
+                subtitle: Text(
+                  settings.weightGoal == null
+                      ? 'Not set — get calories, meals and training for it'
+                      : '${settings.weightGoal!.label} · '
+                            'calories, meals and training',
+                ),
+                onTap: () => context.push('/plan'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
                 title: const Text('Daily calorie & macro goals'),
                 subtitle: Text(
                   settings.calorieGoal == null

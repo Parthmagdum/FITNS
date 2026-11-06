@@ -142,6 +142,33 @@ enum Sex {
   final String label;
 }
 
+/// Which way the user wants their weight to go.
+enum WeightGoal {
+  lose('Lose', -500),
+  maintain('Maintain', 0),
+  gain('Gain', 300);
+
+  const WeightGoal(this.label, this.kcalPerDay);
+  final String label;
+
+  /// The quick estimate's daily adjustment: −500 is roughly 0.5 kg a week;
+  /// +300 is a lean gain. The full plan works from the chosen pace instead.
+  final int kcalPerDay;
+}
+
+/// What the user eats, for meal suggestions. Each includes the ones above.
+enum DietType {
+  vegetarian('Vegetarian'),
+  eggetarian('Veg + eggs'),
+  nonVegetarian('Non-veg');
+
+  const DietType(this.label);
+  final String label;
+
+  /// Whether a meal needing [other] suits this diet.
+  bool allows(DietType other) => other.index <= index;
+}
+
 enum ActivityLevel {
   sedentary('Mostly sitting', 1.2),
   light('Light exercise 1–3 days a week', 1.375),
@@ -217,6 +244,23 @@ class Settings extends Table {
   /// low-impact ones that train the same muscle.
   BoolColumn get lowImpactOnly =>
       boolean().withDefault(const Constant(false))();
+
+  // ── Goal & plan (schema v8) ───────────────────────────────────────────────
+
+  /// Null until the user sets a goal — then the Today and Body tabs stop
+  /// asking.
+  TextColumn get weightGoal => textEnum<WeightGoal>().nullable()();
+  IntColumn get targetWeightGrams => integer().nullable()();
+
+  /// How fast to get there, grams a week. Null when maintaining.
+  IntColumn get weeklyChangeGrams => integer().nullable()();
+
+  /// The weight and day the goal was set — where progress counts from.
+  IntColumn get goalStartWeightGrams => integer().nullable()();
+  DateTimeColumn get goalSetAt => dateTime().nullable()();
+
+  IntColumn get trainingDaysPerWeek => integer().nullable()();
+  TextColumn get dietType => textEnum<DietType>().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

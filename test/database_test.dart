@@ -46,6 +46,17 @@ void main() {
           'ALTER TABLE workout_exercises DROP COLUMN $column',
         );
       }
+      for (final column in [
+        'weight_goal',
+        'target_weight_grams',
+        'weekly_change_grams',
+        'goal_start_weight_grams',
+        'goal_set_at',
+        'training_days_per_week',
+        'diet_type',
+      ]) {
+        await db.customStatement('ALTER TABLE settings DROP COLUMN $column');
+      }
     }
     if (schema < 7) {
       await db.customStatement('DROP INDEX program_days_program');

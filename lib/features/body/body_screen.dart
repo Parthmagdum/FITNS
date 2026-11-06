@@ -10,6 +10,7 @@ import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../settings/settings_dialogs.dart';
+import '../plan/goal_card.dart';
 import 'body_format.dart';
 import 'body_log_sheet.dart';
 import 'weight_trend_card.dart';
@@ -36,6 +37,7 @@ class BodyScreen extends ConsumerWidget {
       ),
       children: [
         const WeightCard(),
+        ...goalSection(),
         const WeightTrendCard(),
         if (measured.isNotEmpty) ...[
           const SectionLabel('Latest measurements'),
