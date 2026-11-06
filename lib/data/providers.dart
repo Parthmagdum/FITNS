@@ -256,6 +256,34 @@ final recentSleepProvider = StreamProvider<List<SleepLogRow>>(
       ),
 );
 
+// ── Progress ────────────────────────────────────────────────────────────────
+
+/// Every night ever logged, newest first.
+final allSleepProvider = StreamProvider.autoDispose<List<SleepLogRow>>(
+  (ref) => ref.watch(dbProvider).watchSleepSince(DateTime(2000)),
+);
+
+/// Calories and protein for every day food was logged, by `dayKey`.
+final allDailyNutritionProvider =
+    StreamProvider.autoDispose<Map<String, ({int kcal, int proteinTenths})>>(
+      (ref) => ref
+          .watch(dbProvider)
+          .watchDailyNutrition(
+            DateTime(2000),
+            ref.watch(todayProvider).add(const Duration(days: 1)),
+          ),
+    );
+
+/// Done sets per muscle over the last 7 days, today included.
+final weekSetsPerMuscleProvider =
+    StreamProvider.autoDispose<Map<MuscleGroup, int>>(
+      (ref) => ref
+          .watch(dbProvider)
+          .watchSetsPerMuscle(
+            ref.watch(todayProvider).subtract(const Duration(days: 6)),
+          ),
+    );
+
 // ── Food & water ────────────────────────────────────────────────────────────
 
 /// The day the Food tab shows. Follows "today" until the user moves it.

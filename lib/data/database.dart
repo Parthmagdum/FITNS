@@ -1429,6 +1429,41 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Done sets per muscle in workouts finished from [from] on — how evenly
+  /// the body is being trained.
+  Stream<Map<MuscleGroup, int>> watchSetsPerMuscle(DateTime from) {
+    final count = workoutSets.id.count();
+    final query =
+        selectOnly(workoutSets).join([
+            innerJoin(
+              workoutExercises,
+              workoutExercises.id.equalsExp(workoutSets.workoutExerciseId),
+            ),
+            innerJoin(
+              exercises,
+              exercises.id.equalsExp(workoutExercises.exerciseId),
+            ),
+            innerJoin(
+              workouts,
+              workouts.id.equalsExp(workoutExercises.workoutId),
+            ),
+          ])
+          ..addColumns([exercises.muscle, count])
+          ..where(
+            workoutSets.done.equals(true) &
+                workouts.endedAt.isNotNull() &
+                workouts.startedAt.isBiggerOrEqualValue(from),
+          )
+          ..groupBy([exercises.muscle]);
+    return query.watch().map(
+      (rows) => {
+        for (final r in rows)
+          ?MuscleGroup.values.asNameMap()[r.read(exercises.muscle)]:
+              r.read(count) ?? 0,
+      },
+    );
+  }
+
   // ── Body ───────────────────────────────────────────────────────────────────
 
   /// One log: every metric in [values] shares the moment [at].
@@ -1669,6 +1704,32 @@ class AppDatabase extends _$AppDatabase {
     await into(foodLogs).insert(
       food == null ? log.copyWith(foodId: const Value(null)) : log,
       mode: InsertMode.insertOrIgnore,
+    );
+  }
+
+  /// Calories and protein (tenths of a gram) per day logged, by `dayKey`,
+  /// from [from] up to (not including) [until].
+  Stream<Map<String, ({int kcal, int proteinTenths})>> watchDailyNutrition(
+    DateTime from,
+    DateTime until,
+  ) {
+    final kcal = foodLogs.kcal.sum();
+    final protein = foodLogs.proteinTenths.sum();
+    final query = selectOnly(foodLogs)
+      ..addColumns([foodLogs.day, kcal, protein])
+      ..where(
+        foodLogs.day.isBiggerOrEqualValue(dayKey(from)) &
+            foodLogs.day.isSmallerThanValue(dayKey(until)),
+      )
+      ..groupBy([foodLogs.day]);
+    return query.watch().map(
+      (rows) => {
+        for (final r in rows)
+          r.read(foodLogs.day)!: (
+            kcal: r.read(kcal) ?? 0,
+            proteinTenths: r.read(protein) ?? 0,
+          ),
+      },
     );
   }
 

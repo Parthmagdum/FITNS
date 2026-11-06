@@ -28,6 +28,13 @@ class TodayScreen extends ConsumerWidget {
 
     return AppPage(
       title: 'Today',
+      actions: [
+        IconButton(
+          tooltip: 'Progress',
+          onPressed: () => context.push('/progress'),
+          icon: const Icon(Icons.insights),
+        ),
+      ],
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),

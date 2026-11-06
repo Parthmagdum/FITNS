@@ -807,6 +807,45 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('progress shows streaks, the month, balance and badges', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        final bench = await (db.select(
+          db.exercises,
+        )..where((e) => e.seedKey.equals('bench_press_bb'))).getSingle();
+        final now = DateTime.now();
+        final id = await db.startWorkout(now: now);
+        await db.addExercisesToWorkout(id, [bench.id]);
+        final set =
+            (await db.watchWorkoutDetail(id).first)!.entries.single.sets.single;
+        await db.updateSet(
+          set.id,
+          const WorkoutSetsCompanion(reps: Value(8), weightGrams: Value(60000)),
+        );
+        await db.setDone(set.id, done: true, now: now);
+        await db.finishWorkout(id, now: now.add(const Duration(minutes: 40)));
+      },
+    );
+    await tester.tap(find.byTooltip('Progress'));
+    await settle(tester);
+    expect(find.text('Streaks'), findsOneWidget);
+    expect(find.text('1 week'), findsOneWidget);
+    await scrollToMiddle(tester, find.text('Time training'));
+    expect(find.text('40m'), findsOneWidget);
+    await scrollToMiddle(tester, find.textContaining('Little or nothing'));
+    expect(
+      find.textContaining('Little or nothing for chest, back'),
+      findsOneWidget,
+    );
+    await scrollToMiddle(tester, find.text('First workout'));
+    expect(find.text('Badges · 1 of 12'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
   testWidgets('every tab renders without errors', (tester) async {
     await pumpApp(tester, steps: StepSensorStatus.denied);
     expect(find.text('Turn on step counting'), findsOneWidget);
