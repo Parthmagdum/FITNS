@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/branding/app_info.dart';
 import '../../core/notifications/rest_alerts.dart';
+import '../../core/platform/health_connect.dart';
 import '../../core/steps/step_sensor.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
@@ -236,7 +237,7 @@ class SettingsScreen extends ConsumerWidget {
         const SectionLabel('Reminders'),
         ReminderTiles(settings: settings),
         const SectionLabel('Your data'),
-        HealthConnectTile(settings: settings),
+        if (healthConnectEnabled) HealthConnectTile(settings: settings),
         Card(
           child: Column(
             children: [
@@ -254,6 +255,20 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('Restore'),
                 subtitle: const Text('Replace everything with a backup file.'),
                 onTap: () => restoreBackup(context, ref),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.delete_forever_outlined,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  'Delete all data',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                subtitle: const Text(
+                  'Erase everything on this phone and start fresh.',
+                ),
+                onTap: () => deleteAllData(context, ref),
               ),
             ],
           ),

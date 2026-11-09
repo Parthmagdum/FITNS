@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,4 +77,41 @@ Future<void> restoreBackup(BuildContext context, WidgetRef ref) async {
   // The backup brings its own all-day-steps setting.
   await syncStepTracking(ref);
   if (context.mounted) _say(context, 'Backup restored');
+}
+
+/// Erases everything after two confirmations — the second names what's
+/// lost — leaving FITNS as it was on install.
+Future<void> deleteAllData(BuildContext context, WidgetRef ref) async {
+  final sure = await confirm(
+    context,
+    title: 'Delete all data?',
+    message:
+        'Every workout, routine, body entry, photo, food and water log, '
+        'sleep log, step count and setting is erased from this phone. '
+        'Back up first if you might want any of it.',
+    action: 'Continue',
+    destructive: true,
+  );
+  if (!sure || !context.mounted) return;
+  final really = await confirm(
+    context,
+    title: 'This can't be undone',
+    message: 'FITNS will start over as if just installed.',
+    action: 'Delete everything',
+    destructive: true,
+  );
+  if (!really || !context.mounted) return;
+
+  ref.read(restTimerProvider.notifier).stop();
+  final photos = await ref.read(dbProvider).deleteAllData();
+  for (final path in photos) {
+    try {
+      await File(path).delete();
+    } on FileSystemException {
+      // Already gone.
+    }
+  }
+  // Settings are back to their defaults, all-day steps included.
+  await syncStepTracking(ref);
+  if (context.mounted) _say(context, 'All data deleted');
 }

@@ -53,6 +53,7 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
   /// Once connected, a quiet Health Connect sync each time FITNS opens.
   Future<void> _syncHealth() async {
     final settings = ref.read(settingsProvider).valueOrNull;
+    if (!healthConnectEnabled) return;
     if (settings == null || !settings.healthConnect) return;
     try {
       await syncHealth(ref.read(dbProvider), ref.read(healthConnectProvider));

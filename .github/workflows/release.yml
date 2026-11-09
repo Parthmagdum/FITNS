@@ -6,9 +6,12 @@
 #   1. check the tag matches the version in pubspec.yaml (by hand: that the
 #      tag doesn't exist yet)
 #   2. analyze and run the full test suite
-#   3. build release APKs, one per ABI, signed with the release key
+#   3. build release APKs, one per ABI, and an app bundle (AAB) for Google
+#      Play, all signed with the release key
 #   4. check every APK carries libsqlite3.so and the release signature
 #   5. publish a GitHub Release with stable asset names + SHA-256 checksums
+#      (the AAB is attached for uploading to Play Console; it can't be
+#      installed directly)
 #
 # Signing needs four repository secrets. tool/setup_release_signing.py
 # creates the key and sets them — once, ever. Every release must be signed
@@ -109,12 +112,17 @@ jobs:
       - name: Build release APKs
         run: flutter build apk --release --split-per-abi
 
+      # Google Play only takes app bundles. Same version and signing key.
+      - name: Build release app bundle
+        run: flutter build appbundle --release
+
       - name: Rename to stable asset names
         run: |
           mkdir -p release
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk   release/fitns-arm64-v8a.apk
           cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release/fitns-armeabi-v7a.apk
           cp build/app/outputs/flutter-apk/app-x86_64-release.apk      release/fitns-x86_64.apk
+          cp build/app/outputs/bundle/release/app-release.aab          release/fitns-play.aab
 
       # Without libsqlite3.so the app can't open its database at all, and
       # a debug-signed APK could never be updated by the next release.
@@ -129,10 +137,13 @@ jobs:
               || { echo "::error::$apk is not signed with the FITNS release key"; exit 1; }
             echo "ok: $apk"
           done
+          # An AAB is signed with jarsigner, not the APK scheme.
+          jarsigner -verify -verbose -certs release/fitns-play.aab | grep -q "CN=FITNS"             || { echo "::error::fitns-play.aab is not signed with the FITNS release key"; exit 1; }
+          echo "ok: release/fitns-play.aab"
 
       - name: Checksums
         working-directory: release
-        run: sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
+        run: sha256sum *.apk *.aab > SHA256SUMS.txt && cat SHA256SUMS.txt
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -141,6 +152,7 @@ jobs:
             release/fitns-arm64-v8a.apk
             release/fitns-armeabi-v7a.apk
             release/fitns-x86_64.apk
+            release/fitns-play.aab
             release/SHA256SUMS.txt
           tag_name: ${{ env.RELEASE_TAG }}
           target_commitish: ${{ github.sha }}

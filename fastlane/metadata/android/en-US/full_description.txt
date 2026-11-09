@@ -1,0 +1,39 @@
+FITNS is a fitness tracker that keeps everything on your phone. It has no internet permission, no accounts, no ads and no trackers.
+
+<b>Train</b>
+<ul>
+<li>Log workouts with sets, reps, weight and how hard each set felt</li>
+<li>A rest timer that alerts you even with the screen locked</li>
+<li>Rep counting for push-ups, jumps and squats</li>
+<li>Reusable routines, ready-made ones to start from, and programs that cycle through your training days</li>
+<li>Tell FITNS what equipment a place has, and routines swap exercises to fit</li>
+<li>Low-impact mode, warm-ups, cool-downs and a "short on time" trim</li>
+</ul>
+
+<b>Move</b>
+<ul>
+<li>Step counting with daily, weekly and monthly totals</li>
+<li>Optional all-day counting and a home-screen widget</li>
+</ul>
+
+<b>Eat</b>
+<ul>
+<li>Calories and macros, a built-in food list and your own foods</li>
+<li>Offline barcode scanning for packaged food</li>
+<li>A calorie plan for your goal, with a weekly check-in that follows your real weight trend</li>
+</ul>
+
+<b>Track</b>
+<ul>
+<li>Weight, BMI, measurements, body-fat estimate and progress photos</li>
+<li>Water, sleep and optional cycle tracking</li>
+<li>Streaks, monthly summaries, muscle balance, personal records and badges</li>
+<li>Reminders for workouts, water and weigh-ins</li>
+</ul>
+
+<b>Yours</b>
+<ul>
+<li>Back up everything to one file and restore it on a new phone</li>
+<li>Delete all data any time</li>
+<li>Open source under the MIT License</li>
+</ul>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Behind the launch icon until Flutter draws; the app's own
+         background (Palette.light.bg in lib/core/theme/app_theme.dart). -->
+    <color name="splash_background">#F2F2F5</color>
+</resources>

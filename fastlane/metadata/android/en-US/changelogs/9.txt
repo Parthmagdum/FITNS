@@ -1,0 +1,5 @@
+First store release.
+- New icon and launch screen
+- Delete all data from Settings
+- Privacy summary on the About screen
+- Health Connect paused for now; it returns in a later update

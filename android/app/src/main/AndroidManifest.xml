@@ -34,11 +34,9 @@
     <!-- Health Connect needs Android 8+; FITNS still installs on older
          phones and simply doesn't offer it there (MainActivity checks). -->
     <uses-sdk tools:overrideLibrary="androidx.health.connect.client"/>
-    <!-- Health Connect, granted on Android's own screen when the user taps
-         Connect in Settings. -->
-    <uses-permission android:name="android.permission.health.READ_STEPS"/>
-    <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
-    <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
+    <!-- Health Connect is on hold (healthConnectEnabled in
+         lib/core/platform/health_connect.dart): no health permissions, and
+         no rationale screens below, until it's switched back on. -->
     <!-- Scanning food barcodes (ZXing). Asked for only when the user first
          taps Scan; the app works fully without it. -->
     <uses-permission android:name="android.permission.CAMERA"/>
@@ -71,23 +69,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Health Connect's "why does this app need it" link (Android
-                 13 and older): opens FITNS. -->
-            <intent-filter>
-                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
-            </intent-filter>
         </activity>
-        <!-- The same link on Android 14+. -->
-        <activity-alias
-            android:name="ViewPermissionUsageActivity"
-            android:exported="true"
-            android:targetActivity=".MainActivity"
-            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
-                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
-            </intent-filter>
-        </activity-alias>
         <service
             android:name=".StepCounterService"
             android:exported="false"
@@ -138,8 +120,6 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- Health Connect's app, on Android 13 and older. -->
-        <package android:name="com.google.android.apps.healthdata"/>
         <!-- Progress photos: is there a camera app to hand over to? -->
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE"/>

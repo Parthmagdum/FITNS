@@ -51,6 +51,20 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Privacy', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(AppInfo.privacySummary, style: muted),
+                const SizedBox(height: 12),
+                Text('Full policy', style: muted),
+                const SelectableText(AppInfo.privacyUrl),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             child: ListTile(
               title: const Text('Open-source licences'),

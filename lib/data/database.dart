@@ -317,6 +317,48 @@ class AppDatabase extends _$AppDatabase {
     await (update(settings)..where((s) => s.id.equals(1))).write(changes);
   }
 
+  /// Erases everything the user has logged and every setting, in one
+  /// transaction, and puts back what a new install starts with: the built-in
+  /// exercises, the starter routines and places. Returns the progress
+  /// photos' file paths, for the caller to delete — the files live outside
+  /// the database.
+  ///
+  /// The step-counter watermark stays: it records where the phone's own
+  /// counter was, and without it the next reading would count every step
+  /// since the phone booted as today's.
+  Future<List<String>> deleteAllData() => transaction(() async {
+    final photos = [for (final p in await select(progressPhotos).get()) p.path];
+    // Children before parents, for the foreign keys.
+    for (final table in <TableInfo>[
+      foodLogs,
+      foods,
+      waterLogs,
+      workoutSets,
+      workoutExercises,
+      workouts,
+      programDays,
+      programs,
+      routineExercises,
+      routines,
+      places,
+      sleepLogs,
+      cycleStarts,
+      progressPhotos,
+      bodyEntries,
+      dailySteps,
+      hourlySteps,
+      exercises,
+      settings,
+    ]) {
+      await delete(table).go();
+    }
+    await getSettings();
+    await seedExerciseLibrary();
+    await seedStarterRoutines();
+    await seedPlaces();
+    return photos;
+  });
+
   // ── Exercises ──────────────────────────────────────────────────────────────
 
   /// Inserts every built-in exercise whose key isn't already present. Safe to

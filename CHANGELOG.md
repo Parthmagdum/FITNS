@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0 — 2026-11-09
+
+The first release for Google Play and F-Droid.
+
+- **A real icon**: a white dumbbell on FITNS orange, with Android 13's
+  themed-icon support, and a matching launch screen in light and dark.
+- **Delete all data** (Settings → Your data): erases everything, photos
+  included, and starts FITNS over as if just installed. Asks twice.
+- **Privacy** on the About screen, and a full policy in PRIVACY.md:
+  FITNS collects nothing.
+- **Health Connect is paused** for now and will come back in a later
+  update. Its permissions are gone from the app until then; your steps
+  and weigh-ins already brought in stay.
+- Releases now include an app bundle for Google Play, and store listing
+  text for F-Droid.
+
 ## 0.0.8 — 2026-11-06
 
 **Your plan, kept on track**

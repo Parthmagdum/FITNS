@@ -756,4 +756,27 @@ void main() {
     await db.deleteBodyLog(at);
     expect(await db.watchBodyEntries().first, isEmpty);
   });
+
+  test('delete all data leaves a fresh install behind', () async {
+    final fresh = (
+      exercises: (await db.watchExercises().first).length,
+      routines: (await db.watchRoutines().first).length,
+      places: (await db.watchPlaces().first).length,
+    );
+    await db.addBodyEntries(DateTime(2026, 11, 1), {BodyMetric.weight: 80000});
+    await db.addWater(500);
+    await db.addProgressPhoto('/data/photos/1.jpg');
+    await db.updateSettings(const SettingsCompanion(dailyStepGoal: Value(12345)));
+
+    final photos = await db.deleteAllData();
+
+    expect(photos, ['/data/photos/1.jpg']);
+    expect(await db.watchBodyEntries().first, isEmpty);
+    expect(await db.select(db.waterLogs).get(), isEmpty);
+    expect(await db.select(db.progressPhotos).get(), isEmpty);
+    expect((await db.getSettings()).dailyStepGoal, isNot(12345));
+    expect((await db.watchExercises().first).length, fresh.exercises);
+    expect((await db.watchRoutines().first).length, fresh.routines);
+    expect((await db.watchPlaces().first).length, fresh.places);
+  });
 }

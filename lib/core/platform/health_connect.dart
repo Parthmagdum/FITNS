@@ -2,6 +2,14 @@ import 'package:flutter/services.dart';
 
 import '../../data/database.dart';
 
+/// Health Connect is on hold for the first store releases: Google Play
+/// reviews every Health Connect permission separately, and that review
+/// shouldn't hold up launch. While this is false the Settings tile is hidden,
+/// nothing syncs, and the manifest declares no health permissions. To bring
+/// it back: set this to true and restore the Health Connect block in
+/// `AndroidManifest.xml` (see git history for 0.0.8).
+const healthConnectEnabled = false;
+
 enum HealthConnectStatus {
   /// Not on this phone (or Android older than 8).
   unavailable,
