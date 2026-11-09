@@ -95,7 +95,7 @@ Future<void> deleteAllData(BuildContext context, WidgetRef ref) async {
   if (!sure || !context.mounted) return;
   final really = await confirm(
     context,
-    title: 'This can't be undone',
+    title: "This can't be undone",
     message: 'FITNS will start over as if just installed.',
     action: 'Delete everything',
     destructive: true,
