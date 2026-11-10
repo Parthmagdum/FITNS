@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1 — 2026-11-10
+
+- **Food suggestions with pictures**: the food picker now shows popular
+  foods and category shelves before you type, and every food — saved
+  ones too — gets a picture.
+- **How to do it**: a step-by-step guide with tips for every built-in
+  exercise (general steps for your own). Tap ⓘ in the exercise picker,
+  or an exercise's icon during and after a workout.
+- **A fresh look**: orange main buttons, cards that lift off the page,
+  bolder headings, exercise icons coloured by muscle group, and a new
+  Today header with a greeting and a bold "Ready to train?" card.
+
 ## 0.1.0 — 2026-11-09
 
 The first release for Google Play and F-Droid.

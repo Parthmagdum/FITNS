@@ -214,7 +214,7 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
           if (query.isEmpty) ...[
             const SectionLabel('Popular'),
             SizedBox(
-              height: 128,
+              height: 150,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -359,7 +359,7 @@ class _FoodCard extends StatelessWidget {
                 children: [
                   Text(
                     foodEmoji(item.name),
-                    style: const TextStyle(fontSize: 40),
+                    style: const TextStyle(fontSize: 34),
                   ),
                   const SizedBox(height: 6),
                   Text(

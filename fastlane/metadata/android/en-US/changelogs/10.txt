@@ -1,0 +1,4 @@
+Food and workout guides, and a fresh look.
+- Food suggestions with pictures before you type
+- Step-by-step how-to for every built-in exercise
+- Orange main buttons, lifted cards, a new Today header

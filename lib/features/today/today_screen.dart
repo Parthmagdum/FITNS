@@ -39,9 +39,21 @@ class TodayScreen extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
-          child: Text(
-            DateFormat('EEEE, d MMMM').format(today),
-            style: theme.textTheme.titleMedium?.copyWith(color: theme.muted),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _greeting(DateTime.now().hour),
+                style: theme.textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                DateFormat('EEEE, d MMMM').format(today),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.muted,
+                ),
+              ),
+            ],
           ),
         ),
         const CheckInCard(),
@@ -72,6 +84,13 @@ class TodayScreen extends ConsumerWidget {
   }
 }
 
+String _greeting(int hour) => switch (hour) {
+  < 5 => 'Up late? 🌙',
+  < 12 => 'Good morning ☀️',
+  < 17 => 'Good afternoon 👋',
+  _ => 'Good evening 🌆',
+};
+
 class _WorkoutSection extends ConsumerWidget {
   const _WorkoutSection();
 
@@ -84,7 +103,7 @@ class _WorkoutSection extends ConsumerWidget {
     final units = ref.watch(unitsProvider);
 
     if (active != null) {
-      return SectionCard(
+      return HeroCard(
         onTap: () => context.push('/workout/${active.id}/log'),
         child: Row(
           children: [
@@ -95,17 +114,23 @@ class _WorkoutSection extends ConsumerWidget {
                   Text(
                     active.inSetup ? 'Setting up' : 'In progress',
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.accent,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(active.name, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    active.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
                   if (!active.inSetup)
                     TickerBuilder(
                       builder: (context, now) => Text(
                         formatClock(now.difference(active.startedAt)),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.muted,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -113,6 +138,7 @@ class _WorkoutSection extends ConsumerWidget {
               ),
             ),
             FilledButton(
+              style: _onHero(theme),
               onPressed: () => context.push('/workout/${active.id}/log'),
               child: const Text('Resume'),
             ),
@@ -145,11 +171,40 @@ class _WorkoutSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionCard(
+        HeroCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ready to train?',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          last == null
+                              ? 'Your first workout starts here.'
+                              : 'Keep the momentum going.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.local_fire_department_rounded, size: 44),
+                ],
+              ),
+              const SizedBox(height: 16),
               FilledButton.icon(
+                style: _onHero(theme),
                 onPressed: () => startWorkout(context, ref),
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text('Start workout'),
@@ -162,7 +217,17 @@ class _WorkoutSection extends ConsumerWidget {
                   children: [
                     for (final r in startable.take(4))
                       ActionChip(
-                        avatar: const Icon(Icons.play_arrow_rounded, size: 18),
+                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        side: BorderSide.none,
+                        labelStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        avatar: const Icon(
+                          Icons.play_arrow_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
                         label: Text(r.routine.name),
                         onPressed: () =>
                             startWorkout(context, ref, routineId: r.routine.id),
@@ -181,3 +246,9 @@ class _WorkoutSection extends ConsumerWidget {
     );
   }
 }
+
+/// A white button that reads on the orange hero card.
+ButtonStyle _onHero(ThemeData theme) => FilledButton.styleFrom(
+  backgroundColor: Colors.white,
+  foregroundColor: theme.accent,
+);
