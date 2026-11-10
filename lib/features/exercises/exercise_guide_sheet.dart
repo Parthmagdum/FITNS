@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/database.dart';
 import '../../data/exercise_guides.dart';
+import '../../data/pictures.dart';
 import 'exercise_icons.dart';
 
 /// Opens the step-by-step guide for [exercise].
@@ -42,7 +45,11 @@ class _GuideBody extends StatelessWidget {
       controller: controller,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
-        ExerciseHero(exercise: exercise),
+        if (exercisePhotos(exercise.seedKey) case final photos
+            when photos.isNotEmpty)
+          ExercisePhotoPlayer(photos: photos, color: color)
+        else
+          ExerciseHero(exercise: exercise),
         const SizedBox(height: 16),
         Text(exercise.name, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 8),
@@ -100,6 +107,241 @@ class _GuideBody extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The exercise in photos: start and finish positions playing in turn, so
+/// the movement reads like a short clip. Tap the photo to pause; tap a
+/// frame below to hold it. Doesn't play by itself when the phone asks for
+/// less motion.
+class ExercisePhotoPlayer extends StatefulWidget {
+  const ExercisePhotoPlayer({
+    super.key,
+    required this.photos,
+    required this.color,
+  });
+
+  final List<String> photos;
+  final Color color;
+
+  /// How long each position shows while playing.
+  static const frame = Duration(milliseconds: 1100);
+
+  @override
+  State<ExercisePhotoPlayer> createState() => _ExercisePhotoPlayerState();
+}
+
+class _ExercisePhotoPlayerState extends State<ExercisePhotoPlayer> {
+  var _index = 0;
+  Timer? _timer;
+  bool? _playing;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Decided once, when first shown.
+    if (_playing == null) {
+      _playing =
+          widget.photos.length > 1 && !MediaQuery.disableAnimationsOf(context);
+      if (_playing!) _start();
+    }
+  }
+
+  void _start() {
+    _timer?.cancel();
+    _timer = Timer.periodic(ExercisePhotoPlayer.frame, (_) {
+      if (mounted) {
+        setState(() => _index = (_index + 1) % widget.photos.length);
+      }
+    });
+  }
+
+  void _setPlaying(bool on) {
+    setState(() => _playing = on);
+    if (on) {
+      _start();
+    } else {
+      _timer?.cancel();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _label(int i) => widget.photos.length == 2
+      ? (i == 0 ? 'Start' : 'Finish')
+      : 'Step ${i + 1}';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final cache = (width * MediaQuery.devicePixelRatioOf(context)).round();
+    final playing = _playing ?? false;
+    final many = widget.photos.length > 1;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          onTap: many ? () => _setPlaying(!playing) : null,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: AspectRatio(
+              aspectRatio: 4 / 3,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(color: theme.track),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: Image.asset(
+                      widget.photos[_index],
+                      key: ValueKey(_index),
+                      fit: BoxFit.cover,
+                      cacheWidth: cache,
+                      gaplessPlayback: true,
+                      semanticLabel: '${_label(_index)} position',
+                    ),
+                  ),
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: _Badge(_label(_index), widget.color),
+                  ),
+                  if (many)
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: Material(
+                        color: Colors.black54,
+                        shape: const CircleBorder(),
+                        child: IconButton(
+                          tooltip: playing ? 'Pause' : 'Play',
+                          color: Colors.white,
+                          onPressed: () => _setPlaying(!playing),
+                          icon: Icon(playing ? Icons.pause : Icons.play_arrow),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (many) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (final (i, photo) in widget.photos.indexed) ...[
+                if (i > 0) ...[
+                  const SizedBox(width: 6),
+                  Icon(Icons.arrow_forward, size: 18, color: theme.muted),
+                  const SizedBox(width: 6),
+                ],
+                Expanded(
+                  child: _Frame(
+                    photo: photo,
+                    label: _label(i),
+                    color: widget.color,
+                    selected: i == _index,
+                    cacheWidth: cache ~/ 2,
+                    onTap: () {
+                      _setPlaying(false);
+                      setState(() => _index = i);
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+        const SizedBox(height: 6),
+        Text(
+          'Photos: ${exercisePhotoSource.name} (public domain)',
+          style: theme.textTheme.labelSmall?.copyWith(color: theme.muted),
+        ),
+      ],
+    );
+  }
+}
+
+class _Frame extends StatelessWidget {
+  const _Frame({
+    required this.photo,
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.cacheWidth,
+    required this.onTap,
+  });
+
+  final String photo;
+  final String label;
+  final Color color;
+  final bool selected;
+  final int cacheWidth;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    label: 'Show $label position',
+    child: InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? color : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(9),
+          child: AspectRatio(
+            aspectRatio: 4 / 3,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(photo, fit: BoxFit.cover, cacheWidth: cacheWidth),
+                Positioned(left: 6, bottom: 6, child: _Badge(label, color)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge(this.text, this.color);
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
 }
 
 /// The exercise's picture: its movement icon large on a gradient in its
@@ -166,7 +408,10 @@ class _Tag extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: TextStyle(color: color, fontWeight: FontWeight.w600),
+        ),
       ],
     ),
   );

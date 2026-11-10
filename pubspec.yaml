@@ -5,7 +5,7 @@ publish_to: 'none'
 # `AppInfo.version` / `AppInfo.buildNumber` mirror this line so the About screen
 # can show it without a platform plugin. `test/branding_test.dart` parses this
 # file and fails if the two ever disagree.
-version: 0.1.2+11
+version: 0.1.3+12
 
 environment:
   # Same floor as XPENC, so a contributor on stable Flutter can build both.
@@ -39,3 +39,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Food and exercise photos, all freely licensed — see CREDITS.md.
+  assets:
+    - assets/food/
+    - assets/exercises/

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/branding/app_info.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
+import 'picture_credits_screen.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -62,6 +63,19 @@ class AboutScreen extends StatelessWidget {
                 Text('Full policy', style: muted),
                 const SelectableText(AppInfo.privacyUrl),
               ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              title: const Text('Picture credits'),
+              subtitle: const Text('Who took the food and exercise photos'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const PictureCreditsScreen(),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 12),

@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/food_library.dart';
+import '../../data/pictures.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_icons.dart' show IconTile;
 import 'food_sheets.dart';
@@ -289,7 +290,8 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
   }
 }
 
-/// A food's picture: its emoji on a soft rounded tile.
+/// A food's picture: its photo, or — for foods FITNS has no photo of —
+/// its emoji, on a soft rounded tile.
 class FoodPicture extends StatelessWidget {
   const FoodPicture(this.name, {super.key, this.size = 44});
 
@@ -297,16 +299,33 @@ class FoodPicture extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: Theme.of(context).track,
-      borderRadius: BorderRadius.circular(size * 0.3),
-    ),
-    child: Text(foodEmoji(name), style: TextStyle(fontSize: size * 0.55)),
-  );
+  Widget build(BuildContext context) {
+    final photo = foodPhoto(name);
+    final radius = BorderRadius.circular(size * 0.3);
+    final emoji = Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Theme.of(context).track,
+        borderRadius: radius,
+      ),
+      child: Text(foodEmoji(name), style: TextStyle(fontSize: size * 0.55)),
+    );
+    if (photo == null) return emoji;
+    return ClipRRect(
+      borderRadius: radius,
+      child: Image.asset(
+        photo,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round(),
+        semanticLabel: name,
+        errorBuilder: (_, _, _) => emoji,
+      ),
+    );
+  }
 }
 
 class _LibraryTile extends StatelessWidget {
@@ -357,10 +376,7 @@ class _FoodCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    foodEmoji(item.name),
-                    style: const TextStyle(fontSize: 34),
-                  ),
+                  FoodPicture(item.name, size: 56),
                   const SizedBox(height: 6),
                   Text(
                     item.name,

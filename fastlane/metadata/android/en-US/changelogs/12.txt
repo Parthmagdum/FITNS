@@ -1,0 +1,5 @@
+Real photos for food and workouts.
+- A photo for every built-in food
+- Exercise guides show start and finish photos, playing like a short clip
+- Exercise lists show a photo of each move
+- Picture credits under About

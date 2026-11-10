@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/database.dart';
+import '../../data/pictures.dart';
 
 /// Material icons — already part of the app, so no download, no extra size,
 /// and the same visual family as every other icon on screen.
@@ -98,14 +99,35 @@ class ExerciseAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = muscleColor(exercise.muscle);
-    return Container(
+    final radius = BorderRadius.circular(size * 0.3);
+    final icon = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(size * 0.3),
+        borderRadius: radius,
       ),
       child: Icon(exerciseIcon(exercise).data, size: size * 0.55, color: color),
+    );
+    final photos = exercisePhotos(exercise.seedKey);
+    if (photos.isEmpty) return icon;
+    // The end position shows the movement best; a muscle-coloured ring
+    // keeps the colour coding the icons had.
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(1.5),
+      decoration: BoxDecoration(color: color, borderRadius: radius),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.3 - 1.5),
+        child: Image.asset(
+          photos.last,
+          fit: BoxFit.cover,
+          cacheWidth: (size * 1.4 * MediaQuery.devicePixelRatioOf(context))
+              .round(),
+          errorBuilder: (_, _, _) => icon,
+        ),
+      ),
     );
   }
 }

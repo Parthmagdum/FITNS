@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.3 — 2026-11-10
+
+- **Real food photos**: every one of the 123 built-in foods now has a
+  photo, in the Popular row and the food list. Your own foods keep their
+  emoji.
+- **Exercise guides with photos**: 93 built-in exercises show their start
+  and finish positions, playing in turn like a short clip. Tap to pause,
+  or tap Start or Finish to hold one. It doesn't play by itself when the
+  phone asks for less motion. The written steps and tips stay below.
+- **Exercise photos in lists**: the exercise picker and workouts show a
+  small photo of each move, ringed in its muscle group's colour.
+- **Picture credits** (About → Picture credits, and CREDITS.md): every
+  photo is freely licensed. Exercise photos are from free-exercise-db
+  (public domain), food photos from Wikimedia Commons (CC0, CC BY and
+  CC BY-SA). All are stored in the app, so it still works offline.
+
 ## 0.1.2 — 2026-11-10
 
 - **The weights you own** ([#6](https://github.com/Parthmagdum/FITNS/issues/6)):
