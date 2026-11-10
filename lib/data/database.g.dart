@@ -8355,6 +8355,17 @@ class $PlacesTable extends Places with TableInfo<$PlacesTable, PlaceRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _weightsMeta = const VerificationMeta(
+    'weights',
+  );
+  @override
+  late final GeneratedColumn<String> weights = GeneratedColumn<String>(
+    'weights',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sortMeta = const VerificationMeta('sort');
   @override
   late final GeneratedColumn<int> sort = GeneratedColumn<int>(
@@ -8366,7 +8377,7 @@ class $PlacesTable extends Places with TableInfo<$PlacesTable, PlaceRow> {
     defaultValue: const Constant(0),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, equipment, sort];
+  List<GeneratedColumn> get $columns => [id, name, equipment, weights, sort];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -8396,6 +8407,12 @@ class $PlacesTable extends Places with TableInfo<$PlacesTable, PlaceRow> {
         equipment.isAcceptableOrUnknown(data['equipment']!, _equipmentMeta),
       );
     }
+    if (data.containsKey('weights')) {
+      context.handle(
+        _weightsMeta,
+        weights.isAcceptableOrUnknown(data['weights']!, _weightsMeta),
+      );
+    }
     if (data.containsKey('sort')) {
       context.handle(
         _sortMeta,
@@ -8423,6 +8440,10 @@ class $PlacesTable extends Places with TableInfo<$PlacesTable, PlaceRow> {
         DriftSqlType.string,
         data['${effectivePrefix}equipment'],
       )!,
+      weights: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}weights'],
+      ),
       sort: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort'],
@@ -8442,11 +8463,17 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
 
   /// [Equipment] names, comma-separated: `dumbbell,band`.
   final String equipment;
+
+  /// The exact weights owned here, in grams, per loadable [Equipment]:
+  /// `dumbbell:4000,8000;kettlebell:12000`. Equipment not listed (or a null
+  /// column) has no limit — a full rack. See `parseWeights`. Schema v10.
+  final String? weights;
   final int sort;
   const PlaceRow({
     required this.id,
     required this.name,
     required this.equipment,
+    this.weights,
     required this.sort,
   });
   @override
@@ -8455,6 +8482,9 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['equipment'] = Variable<String>(equipment);
+    if (!nullToAbsent || weights != null) {
+      map['weights'] = Variable<String>(weights);
+    }
     map['sort'] = Variable<int>(sort);
     return map;
   }
@@ -8464,6 +8494,9 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
       id: Value(id),
       name: Value(name),
       equipment: Value(equipment),
+      weights: weights == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weights),
       sort: Value(sort),
     );
   }
@@ -8477,6 +8510,7 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       equipment: serializer.fromJson<String>(json['equipment']),
+      weights: serializer.fromJson<String?>(json['weights']),
       sort: serializer.fromJson<int>(json['sort']),
     );
   }
@@ -8487,22 +8521,30 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'equipment': serializer.toJson<String>(equipment),
+      'weights': serializer.toJson<String?>(weights),
       'sort': serializer.toJson<int>(sort),
     };
   }
 
-  PlaceRow copyWith({int? id, String? name, String? equipment, int? sort}) =>
-      PlaceRow(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        equipment: equipment ?? this.equipment,
-        sort: sort ?? this.sort,
-      );
+  PlaceRow copyWith({
+    int? id,
+    String? name,
+    String? equipment,
+    Value<String?> weights = const Value.absent(),
+    int? sort,
+  }) => PlaceRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    equipment: equipment ?? this.equipment,
+    weights: weights.present ? weights.value : this.weights,
+    sort: sort ?? this.sort,
+  );
   PlaceRow copyWithCompanion(PlacesCompanion data) {
     return PlaceRow(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       equipment: data.equipment.present ? data.equipment.value : this.equipment,
+      weights: data.weights.present ? data.weights.value : this.weights,
       sort: data.sort.present ? data.sort.value : this.sort,
     );
   }
@@ -8513,13 +8555,14 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('equipment: $equipment, ')
+          ..write('weights: $weights, ')
           ..write('sort: $sort')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, equipment, sort);
+  int get hashCode => Object.hash(id, name, equipment, weights, sort);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8527,6 +8570,7 @@ class PlaceRow extends DataClass implements Insertable<PlaceRow> {
           other.id == this.id &&
           other.name == this.name &&
           other.equipment == this.equipment &&
+          other.weights == this.weights &&
           other.sort == this.sort);
 }
 
@@ -8534,29 +8578,34 @@ class PlacesCompanion extends UpdateCompanion<PlaceRow> {
   final Value<int> id;
   final Value<String> name;
   final Value<String> equipment;
+  final Value<String?> weights;
   final Value<int> sort;
   const PlacesCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.equipment = const Value.absent(),
+    this.weights = const Value.absent(),
     this.sort = const Value.absent(),
   });
   PlacesCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     this.equipment = const Value.absent(),
+    this.weights = const Value.absent(),
     this.sort = const Value.absent(),
   }) : name = Value(name);
   static Insertable<PlaceRow> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? equipment,
+    Expression<String>? weights,
     Expression<int>? sort,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (equipment != null) 'equipment': equipment,
+      if (weights != null) 'weights': weights,
       if (sort != null) 'sort': sort,
     });
   }
@@ -8565,12 +8614,14 @@ class PlacesCompanion extends UpdateCompanion<PlaceRow> {
     Value<int>? id,
     Value<String>? name,
     Value<String>? equipment,
+    Value<String?>? weights,
     Value<int>? sort,
   }) {
     return PlacesCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       equipment: equipment ?? this.equipment,
+      weights: weights ?? this.weights,
       sort: sort ?? this.sort,
     );
   }
@@ -8587,6 +8638,9 @@ class PlacesCompanion extends UpdateCompanion<PlaceRow> {
     if (equipment.present) {
       map['equipment'] = Variable<String>(equipment.value);
     }
+    if (weights.present) {
+      map['weights'] = Variable<String>(weights.value);
+    }
     if (sort.present) {
       map['sort'] = Variable<int>(sort.value);
     }
@@ -8599,6 +8653,7 @@ class PlacesCompanion extends UpdateCompanion<PlaceRow> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('equipment: $equipment, ')
+          ..write('weights: $weights, ')
           ..write('sort: $sort')
           ..write(')'))
         .toString();
@@ -15901,6 +15956,7 @@ typedef $$PlacesTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       Value<String> equipment,
+      Value<String?> weights,
       Value<int> sort,
     });
 typedef $$PlacesTableUpdateCompanionBuilder =
@@ -15908,6 +15964,7 @@ typedef $$PlacesTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> name,
       Value<String> equipment,
+      Value<String?> weights,
       Value<int> sort,
     });
 
@@ -15932,6 +15989,11 @@ class $$PlacesTableFilterComposer
 
   ColumnFilters<String> get equipment => $composableBuilder(
     column: $table.equipment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get weights => $composableBuilder(
+    column: $table.weights,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15965,6 +16027,11 @@ class $$PlacesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get weights => $composableBuilder(
+    column: $table.weights,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sort => $composableBuilder(
     column: $table.sort,
     builder: (column) => ColumnOrderings(column),
@@ -15988,6 +16055,9 @@ class $$PlacesTableAnnotationComposer
 
   GeneratedColumn<String> get equipment =>
       $composableBuilder(column: $table.equipment, builder: (column) => column);
+
+  GeneratedColumn<String> get weights =>
+      $composableBuilder(column: $table.weights, builder: (column) => column);
 
   GeneratedColumn<int> get sort =>
       $composableBuilder(column: $table.sort, builder: (column) => column);
@@ -16024,11 +16094,13 @@ class $$PlacesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> equipment = const Value.absent(),
+                Value<String?> weights = const Value.absent(),
                 Value<int> sort = const Value.absent(),
               }) => PlacesCompanion(
                 id: id,
                 name: name,
                 equipment: equipment,
+                weights: weights,
                 sort: sort,
               ),
           createCompanionCallback:
@@ -16036,11 +16108,13 @@ class $$PlacesTableTableManager
                 Value<int> id = const Value.absent(),
                 required String name,
                 Value<String> equipment = const Value.absent(),
+                Value<String?> weights = const Value.absent(),
                 Value<int> sort = const Value.absent(),
               }) => PlacesCompanion.insert(
                 id: id,
                 name: name,
                 equipment: equipment,
+                weights: weights,
                 sort: sort,
               ),
           withReferenceMapper: (p0) => p0

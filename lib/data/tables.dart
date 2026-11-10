@@ -458,6 +458,11 @@ class Places extends Table {
   /// [Equipment] names, comma-separated: `dumbbell,band`.
   TextColumn get equipment => text().withDefault(const Constant(''))();
 
+  /// The exact weights owned here, in grams, per loadable [Equipment]:
+  /// `dumbbell:4000,8000;kettlebell:12000`. Equipment not listed (or a null
+  /// column) has no limit — a full rack. See `parseWeights`. Schema v10.
+  TextColumn get weights => text().nullable()();
+
   IntColumn get sort => integer().withDefault(const Constant(0))();
 }
 

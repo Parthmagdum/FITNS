@@ -704,6 +704,117 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('a place lists the exact weights it has', (tester) async {
+    final db = await pumpApp(tester);
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    await tester.tap(find.text('Edit places'));
+    await settle(tester);
+    await tester.tap(find.text('New place'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Flat');
+    await tester.tap(find.widgetWithText(FilterChip, 'Dumbbell'));
+    await settle(tester);
+    expect(find.text('Dumbbell weights (each)'), findsOneWidget);
+    expect(find.text('None listed: any weight.'), findsOneWidget);
+
+    await tester.tap(find.text('Add weight'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).last, '4 8');
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await settle(tester);
+    expect(find.widgetWithText(InputChip, '4 kg'), findsOneWidget);
+    expect(find.widgetWithText(InputChip, '8 kg'), findsOneWidget);
+
+    // Taking one away.
+    await tester.tap(
+      find.descendant(
+        of: find.widgetWithText(InputChip, '8 kg'),
+        matching: find.byTooltip('Remove'),
+      ),
+    );
+    await settle(tester);
+    expect(find.widgetWithText(InputChip, '8 kg'), findsNothing);
+
+    await tester.tap(find.text('Create'));
+    await settle(tester);
+    expect(find.text('Dumbbell (4 kg)'), findsOneWidget);
+    final flat = (await tester.runAsync(
+      () => db.watchPlaces().first,
+    ))!.firstWhere((p) => p.name == 'Flat');
+    expect(flat.weights, 'dumbbell:4000');
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('with only 4 kg dumbbells at home, it asks for more reps', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        final fly = await (db.select(
+          db.exercises,
+        )..where((e) => e.seedKey.equals('chest_fly_db'))).getSingle();
+        final routine = await db.saveRoutine(
+          name: 'Chest',
+          items: [
+            (
+              exerciseId: fly.id,
+              targetSets: 2,
+              targetReps: 10,
+              restSeconds: null,
+            ),
+          ],
+        );
+        // Last time: every set at 4 kg × 10.
+        final last = await db.startWorkout(
+          routineId: routine,
+          now: DateTime(2026, 11, 1, 9),
+        );
+        final entry = (await db.watchWorkoutDetail(last).first)!.entries.single;
+        for (final set in entry.sets) {
+          await db.updateSet(
+            set.id,
+            const WorkoutSetsCompanion(
+              weightGrams: Value(4000),
+              reps: Value(10),
+              done: Value(true),
+            ),
+          );
+        }
+        await db.finishWorkout(last, now: DateTime(2026, 11, 1, 10));
+
+        final home = (await db.watchPlaces().first)[1];
+        await db.savePlace(
+          id: home.id,
+          name: home.name,
+          equipment: {Equipment.dumbbell},
+          weights: {
+            Equipment.dumbbell: [4000],
+          },
+        );
+        await db.updateSettings(
+          SettingsCompanion(activePlaceId: Value(home.id)),
+        );
+        await db.startWorkout(routineId: routine);
+      },
+    );
+    await scrollToMiddle(tester, find.text('Resume'));
+    await tester.tap(find.text('Resume'));
+    await settle(tester);
+    expect(
+      find.text('4 kg is the heaviest you have at Home — go for 12 reps'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Use'));
+    await settle(tester);
+    expect(find.text('Applied'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
   testWidgets('places and programs can be created', (tester) async {
     await pumpApp(
       tester,

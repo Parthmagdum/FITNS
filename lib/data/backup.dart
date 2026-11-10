@@ -58,7 +58,8 @@ class BackupService {
   /// settings.
   /// 6 (0.0.8): adds sleepLogs, cycleStarts, reps in reserve on sets, and
   /// the reminder and cycle settings.
-  static const formatVersion = 6;
+  /// 7 (0.1.2): adds the exact weights owned at each place.
+  static const formatVersion = 7;
 
   static String fileName(DateTime now) =>
       'fitns-backup-${now.year}-${_two(now.month)}-${_two(now.day)}.json';

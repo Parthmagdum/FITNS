@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.2 — 2026-11-10
+
+- **The weights you own** ([#6](https://github.com/Parthmagdum/FITNS/issues/6)):
+  each place can now list its exact dumbbell, kettlebell and barbell
+  weights (Workouts → Edit places), say a pair of 4 kg dumbbells at home.
+  Leave them out and any weight still goes.
+- **Suggestions that fit them**: the "try a heavier weight" hint uses the
+  next weight you actually have. If there's nothing heavier, or the jump
+  is too big, it asks for 2 more reps instead (4 when every set felt
+  easy), up to 30. It suggests the jump once your reps show you're ready
+  for it.
+- **Weights from somewhere else**: did 10 kg at the gym, but home only has
+  8 kg? It suggests 8 kg and about how many reps match the work you did
+  last time. One tap sets the weight and the reps.
+
 ## 0.1.1 — 2026-11-10
 
 - **Food suggestions with pictures**: the food picker now shows popular

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
+import 'package:fitns/core/training/swaps.dart';
 import 'package:fitns/data/database.dart';
 import 'package:fitns/data/seed_exercises.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +38,9 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 10) {
+      await db.customStatement('ALTER TABLE places DROP COLUMN weights');
+    }
     if (schema < 9) {
       await db.customStatement('DROP TABLE sleep_logs');
       await db.customStatement('DROP TABLE cycle_starts');
@@ -147,6 +151,7 @@ void main() {
     (6, '0.0.5'),
     (7, '0.0.6'),
     (8, '0.0.7'),
+    (9, '0.1.1'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
@@ -212,6 +217,19 @@ void main() {
           sleptAt: DateTime(2026, 11, 1, 23),
           wokeAt: DateTime(2026, 11, 2, 7),
         );
+        // Schema v10: a place keeps its exact weights.
+        final home = (await upgraded.watchPlaces().first)[1];
+        await upgraded.savePlace(
+          id: home.id,
+          name: home.name,
+          equipment: {Equipment.dumbbell},
+          weights: {
+            Equipment.dumbbell: [4000],
+          },
+        );
+        expect(parseWeights((await upgraded.watchPlaces().first)[1].weights), {
+          Equipment.dumbbell: [4000],
+        });
       },
     );
   }
@@ -766,7 +784,9 @@ void main() {
     await db.addBodyEntries(DateTime(2026, 11, 1), {BodyMetric.weight: 80000});
     await db.addWater(500);
     await db.addProgressPhoto('/data/photos/1.jpg');
-    await db.updateSettings(const SettingsCompanion(dailyStepGoal: Value(12345)));
+    await db.updateSettings(
+      const SettingsCompanion(dailyStepGoal: Value(12345)),
+    );
 
     final photos = await db.deleteAllData();
 

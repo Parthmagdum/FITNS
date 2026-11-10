@@ -96,6 +96,7 @@ final trainingConditionsProvider = Provider<TrainingConditions>((ref) {
   return TrainingConditions(
     place: place?.name,
     equipment: place == null ? null : parseEquipment(place.equipment),
+    weights: parseWeights(place?.weights),
     lowImpactOnly: settings?.lowImpactOnly ?? false,
   );
 });

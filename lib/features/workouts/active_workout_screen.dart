@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/dates.dart';
-import '../../core/insights.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
@@ -14,6 +13,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_guide_sheet.dart';
 import '../exercises/exercise_icons.dart';
+import '../../core/training/loads.dart';
 import '../../core/training/time_box.dart';
 import '../../data/seed_exercises.dart';
 import 'rep_profiles.dart';
@@ -471,7 +471,15 @@ class _ExerciseCard extends ConsumerWidget {
               ],
             ),
             if (!editing && exercise.kind == ExerciseKind.weightReps)
-              _ProgressHint(entry: entry, previous: previous, units: units),
+              _ProgressHint(
+                entry: entry,
+                previous: previous,
+                units: units,
+                owned: editing
+                    ? null
+                    : conditions.ownedWeights(exercise.equipment),
+                place: conditions.place,
+              ),
             const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -1190,22 +1198,55 @@ class RestTimerBar extends ConsumerWidget {
 }
 
 /// "Every set hit 8 last time — try 62.5 kg": progressive overload, offered
-/// when last session earned it, applied to the open sets in one tap.
+/// when last session earned it, applied to the open sets in one tap. At a
+/// place with fixed weights (two 4 kg dumbbells at home) it works with what
+/// is there: the next weight owned, or more reps when there is none.
 class _ProgressHint extends ConsumerWidget {
   const _ProgressHint({
     required this.entry,
     required this.previous,
     required this.units,
+    this.owned,
+    this.place,
   });
 
   final WorkoutEntry entry;
   final List<WorkoutSetRow> previous;
   final UnitSystem units;
 
+  /// The weights at today's place for this exercise; null = any weight.
+  final List<int>? owned;
+
+  /// Today's place's name, for the message.
+  final String? place;
+
+  String _message(LoadAdvice advice) {
+    String mass(int grams) => formatMass(grams, units);
+    final here = place == null ? 'here' : 'at $place';
+    final reps = advice.reps;
+    return switch (advice.reason) {
+      LoadReason.stepUp =>
+        'You hit every set last time — try '
+            '${mass(advice.weightGrams)}',
+      LoadReason.moreReps =>
+        advice.nextOwned == null
+            ? '${mass(advice.weightGrams)} is the heaviest you have $here — '
+                  'go for $reps reps'
+            : 'Next up $here is ${mass(advice.nextOwned!)} — build to '
+                  '$reps reps at ${mass(advice.weightGrams)} first',
+      LoadReason.jumpUp =>
+        'Ready for ${mass(advice.weightGrams)} — '
+            'aim for $reps reps',
+      LoadReason.fitOwned =>
+        'You have ${mass(advice.weightGrams)} $here — '
+            'about $reps reps matches last time',
+    };
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final next = suggestedWeight(
+    final advice = adviseLoad(
       lastTime: [
         for (final s in previous)
           (weightGrams: s.weightGrams ?? 0, reps: s.reps ?? 0),
@@ -1216,10 +1257,18 @@ class _ProgressHint extends ConsumerWidget {
         UnitSystem.metric => 2500,
         UnitSystem.imperial => (5 * gramsPerPound).round(),
       },
+      owned: owned,
     );
-    if (next == null) return const SizedBox.shrink();
+    if (advice == null) return const SizedBox.shrink();
+    final next = advice.weightGrams;
     final open = entry.sets.where((s) => !s.done).toList();
-    final applied = open.isNotEmpty && open.every((s) => s.weightGrams == next);
+    final applied =
+        open.isNotEmpty &&
+        open.every(
+          (s) =>
+              s.weightGrams == next &&
+              (advice.reps == null || s.reps == advice.reps),
+        );
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 6, 8, 0),
       child: Container(
@@ -1233,18 +1282,18 @@ class _ProgressHint extends ConsumerWidget {
             Icon(Icons.trending_up, size: 18, color: theme.accent),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                'You hit every set last time — try '
-                '${formatMass(next, units)}',
-                style: theme.textTheme.bodySmall,
-              ),
+              child: Text(_message(advice), style: theme.textTheme.bodySmall),
             ),
             TextButton(
               onPressed: open.isEmpty || applied
                   ? null
                   : () => ref
                         .read(dbProvider)
-                        .applyWeightToOpenSets(entry.item.id, next),
+                        .applyWeightToOpenSets(
+                          entry.item.id,
+                          next,
+                          reps: advice.reps,
+                        ),
               child: Text(applied ? 'Applied' : 'Use'),
             ),
           ],

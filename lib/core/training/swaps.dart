@@ -1,4 +1,7 @@
 import '../../data/database.dart';
+import 'loads.dart';
+
+export 'loads.dart';
 
 /// What today's session has to fit: the equipment where the user is, and
 /// whether to skip jumps and hard landings.
@@ -6,6 +9,7 @@ class TrainingConditions {
   const TrainingConditions({
     this.place,
     this.equipment,
+    this.weights = const {},
     this.lowImpactOnly = false,
   });
 
@@ -18,7 +22,17 @@ class TrainingConditions {
   /// What's available. Null = anything. Bodyweight always is.
   final Set<Equipment>? equipment;
 
+  /// The exact weights the place has. Equipment not listed has no limit.
+  final OwnedWeights weights;
+
   final bool lowImpactOnly;
+
+  /// The weights available for [e], lightest first — or null when any
+  /// weight will do.
+  List<int>? ownedWeights(Equipment e) {
+    final owned = weights[e];
+    return owned == null || owned.isEmpty ? null : owned;
+  }
 
   bool get isUnrestricted => equipment == null && !lowImpactOnly;
 

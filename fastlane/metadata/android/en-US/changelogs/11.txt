@@ -1,0 +1,4 @@
+Training with what you own.
+- List the exact weights at each place, like 4 kg dumbbells at home
+- Suggestions stick to those weights and add reps when there's nothing heavier
+- Last time's weight not here? It picks the nearest one and the reps to match

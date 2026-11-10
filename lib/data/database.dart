@@ -122,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -207,6 +207,8 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(settings, settings.healthConnect);
         await m.createIndex(sleepLogsWoke);
       }
+      // Created whole (weights included) by the v7 step on older files.
+      if (from < 10 && from >= 7) await m.addColumn(places, places.weights);
     },
     beforeOpen: (details) async {
       // SQLite leaves foreign keys off unless asked, and the cascades in
@@ -973,13 +975,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteSet(int setId) =>
       (delete(workoutSets)..where((s) => s.id.equals(setId))).go();
 
-  /// Sets [grams] on every not-yet-done set of [itemId] — taking a
-  /// suggested weight in one tap.
-  Future<void> applyWeightToOpenSets(int itemId, int grams) =>
+  /// Sets [grams] (and [reps], if given) on every not-yet-done set of
+  /// [itemId] — taking a suggested weight in one tap.
+  Future<void> applyWeightToOpenSets(int itemId, int grams, {int? reps}) =>
       (update(workoutSets)..where(
             (s) => s.workoutExerciseId.equals(itemId) & s.done.equals(false),
           ))
-          .write(WorkoutSetsCompanion(weightGrams: Value(grams)));
+          .write(
+            WorkoutSetsCompanion(
+              weightGrams: Value(grams),
+              reps: reps == null ? const Value.absent() : Value(reps),
+            ),
+          );
 
   /// Puts back a set exactly as it was — an undo of [deleteSet].
   Future<void> restoreSet(WorkoutSetRow set) =>
@@ -1276,7 +1283,13 @@ class AppDatabase extends _$AppDatabase {
     int? id,
     required String name,
     required Set<Equipment> equipment,
+    OwnedWeights weights = const {},
   }) async {
+    // Weights only count for equipment the place has.
+    final kept = encodeWeights({
+      for (final MapEntry(:key, :value) in weights.entries)
+        if (equipment.contains(key)) key: value,
+    });
     if (id == null) {
       final max = places.sort.max();
       final last = await (selectOnly(
@@ -1286,6 +1299,7 @@ class AppDatabase extends _$AppDatabase {
         PlacesCompanion.insert(
           name: name.trim(),
           equipment: Value(encodeEquipment(equipment)),
+          weights: Value(kept),
           sort: Value((last ?? -1) + 1),
         ),
       );
@@ -1294,6 +1308,7 @@ class AppDatabase extends _$AppDatabase {
       PlacesCompanion(
         name: Value(name.trim()),
         equipment: Value(encodeEquipment(equipment)),
+        weights: Value(kept),
       ),
     );
     return id;
@@ -1320,6 +1335,7 @@ class AppDatabase extends _$AppDatabase {
     return TrainingConditions(
       place: place?.name,
       equipment: place == null ? null : parseEquipment(place.equipment),
+      weights: parseWeights(place?.weights),
       lowImpactOnly: s.lowImpactOnly,
     );
   }
