@@ -12,6 +12,7 @@ import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../exercises/exercise_guide_sheet.dart';
 import '../exercises/exercise_icons.dart';
 import '../../core/training/time_box.dart';
 import '../../data/seed_exercises.dart';
@@ -383,7 +384,11 @@ class _ExerciseCard extends ConsumerWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
-                  child: ExerciseAvatar(exercise),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => showExerciseGuide(context, exercise),
+                    child: ExerciseAvatar(exercise),
+                  ),
                 ),
                 Expanded(
                   child: Padding(
@@ -431,6 +436,10 @@ class _ExerciseCard extends ConsumerWidget {
                   ),
                 PopupMenuButton<String>(
                   onSelected: (value) async {
+                    if (value == 'guide') {
+                      await showExerciseGuide(context, exercise);
+                      return;
+                    }
                     if (value == 'swap') {
                       await showSwapSheet(context, entry);
                       return;
@@ -444,6 +453,10 @@ class _ExerciseCard extends ConsumerWidget {
                     );
                   },
                   itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'guide',
+                      child: Text('How to do it'),
+                    ),
                     if (!editing)
                       const PopupMenuItem(
                         value: 'swap',

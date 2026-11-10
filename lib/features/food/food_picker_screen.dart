@@ -26,6 +26,9 @@ class FoodPickerScreen extends ConsumerStatefulWidget {
 class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
   String _query = '';
 
+  /// The shelf being browsed while nothing is typed.
+  FoodCategory _category = foodCategories.first;
+
   void _added(String what) {
     final messenger = ScaffoldMessenger.of(context);
     context.pop();
@@ -208,22 +211,35 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
             onTap: _quickAdd,
           ),
           const Divider(),
-          if (shown.isEmpty && library.isEmpty)
-            EmptyHint(
-              icon: Icons.restaurant_outlined,
-              message: foods.isEmpty
-                  ? 'Search ${foodLibrary.length} common foods above, or save '
-                        'your own and log them in one tap.'
-                  : 'No food matches.',
-              action: OutlinedButton(
-                onPressed: _newFood,
-                child: Text(
-                  query.isEmpty ? 'New food' : 'Save "${_query.trim()}"',
-                ),
+          if (query.isEmpty) ...[
+            const SectionLabel('Popular'),
+            SizedBox(
+              height: 128,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  for (final item in popularFoods)
+                    _FoodCard(item: item, onTap: () => _logLibrary(item)),
+                ],
               ),
             ),
+          ],
+          if (query.isNotEmpty && shown.isEmpty && library.isEmpty)
+            EmptyHint(
+              icon: Icons.restaurant_outlined,
+              message:
+                  'No food matches. Save it once and it is one tap next time.',
+              action: OutlinedButton(
+                onPressed: _newFood,
+                child: Text('Save "${_query.trim()}"'),
+              ),
+            ),
+          if (query.isEmpty && shown.isNotEmpty)
+            const SectionLabel('Your foods'),
           for (final food in shown)
             ListTile(
+              leading: FoodPicture(food.name),
               title: Text(food.name),
               subtitle: Text(
                 '${food.servingLabel} · ${formatKcal(food.kcal)} · '
@@ -238,21 +254,132 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
                 icon: Icon(Icons.add_circle_outline, color: theme.accent),
               ),
             ),
+          if (query.isEmpty) ...[
+            const SectionLabel('Browse'),
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  for (final c in foodCategories)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        avatar: Text(c.emoji),
+                        label: Text(c.label),
+                        selected: c == _category,
+                        onSelected: (_) => setState(() => _category = c),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            for (final item in _category.foods)
+              _LibraryTile(item: item, onTap: () => _logLibrary(item)),
+          ],
           if (library.isNotEmpty) ...[
             const SectionLabel('Common foods'),
             for (final item in library)
-              ListTile(
-                title: Text(item.name),
-                subtitle: Text(
-                  '${item.serving} · ${formatKcal(item.kcal)} · '
-                  'P ${formatGrams((item.protein * 10).round())}',
-                  style: TextStyle(color: theme.muted),
-                ),
-                trailing: Icon(Icons.add_circle_outline, color: theme.muted),
-                onTap: () => _logLibrary(item),
-              ),
+              _LibraryTile(item: item, onTap: () => _logLibrary(item)),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A food's picture: its emoji on a soft rounded tile.
+class FoodPicture extends StatelessWidget {
+  const FoodPicture(this.name, {super.key, this.size = 44});
+
+  final String name;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: Theme.of(context).track,
+      borderRadius: BorderRadius.circular(size * 0.3),
+    ),
+    child: Text(foodEmoji(name), style: TextStyle(fontSize: size * 0.55)),
+  );
+}
+
+class _LibraryTile extends StatelessWidget {
+  const _LibraryTile({required this.item, required this.onTap});
+
+  final LibraryFood item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: FoodPicture(item.name),
+      title: Text(item.name),
+      subtitle: Text(
+        '${item.serving} · ${formatKcal(item.kcal)} · '
+        'P ${formatGrams((item.protein * 10).round())}',
+        style: TextStyle(color: theme.muted),
+      ),
+      trailing: Icon(Icons.add_circle_outline, color: theme.muted),
+      onTap: onTap,
+    );
+  }
+}
+
+/// A big tappable card for the "Popular" row.
+class _FoodCard extends StatelessWidget {
+  const _FoodCard({required this.item, required this.onTap});
+
+  final LibraryFood item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Material(
+        color: theme.track,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: SizedBox(
+            width: 104,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    foodEmoji(item.name),
+                    style: const TextStyle(fontSize: 40),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.name,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium,
+                  ),
+                  Text(
+                    formatKcal(item.kcal),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

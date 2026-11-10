@@ -7,6 +7,7 @@ import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import 'custom_exercise_sheet.dart';
+import 'exercise_guide_sheet.dart';
 import 'exercise_icons.dart';
 
 /// Pick one or more exercises. Pops with their ids, in the order picked.
@@ -175,20 +176,30 @@ class _ExercisePickerScreenState extends ConsumerState<ExercisePickerScreen> {
                   ),
                   onTap: () => _toggle(e.id),
                   onLongPress: e.isCustom ? () => _remove(e) : null,
-                  trailing: order < 0
-                      ? Icon(Icons.circle_outlined, color: theme.muted)
-                      : CircleAvatar(
-                          radius: 13,
-                          backgroundColor: theme.accent,
-                          child: Text(
-                            '${order + 1}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'How to do it',
+                        onPressed: () => showExerciseGuide(context, e),
+                        icon: Icon(Icons.info_outline, color: theme.muted),
+                      ),
+                      order < 0
+                          ? Icon(Icons.circle_outlined, color: theme.muted)
+                          : CircleAvatar(
+                              radius: 13,
+                              backgroundColor: theme.accent,
+                              child: Text(
+                                '${order + 1}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                    ],
+                  ),
                 );
               },
             ),

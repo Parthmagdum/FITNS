@@ -19,9 +19,21 @@ class LibraryFood {
   final double protein, carbs, fat;
 }
 
-/// Searched as the user types in a meal's food picker.
+/// Searched as the user types in a meal's food picker, and browsed by
+/// category before they type.
 const foodLibrary = <LibraryFood>[
-  // Breads & grains
+  ..._grains,
+  ..._dalsCurries,
+  ..._eggsMeatFish,
+  ..._dairyDrinks,
+  ..._fruit,
+  ..._veg,
+  ..._nuts,
+  ..._snacks,
+];
+
+// Breads & grains
+const _grains = <LibraryFood>[
   LibraryFood('Roti / chapati', '1 roti (40 g)', 120, 3.5, 20, 3),
   LibraryFood('Phulka', '1 phulka (30 g)', 80, 2.5, 16, 0.5),
   LibraryFood('Paratha, plain', '1 paratha', 220, 4, 30, 9),
@@ -49,8 +61,10 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Maggi noodles', '1 pack (70 g)', 310, 7, 44, 12),
   LibraryFood('Quinoa, cooked', '1 cup (185 g)', 220, 8, 39, 3.5),
   LibraryFood('Dalia (broken wheat), cooked', '1 bowl', 180, 6, 35, 1.5),
+];
 
-  // Dals, legumes, curries
+// Dals, legumes, curries
+const _dalsCurries = <LibraryFood>[
   LibraryFood('Dal (toor / moong), cooked', '1 bowl (200 g)', 200, 12, 30, 4),
   LibraryFood('Dal tadka', '1 bowl', 230, 11, 28, 8),
   LibraryFood('Dal makhani', '1 bowl', 330, 12, 30, 18),
@@ -77,8 +91,10 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Samosa', '1 samosa', 260, 4, 30, 14),
   LibraryFood('Pakora', '5 pieces', 250, 5, 22, 16),
   LibraryFood('Dhokla', '2 pieces', 160, 6, 22, 5),
+];
 
-  // Eggs, meat, fish
+// Eggs, meat, fish
+const _eggsMeatFish = <LibraryFood>[
   LibraryFood('Egg, boiled', '1 large', 78, 6.3, 0.6, 5.3),
   LibraryFood('Egg white', '1 large', 17, 3.6, 0.2, 0.1),
   LibraryFood('Omelette (2 eggs)', '1 omelette', 190, 13, 1.5, 15),
@@ -94,8 +110,10 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Fish curry', '1 bowl', 260, 22, 6, 16),
   LibraryFood('Prawns, cooked', '100 g', 100, 24, 0.2, 0.3),
   LibraryFood('Tuna, canned in water', '100 g', 115, 26, 0, 1),
+];
 
-  // Dairy & drinks
+// Dairy & drinks
+const _dairyDrinks = <LibraryFood>[
   LibraryFood('Milk, full fat', '1 glass (250 ml)', 155, 8, 12, 8.5),
   LibraryFood('Milk, toned', '1 glass (250 ml)', 120, 8, 12, 4),
   LibraryFood('Milk, skimmed', '1 glass (250 ml)', 85, 8.5, 12, 0.3),
@@ -113,8 +131,10 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Coconut water', '1 glass', 45, 1.5, 9, 0.5),
   LibraryFood('Orange juice', '1 glass (250 ml)', 110, 2, 26, 0.5),
   LibraryFood('Soft drink / cola', '1 can (330 ml)', 140, 0, 35, 0),
+];
 
-  // Fruit
+// Fruit
+const _fruit = <LibraryFood>[
   LibraryFood('Banana', '1 medium', 105, 1.3, 27, 0.4),
   LibraryFood('Apple', '1 medium', 95, 0.5, 25, 0.3),
   LibraryFood('Orange', '1 medium', 62, 1.2, 15, 0.2),
@@ -126,16 +146,20 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Guava', '1 medium', 37, 1.4, 8, 0.5),
   LibraryFood('Chikoo', '1 medium', 95, 0.5, 23, 1.3),
   LibraryFood('Dates', '3 dates', 70, 0.6, 18, 0),
+];
 
-  // Vegetables & salad
+// Vegetables & salad
+const _veg = <LibraryFood>[
   LibraryFood('Green salad', '1 bowl', 30, 1.5, 6, 0.2),
   LibraryFood('Cucumber', '1 medium', 30, 1.3, 7, 0.2),
   LibraryFood('Carrot', '1 medium', 25, 0.6, 6, 0.1),
   LibraryFood('Broccoli, cooked', '1 cup', 55, 3.7, 11, 0.6),
   LibraryFood('Sweet potato, boiled', '1 medium (130 g)', 115, 2, 27, 0.2),
   LibraryFood('Potato, boiled', '1 medium (150 g)', 130, 3, 30, 0.2),
+];
 
-  // Nuts, seeds & spreads
+// Nuts, seeds & spreads
+const _nuts = <LibraryFood>[
   LibraryFood('Almonds', '10 almonds (12 g)', 70, 2.5, 2.5, 6),
   LibraryFood('Peanuts, roasted', '30 g', 170, 7, 5, 14.5),
   LibraryFood('Cashews', '10 cashews (15 g)', 85, 2.7, 4.5, 6.5),
@@ -144,8 +168,10 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Chia seeds', '1 tbsp (12 g)', 60, 2, 5, 3.7),
   LibraryFood('Flax seeds', '1 tbsp (10 g)', 55, 1.9, 3, 4.3),
   LibraryFood('Makhana, roasted', '30 g', 105, 3, 23, 0.2),
+];
 
-  // Snacks & sweets
+// Snacks & sweets
+const _snacks = <LibraryFood>[
   LibraryFood('Biscuits (Marie)', '4 biscuits', 120, 2, 21, 3),
   LibraryFood('Potato chips', '1 small pack (30 g)', 160, 2, 15, 10),
   LibraryFood('Namkeen / bhujia', '30 g', 160, 4, 14, 10),
@@ -159,6 +185,189 @@ const foodLibrary = <LibraryFood>[
   LibraryFood('Burger, veg', '1 burger', 400, 11, 50, 17),
   LibraryFood('French fries', 'medium (115 g)', 365, 4, 48, 17),
   LibraryFood('Sandwich, veg grilled', '1 sandwich', 280, 8, 36, 11),
+];
+
+/// One shelf of the library, for browsing before typing.
+class FoodCategory {
+  const FoodCategory(this.label, this.emoji, this.foods);
+
+  final String label;
+  final String emoji;
+  final List<LibraryFood> foods;
+}
+
+const foodCategories = <FoodCategory>[
+  FoodCategory('Breads & grains', '🍚', _grains),
+  FoodCategory('Dals & curries', '🍛', _dalsCurries),
+  FoodCategory('Eggs, meat & fish', '🍗', _eggsMeatFish),
+  FoodCategory('Dairy & drinks', '🥛', _dairyDrinks),
+  FoodCategory('Fruit', '🍎', _fruit),
+  FoodCategory('Vegetables', '🥗', _veg),
+  FoodCategory('Nuts & seeds', '🥜', _nuts),
+  FoodCategory('Snacks & sweets', '🍩', _snacks),
+];
+
+/// Shown at the top of the picker before anything is typed — the staples
+/// most meals are built from.
+const popularFoodNames = [
+  'Roti / chapati',
+  'Rice, white, cooked',
+  'Dal (toor / moong), cooked',
+  'Egg, boiled',
+  'Chicken breast, cooked',
+  'Paneer',
+  'Milk, toned',
+  'Curd / dahi',
+  'Banana',
+  'Poha',
+  'Idli',
+  'Whey protein',
+];
+
+List<LibraryFood> get popularFoods => [
+  for (final name in popularFoodNames)
+    ?foodLibrary.where((f) => f.name == name).firstOrNull,
+];
+
+/// Words in a food's name, checked in order, and the picture each one
+/// gets. Specific words come before general ones ("butter chicken" is
+/// chicken, "peanut butter" is a peanut). Works for the user's own saved
+/// foods too, since it only looks at the name.
+const _emojiRules = <(String, String)>[
+  ('peanut butter', '🥜'),
+  ('butter chicken', '🍗'),
+  ('biryani', '🍛'),
+  ('pizza', '🍕'),
+  ('burger', '🍔'),
+  ('fries', '🍟'),
+  ('sandwich', '🥪'),
+  ('noodle', '🍜'),
+  ('maggi', '🍜'),
+  ('pasta', '🍝'),
+  ('ice cream', '🍨'),
+  ('chocolate', '🍫'),
+  ('biscuit', '🍪'),
+  ('cookie', '🍪'),
+  ('chips', '🥔'),
+  ('cake', '🍰'),
+  ('omelette', '🍳'),
+  ('bhurji', '🍳'),
+  ('egg', '🥚'),
+  ('chicken', '🍗'),
+  ('mutton', '🍖'),
+  ('meat', '🍖'),
+  ('prawn', '🦐'),
+  ('shrimp', '🦐'),
+  ('tuna', '🐟'),
+  ('fish', '🐟'),
+  ('coffee', '☕'),
+  ('tea', '🍵'),
+  ('whey', '🥤'),
+  ('protein', '🥤'),
+  ('shake', '🥤'),
+  ('lassi', '🥤'),
+  ('buttermilk', '🥛'),
+  ('chaas', '🥛'),
+  ('milk', '🥛'),
+  ('yogurt', '🥣'),
+  ('curd', '🥣'),
+  ('dahi', '🥣'),
+  ('cheese', '🧀'),
+  ('paneer', '🧀'),
+  ('tofu', '🧈'),
+  ('butter', '🧈'),
+  ('ghee', '🧈'),
+  ('coconut', '🥥'),
+  ('juice', '🧃'),
+  ('cola', '🥤'),
+  ('soft drink', '🥤'),
+  ('banana', '🍌'),
+  ('apple', '🍎'),
+  ('orange', '🍊'),
+  ('mango', '🥭'),
+  ('watermelon', '🍉'),
+  ('grape', '🍇'),
+  ('papaya', '🍈'),
+  ('guava', '🍐'),
+  ('pomegranate', '🍎'),
+  ('chikoo', '🥝'),
+  ('dates', '🌴'),
+  ('salad', '🥗'),
+  ('cucumber', '🥒'),
+  ('carrot', '🥕'),
+  ('broccoli', '🥦'),
+  ('sweet potato', '🍠'),
+  ('potato', '🥔'),
+  ('aloo', '🥔'),
+  ('bhindi', '🫛'),
+  ('baingan', '🍆'),
+  ('almond', '🌰'),
+  ('cashew', '🌰'),
+  ('walnut', '🌰'),
+  ('peanut', '🥜'),
+  ('chana', '🫘'),
+  ('chickpea', '🫘'),
+  ('chole', '🫘'),
+  ('rajma', '🫘'),
+  ('soya', '🫘'),
+  ('sprouts', '🌱'),
+  ('seed', '🌱'),
+  ('makhana', '🍿'),
+  ('dal', '🍲'),
+  ('sambar', '🍲'),
+  ('kadhi', '🍲'),
+  ('khichdi', '🍲'),
+  ('kheer', '🍮'),
+  ('gulab', '🍡'),
+  ('rasgulla', '🍡'),
+  ('jalebi', '🥨'),
+  ('samosa', '🥟'),
+  ('pakora', '🧆'),
+  ('vada', '🍔'),
+  ('pav', '🍞'),
+  ('dosa', '🫓'),
+  ('uttapam', '🫓'),
+  ('idli', '🍘'),
+  ('dhokla', '🧇'),
+  ('roti', '🫓'),
+  ('chapati', '🫓'),
+  ('phulka', '🫓'),
+  ('paratha', '🫓'),
+  ('naan', '🫓'),
+  ('puri', '🫓'),
+  ('bhakri', '🫓'),
+  ('bread', '🍞'),
+  ('toast', '🍞'),
+  ('oats', '🥣'),
+  ('muesli', '🥣'),
+  ('cornflakes', '🥣'),
+  ('dalia', '🥣'),
+  ('poha', '🍚'),
+  ('upma', '🍚'),
+  ('quinoa', '🍚'),
+  ('rice', '🍚'),
+  ('namkeen', '🥨'),
+  ('bhujia', '🥨'),
+  ('sabzi', '🥘'),
+  ('curry', '🍛'),
+  ('masala', '🍛'),
+  ('tikka', '🍢'),
+  ('tandoori', '🍗'),
+];
+
+/// A picture for a food, from its name. Falls back to a plate.
+String foodEmoji(String name) {
+  final n = name.toLowerCase();
+  for (final (pattern, emoji) in _emojiPatterns) {
+    if (pattern.hasMatch(n)) return emoji;
+  }
+  return '🍽️';
+}
+
+/// Each rule matches only at the start of a word, so "steamed" isn't tea.
+final _emojiPatterns = [
+  for (final (word, emoji) in _emojiRules)
+    (RegExp('(^|[^a-z])${RegExp.escape(word)}'), emoji),
 ];
 
 /// Library foods whose name contains every word of [query], best first:

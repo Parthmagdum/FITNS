@@ -70,7 +70,25 @@ ExerciseIcon exerciseIcon(ExerciseRow e) =>
     seedIconOverrides[e.seedKey] ??
     defaultExerciseIcon(muscle: e.muscle, equipment: e.equipment, kind: e.kind);
 
-/// The exercise's icon on a soft rounded tile — list rows and card headers.
+/// A colour per muscle group, so an exercise's picture reads at a glance.
+Color muscleColor(MuscleGroup m) => switch (m) {
+  MuscleGroup.chest => const Color(0xFFE5534B),
+  MuscleGroup.back => const Color(0xFF3B82F6),
+  MuscleGroup.shoulders => const Color(0xFFF59E0B),
+  MuscleGroup.biceps => const Color(0xFF8B5CF6),
+  MuscleGroup.triceps => const Color(0xFFA855F7),
+  MuscleGroup.forearms => const Color(0xFF6366F1),
+  MuscleGroup.core => const Color(0xFF14B8A6),
+  MuscleGroup.quads => const Color(0xFF22C55E),
+  MuscleGroup.hamstrings => const Color(0xFF16A34A),
+  MuscleGroup.glutes => const Color(0xFFEC4899),
+  MuscleGroup.calves => const Color(0xFF84CC16),
+  MuscleGroup.fullBody => const Color(0xFFF97316),
+  MuscleGroup.cardio => const Color(0xFFEF4444),
+};
+
+/// The exercise's icon on a rounded tile tinted with its muscle group's
+/// colour — list rows and card headers.
 class ExerciseAvatar extends StatelessWidget {
   const ExerciseAvatar(this.exercise, {super.key, this.size = 40});
 
@@ -78,8 +96,18 @@ class ExerciseAvatar extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) =>
-      IconTile(exerciseIcon(exercise).data, size: size);
+  Widget build(BuildContext context) {
+    final color = muscleColor(exercise.muscle);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(size * 0.3),
+      ),
+      child: Icon(exerciseIcon(exercise).data, size: size * 0.55, color: color),
+    );
+  }
 }
 
 class IconTile extends StatelessWidget {

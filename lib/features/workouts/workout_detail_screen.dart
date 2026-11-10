@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../exercises/exercise_guide_sheet.dart';
 import '../exercises/exercise_icons.dart';
 import 'set_format.dart';
 
@@ -178,7 +179,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        ExerciseAvatar(entry.exercise, size: 32),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () =>
+                              showExerciseGuide(context, entry.exercise),
+                          child: ExerciseAvatar(entry.exercise, size: 32),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
