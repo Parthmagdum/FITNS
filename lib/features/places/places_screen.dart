@@ -67,16 +67,22 @@ String _equipmentSummary(PlaceRow p, UnitSystem units) {
     for (final e in Equipment.values)
       if (equipment.contains(e) && e != Equipment.bodyweight)
         switch (weights[e]) {
-          final grams? => '${e.label} (${weightList(grams, units)})',
+          final owned? => '${e.label} (${weightList(e, owned, units)})',
           null => e.label,
         },
   ].join(', ');
 }
 
-/// `4, 8 kg`.
-String weightList(List<int> grams, UnitSystem units) =>
-    '${grams.map((g) => formatMass(g, units, withUnit: false)).join(', ')} '
-    '${units.massUnit}';
+/// `2 × 4, 1 × 8 kg` for dumbbells and kettlebells, `20, 30 kg` for a
+/// barbell's loads.
+String weightList(Equipment e, List<OwnedWeight> owned, UnitSystem units) {
+  String one(OwnedWeight w) {
+    final mass = formatMass(w.grams, units, withUnit: false);
+    return countsPieces(e) ? '${w.count} × $mass' : mass;
+  }
+
+  return '${owned.map(one).join(', ')} ${units.massUnit}';
+}
 
 /// Creates a place, or edits (and can delete) [place].
 Future<void> showPlaceSheet(BuildContext context, {PlaceRow? place}) =>
@@ -100,7 +106,7 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
   late final _equipment = widget.place == null
       ? <Equipment>{}
       : parseEquipment(widget.place!.equipment);
-  late final _weights = <Equipment, List<int>>{
+  late final _weights = <Equipment, List<OwnedWeight>>{
     for (final MapEntry(:key, :value) in parseWeights(
       widget.place?.weights,
     ).entries)
@@ -205,12 +211,12 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
             if (_equipment.contains(e))
               _WeightsEditor(
                 equipment: e,
-                grams: _weights[e] ?? const [],
-                onChanged: (grams) => setState(() {
-                  if (grams.isEmpty) {
+                owned: _weights[e] ?? const [],
+                onChanged: (owned) => setState(() {
+                  if (owned.isEmpty) {
                     _weights.remove(e);
                   } else {
-                    _weights[e] = grams;
+                    _weights[e] = owned;
                   }
                 }),
               ),
@@ -230,40 +236,58 @@ class _PlaceSheetState extends ConsumerState<_PlaceSheet> {
   }
 }
 
-/// The exact weights of one kind of equipment at a place: chips to remove,
-/// and "Add weight" for more. None listed means any weight — a full rack.
+/// The exact weights of one kind of equipment at a place: chips to remove
+/// (and, for dumbbells and kettlebells, tap to switch between a pair and a
+/// single), and "Add weight" for more. None listed means any weight — a
+/// full rack.
 class _WeightsEditor extends ConsumerWidget {
   const _WeightsEditor({
     required this.equipment,
-    required this.grams,
+    required this.owned,
     required this.onChanged,
   });
 
   final Equipment equipment;
-  final List<int> grams;
-  final ValueChanged<List<int>> onChanged;
+  final List<OwnedWeight> owned;
+  final ValueChanged<List<OwnedWeight>> onChanged;
 
   Future<void> _add(BuildContext context, UnitSystem units) async {
-    final added = await showDialog<List<int>>(
+    final added = await showDialog<List<OwnedWeight>>(
       context: context,
       builder: (_) => _AddWeightsDialog(equipment: equipment, units: units),
     );
     if (added == null || added.isEmpty) return;
-    onChanged({...grams, ...added}.toList()..sort());
+    // A weight added again takes the new count.
+    final counts = {
+      for (final w in owned) w.grams: w.count,
+      for (final w in added) w.grams: w.count,
+    };
+    onChanged([
+      for (final g in counts.keys.toList()..sort())
+        (grams: g, count: counts[g]!),
+    ]);
   }
+
+  void _toggle(OwnedWeight w) => onChanged([
+    for (final o in owned)
+      o.grams == w.grams ? (grams: o.grams, count: o.count >= 2 ? 1 : 2) : o,
+  ]);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final units = ref.watch(unitsProvider);
-    final each = equipment == Equipment.barbell ? 'loaded' : 'each';
+    final pieces = countsPieces(equipment);
+    final muted = theme.textTheme.bodySmall?.copyWith(color: theme.muted);
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${equipment.label} weights ($each)',
+            equipment == Equipment.barbell
+                ? 'Barbell loads you can make'
+                : '${equipment.label} weights',
             style: theme.textTheme.labelLarge,
           ),
           const SizedBox(height: 4),
@@ -272,11 +296,18 @@ class _WeightsEditor extends ConsumerWidget {
             runSpacing: 4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              for (final g in grams)
+              for (final w in owned)
                 InputChip(
-                  label: Text(formatMass(g, units)),
+                  label: Text(
+                    pieces
+                        ? '${w.count >= 2 ? 'Pair' : 'Single'} · '
+                              '${formatMass(w.grams, units)}'
+                        : formatMass(w.grams, units),
+                  ),
+                  tooltip: pieces ? 'Switch pair / single' : null,
+                  onPressed: pieces ? () => _toggle(w) : null,
                   deleteButtonTooltipMessage: 'Remove',
-                  onDeleted: () => onChanged([...grams]..remove(g)),
+                  onDeleted: () => onChanged([...owned]..remove(w)),
                 ),
               ActionChip(
                 avatar: const Icon(Icons.add, size: 18),
@@ -285,10 +316,13 @@ class _WeightsEditor extends ConsumerWidget {
               ),
             ],
           ),
-          if (grams.isEmpty)
+          if (owned.isEmpty)
+            Text('None listed: any weight.', style: muted)
+          else if (equipment == Equipment.dumbbell)
             Text(
-              'None listed: any weight.',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
+              'Tap a weight to switch between a pair and a single. '
+              'Exercises with a dumbbell in each hand need a pair.',
+              style: muted,
             ),
         ],
       ),
@@ -296,7 +330,8 @@ class _WeightsEditor extends ConsumerWidget {
   }
 }
 
-/// Asks for one or more weights: "4" or "4 8 12".
+/// Asks for one or more weights — "4" or "4 8 12" — and, for dumbbells and
+/// kettlebells, whether there's a pair of each.
 class _AddWeightsDialog extends StatefulWidget {
   const _AddWeightsDialog({required this.equipment, required this.units});
 
@@ -309,6 +344,7 @@ class _AddWeightsDialog extends StatefulWidget {
 
 class _AddWeightsDialogState extends State<_AddWeightsDialog> {
   final _text = TextEditingController();
+  late var _pair = widget.equipment == Equipment.dumbbell;
 
   @override
   void dispose() {
@@ -321,24 +357,43 @@ class _AddWeightsDialogState extends State<_AddWeightsDialog> {
 
   void _submit() {
     final grams = _parsed;
-    if (grams != null) Navigator.pop(context, grams);
+    if (grams == null) return;
+    final count = countsPieces(widget.equipment) && _pair ? 2 : 1;
+    Navigator.pop(context, [for (final g in grams) (grams: g, count: count)]);
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('Add ${widget.equipment.label.toLowerCase()} weights'),
-      content: TextField(
-        controller: _text,
-        autofocus: true,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(
-          suffixText: widget.units.massUnit,
-          hintText: '4 8 12',
-          helperText: 'One or more, separated by spaces',
-        ),
-        onChanged: (_) => setState(() {}),
-        onSubmitted: (_) => _submit(),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _text,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              suffixText: widget.units.massUnit,
+              hintText: '4 8 12',
+              helperText: 'One or more, separated by spaces',
+            ),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => _submit(),
+          ),
+          if (countsPieces(widget.equipment)) ...[
+            const SizedBox(height: 16),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: true, label: Text('A pair')),
+                ButtonSegment(value: false, label: Text('Just one')),
+              ],
+              selected: {_pair},
+              onSelectionChanged: (v) => setState(() => _pair = v.single),
+            ),
+          ],
+        ],
       ),
       actions: [
         TextButton(

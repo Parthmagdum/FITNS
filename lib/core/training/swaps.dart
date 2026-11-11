@@ -3,13 +3,15 @@ import 'loads.dart';
 
 export 'loads.dart';
 
-/// What today's session has to fit: the equipment where the user is, and
-/// whether to skip jumps and hard landings.
+/// What today's session has to fit: the equipment where the user is, the
+/// exact weights it has, how strong the user is, and whether to skip jumps
+/// and hard landings.
 class TrainingConditions {
   const TrainingConditions({
     this.place,
     this.equipment,
     this.weights = const {},
+    this.strength = const {},
     this.lowImpactOnly = false,
   });
 
@@ -25,13 +27,28 @@ class TrainingConditions {
   /// The exact weights the place has. Equipment not listed has no limit.
   final OwnedWeights weights;
 
+  /// Exercise id → the user's best estimated one-rep max on it, in grams.
+  final Map<int, int> strength;
+
   final bool lowImpactOnly;
 
-  /// The weights available for [e], lightest first — or null when any
-  /// weight will do.
-  List<int>? ownedWeights(Equipment e) {
-    final owned = weights[e];
-    return owned == null || owned.isEmpty ? null : owned;
+  /// The weights [exercise] can use here, lightest first — only pairs when
+  /// it needs two dumbbells. Null when any weight will do; empty when the
+  /// place has weights but none that suit (a single dumbbell for a curl).
+  List<int>? loadsFor(ExerciseRow exercise) {
+    final owned = weights[exercise.equipment];
+    if (owned == null || owned.isEmpty) return null;
+    return usableWeights(owned, exercise);
+  }
+
+  /// Whether the weights here are too light to train [exercise] — the user
+  /// is strong enough that even the heaviest would take over 30 reps.
+  /// Only known once they've logged it.
+  bool tooLight(ExerciseRow exercise) {
+    if (exercise.kind != ExerciseKind.weightReps) return false;
+    final max = strength[exercise.id];
+    final loads = loadsFor(exercise);
+    return max != null && loads != null && tooLightFor(max, loads);
   }
 
   bool get isUnrestricted => equipment == null && !lowImpactOnly;
@@ -39,21 +56,68 @@ class TrainingConditions {
   bool hasEquipment(Equipment e) =>
       equipment == null || e == Equipment.bodyweight || equipment!.contains(e);
 
-  /// Whether [exercise] can be done today as it is.
+  bool _missingPair(ExerciseRow exercise) =>
+      loadsFor(exercise)?.isEmpty ?? false;
+
+  /// Whether [exercise] can be done today as it is. Too light still fits:
+  /// it can be done, just not to much effect — see [tooLight].
   bool fits(ExerciseRow exercise) =>
       hasEquipment(exercise.equipment) &&
+      !_missingPair(exercise) &&
       !(lowImpactOnly && exercise.highImpact);
 
-  /// Why [exercise] doesn't fit, worded for a subtitle; null if it does.
+  /// What's wrong with doing [exercise] today, worded for a subtitle; null
+  /// if nothing is.
   String? problemWith(ExerciseRow exercise) {
+    final at = place == null ? '' : ' at $place';
     if (!hasEquipment(exercise.equipment)) {
       return place == null
           ? 'Needs ${exercise.equipment.label.toLowerCase()}'
           : 'No ${exercise.equipment.label.toLowerCase()} at $place';
     }
+    if (_missingPair(exercise)) return 'Needs a pair of dumbbells$at';
     if (lowImpactOnly && exercise.highImpact) return 'High impact';
+    if (tooLight(exercise)) return 'The weights$at are light for you';
     return null;
   }
+}
+
+/// Roughly how hard a movement is for its muscle, from its name: working
+/// one side at a time, or lifting the whole body, beats a two-sided move
+/// with light weights. Only compared between exercises, never shown.
+int difficultyOf(ExerciseRow exercise) {
+  final n = exercise.name.toLowerCase();
+  var d = 0;
+  const unilateral = [
+    'single-leg',
+    'one-arm',
+    'bulgarian',
+    'split',
+    'pistol',
+    'nordic',
+    'cossack',
+    'step-up',
+    'lunge',
+    'archer',
+    'pike',
+    'diamond',
+    'decline',
+  ];
+  if (unilateral.any(n.contains)) d += 3;
+  if (n.contains('jump') || n.contains('burpee')) d += 2;
+  if (exercise.equipment == Equipment.bodyweight) d += 1;
+  const easier = [
+    'incline push',
+    'bodyweight squat',
+    'wall sit',
+    'knee',
+    'march',
+    'stretch',
+    'circles',
+    'swings',
+  ];
+  if (easier.any(n.contains)) d -= 3;
+  return d;
 }
 
 /// Equipment that loads a movement the same way, so one stands in for
@@ -104,21 +168,31 @@ int swapScore(ExerciseRow original, ExerciseRow candidate) {
 }
 
 /// Exercises that train what [original] trains and fit [conditions], best
-/// first. Excludes [original] itself and anything archived.
+/// first. Excludes [original] itself, anything archived, and anything the
+/// weights here are too light for. When they're too light for [original],
+/// only harder movements, the hardest first.
 List<ExerciseRow> rankSwaps(
   ExerciseRow original,
   Iterable<ExerciseRow> library,
   TrainingConditions conditions,
 ) {
+  // Swapping because the weights are too light: only something harder.
+  final harder = conditions.tooLight(original);
+  final base = difficultyOf(original);
   final candidates = [
     for (final e in library)
       if (e.id != original.id &&
           !e.isArchived &&
           e.muscle == original.muscle &&
-          conditions.fits(e))
+          conditions.fits(e) &&
+          !conditions.tooLight(e) &&
+          (!harder || difficultyOf(e) > base))
         e,
   ];
-  final scores = {for (final e in candidates) e.id: swapScore(original, e)};
+  final scores = {
+    for (final e in candidates)
+      e.id: swapScore(original, e) + (harder ? 3 * difficultyOf(e) : 0),
+  };
   candidates.sort((x, y) {
     final byScore = scores[y.id]!.compareTo(scores[x.id]!);
     return byScore != 0
@@ -130,13 +204,17 @@ List<ExerciseRow> rankSwaps(
 
 /// What to do instead of [original] today: itself if it fits, else the best
 /// stand-in, else null — nothing in the library fits, so keep the original
-/// and let the user decide.
+/// and let the user decide. When the weights are too light for it, a
+/// harder movement — or [original] itself if there's none.
 ExerciseRow? swapFor(
   ExerciseRow original,
   Iterable<ExerciseRow> library,
   TrainingConditions conditions,
 ) {
-  if (conditions.fits(original)) return original;
+  if (conditions.fits(original)) {
+    if (!conditions.tooLight(original)) return original;
+    return rankSwaps(original, library, conditions).firstOrNull ?? original;
+  }
   return rankSwaps(original, library, conditions).firstOrNull;
 }
 

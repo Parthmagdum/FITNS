@@ -85,6 +85,11 @@ final lastProgramDaysProvider = StreamProvider<Map<int, int>>(
   (ref) => ref.watch(dbProvider).watchLastProgramDays(),
 );
 
+/// Exercise id → the user's best estimated one-rep max on it, in grams.
+final bestLiftsProvider = StreamProvider<Map<int, int>>(
+  (ref) => ref.watch(dbProvider).watchBestLifts(),
+);
+
 /// Where the user trains today and how — the same answer
 /// `AppDatabase.trainingConditions` gives, kept live for the screens.
 final trainingConditionsProvider = Provider<TrainingConditions>((ref) {
@@ -97,6 +102,9 @@ final trainingConditionsProvider = Provider<TrainingConditions>((ref) {
     place: place?.name,
     equipment: place == null ? null : parseEquipment(place.equipment),
     weights: parseWeights(place?.weights),
+    strength: place?.weights == null
+        ? const {}
+        : ref.watch(bestLiftsProvider).valueOrNull ?? const {},
     lowImpactOnly: settings?.lowImpactOnly ?? false,
   );
 });

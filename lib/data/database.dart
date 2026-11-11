@@ -1336,9 +1336,42 @@ class AppDatabase extends _$AppDatabase {
       place: place?.name,
       equipment: place == null ? null : parseEquipment(place.equipment),
       weights: parseWeights(place?.weights),
+      strength: place?.weights == null ? const {} : await bestLifts(),
       lowImpactOnly: s.lowImpactOnly,
     );
   }
+
+  /// Every finished, loaded set: what strength is measured from.
+  Selectable<ExerciseSet> _liftedSets() =>
+      (select(workoutSets).join([
+            innerJoin(
+              workoutExercises,
+              workoutExercises.id.equalsExp(workoutSets.workoutExerciseId),
+            ),
+            innerJoin(
+              workouts,
+              workouts.id.equalsExp(workoutExercises.workoutId),
+            ),
+          ])..where(
+            workoutSets.done.equals(true) &
+                workouts.endedAt.isNotNull() &
+                workoutSets.weightGrams.isBiggerThanValue(0) &
+                workoutSets.reps.isBiggerThanValue(0),
+          ))
+          .map(
+            (r) => (
+              exerciseId: r.readTable(workoutExercises).exerciseId,
+              weightGrams: r.readTable(workoutSets).weightGrams!,
+              reps: r.readTable(workoutSets).reps!,
+            ),
+          );
+
+  /// Exercise id → the user's best estimated one-rep max on it, in grams.
+  Future<Map<int, int>> bestLifts() async =>
+      bestOneRepMaxes(await _liftedSets().get());
+
+  Stream<Map<int, int>> watchBestLifts() =>
+      _liftedSets().watch().map(bestOneRepMaxes);
 
   // ── Goal & plan ────────────────────────────────────────────────────────────
 

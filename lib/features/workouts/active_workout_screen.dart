@@ -475,9 +475,8 @@ class _ExerciseCard extends ConsumerWidget {
                 entry: entry,
                 previous: previous,
                 units: units,
-                owned: editing
-                    ? null
-                    : conditions.ownedWeights(exercise.equipment),
+                owned: editing ? null : conditions.loadsFor(exercise),
+                start: startingWeight(exercise),
                 place: conditions.place,
               ),
             const SizedBox(height: 4),
@@ -1207,6 +1206,7 @@ class _ProgressHint extends ConsumerWidget {
     required this.previous,
     required this.units,
     this.owned,
+    this.start,
     this.place,
   });
 
@@ -1214,8 +1214,12 @@ class _ProgressHint extends ConsumerWidget {
   final List<WorkoutSetRow> previous;
   final UnitSystem units;
 
-  /// The weights at today's place for this exercise; null = any weight.
+  /// The weights at today's place for this exercise; null = any weight,
+  /// empty = none that suit (the card says why).
   final List<int>? owned;
+
+  /// A first weight to suggest before the exercise is ever logged.
+  final int? start;
 
   /// Today's place's name, for the message.
   final String? place;
@@ -1225,6 +1229,13 @@ class _ProgressHint extends ConsumerWidget {
     final here = place == null ? 'here' : 'at $place';
     final reps = advice.reps;
     return switch (advice.reason) {
+      LoadReason.firstTime =>
+        'First time? Start with '
+            '${mass(advice.weightGrams)} for $reps reps — go heavier next '
+            'time if it felt easy',
+      LoadReason.slowDown =>
+        'Make ${mass(advice.weightGrams)} harder: '
+            'lower for 3 seconds and pause at the bottom of each rep',
       LoadReason.stepUp =>
         'You hit every set last time — try '
             '${mass(advice.weightGrams)}',
@@ -1258,8 +1269,11 @@ class _ProgressHint extends ConsumerWidget {
         UnitSystem.imperial => (5 * gramsPerPound).round(),
       },
       owned: owned,
+      start: start,
     );
-    if (advice == null) return const SizedBox.shrink();
+    if (advice == null || (owned?.isEmpty ?? false)) {
+      return const SizedBox.shrink();
+    }
     final next = advice.weightGrams;
     final open = entry.sets.where((s) => !s.done).toList();
     final applied =
@@ -1279,23 +1293,34 @@ class _ProgressHint extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.trending_up, size: 18, color: theme.accent),
+            Icon(
+              switch (advice.reason) {
+                LoadReason.firstTime => Icons.flag_outlined,
+                LoadReason.slowDown => Icons.slow_motion_video,
+                _ => Icons.trending_up,
+              },
+              size: 18,
+              color: theme.accent,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(_message(advice), style: theme.textTheme.bodySmall),
             ),
-            TextButton(
-              onPressed: open.isEmpty || applied
-                  ? null
-                  : () => ref
-                        .read(dbProvider)
-                        .applyWeightToOpenSets(
-                          entry.item.id,
-                          next,
-                          reps: advice.reps,
-                        ),
-              child: Text(applied ? 'Applied' : 'Use'),
-            ),
+            if (advice.reason == LoadReason.slowDown)
+              const SizedBox(height: 40)
+            else
+              TextButton(
+                onPressed: open.isEmpty || applied
+                    ? null
+                    : () => ref
+                          .read(dbProvider)
+                          .applyWeightToOpenSets(
+                            entry.item.id,
+                            next,
+                            reps: advice.reps,
+                          ),
+                child: Text(applied ? 'Applied' : 'Use'),
+              ),
           ],
         ),
       ),

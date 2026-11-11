@@ -224,11 +224,11 @@ void main() {
           name: home.name,
           equipment: {Equipment.dumbbell},
           weights: {
-            Equipment.dumbbell: [4000],
+            Equipment.dumbbell: [(grams: 4000, count: 2)],
           },
         );
         expect(parseWeights((await upgraded.watchPlaces().first)[1].weights), {
-          Equipment.dumbbell: [4000],
+          Equipment.dumbbell: [(grams: 4000, count: 2)],
         });
       },
     );

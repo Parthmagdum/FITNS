@@ -237,6 +237,15 @@ void main() {
     await tester.tap(find.text('Legs')); // the quick-start chip on Today
     await settle(tester);
     expect(find.text('Squat (Barbell)'), findsOneWidget);
+    // Never logged: a light weight to start with.
+    expect(
+      find.text(
+        'First time? Start with 20 kg for 5 reps — go heavier next time if '
+        'it felt easy',
+      ),
+      findsOneWidget,
+    );
+    await scrollToMiddle(tester, find.text('Start workout'));
     await tester.tap(find.text('Start workout'));
     await settle(tester);
     expect(find.byIcon(Icons.check_circle_outline), findsNWidgets(4));
@@ -715,35 +724,53 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Flat');
     await tester.tap(find.widgetWithText(FilterChip, 'Dumbbell'));
     await settle(tester);
-    expect(find.text('Dumbbell weights (each)'), findsOneWidget);
+    expect(find.text('Dumbbell weights'), findsOneWidget);
     expect(find.text('None listed: any weight.'), findsOneWidget);
 
     await tester.tap(find.text('Add weight'));
     await settle(tester);
     await tester.enterText(find.byType(TextField).last, '4 8');
     await settle(tester);
+    // Dumbbells default to a pair.
+    expect(find.text('A pair'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await settle(tester);
-    expect(find.widgetWithText(InputChip, '4 kg'), findsOneWidget);
-    expect(find.widgetWithText(InputChip, '8 kg'), findsOneWidget);
+    expect(find.widgetWithText(InputChip, 'Pair · 4 kg'), findsOneWidget);
+    expect(find.widgetWithText(InputChip, 'Pair · 8 kg'), findsOneWidget);
 
     // Taking one away.
     await tester.tap(
       find.descendant(
-        of: find.widgetWithText(InputChip, '8 kg'),
+        of: find.widgetWithText(InputChip, 'Pair · 8 kg'),
         matching: find.byTooltip('Remove'),
       ),
     );
     await settle(tester);
-    expect(find.widgetWithText(InputChip, '8 kg'), findsNothing);
+    expect(find.widgetWithText(InputChip, 'Pair · 8 kg'), findsNothing);
+
+    // Only one 10 kg dumbbell.
+    await tester.tap(find.text('Add weight'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).last, '10');
+    await tester.tap(find.text('Just one'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await settle(tester);
+    expect(find.widgetWithText(InputChip, 'Single · 10 kg'), findsOneWidget);
+    // A tap switches it to a pair and back.
+    await tester.tap(find.widgetWithText(InputChip, 'Single · 10 kg'));
+    await settle(tester);
+    expect(find.widgetWithText(InputChip, 'Pair · 10 kg'), findsOneWidget);
+    await tester.tap(find.widgetWithText(InputChip, 'Pair · 10 kg'));
+    await settle(tester);
 
     await tester.tap(find.text('Create'));
     await settle(tester);
-    expect(find.text('Dumbbell (4 kg)'), findsOneWidget);
+    expect(find.text('Dumbbell (2 × 4, 1 × 10 kg)'), findsOneWidget);
     final flat = (await tester.runAsync(
       () => db.watchPlaces().first,
     ))!.firstWhere((p) => p.name == 'Flat');
-    expect(flat.weights, 'dumbbell:4000');
+    expect(flat.weights, 'dumbbell:4000x2,10000x1');
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
@@ -792,7 +819,7 @@ void main() {
           name: home.name,
           equipment: {Equipment.dumbbell},
           weights: {
-            Equipment.dumbbell: [4000],
+            Equipment.dumbbell: [(grams: 4000, count: 2)],
           },
         );
         await db.updateSettings(
