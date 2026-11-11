@@ -70,6 +70,9 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
   /// reschedule every reminder.
   String? _syncedReminders;
 
+  /// The setup guide opens once, the first time FITNS starts.
+  var _offeredSetup = false;
+
   @override
   Widget build(BuildContext context) {
     ref.listen(settingsProvider, (_, next) {
@@ -80,6 +83,12 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
       if (key == _syncedReminders) return;
       _syncedReminders = key;
       ref.read(remindersProvider).sync(reminders);
+    });
+    ref.listen(settingsProvider, (_, next) {
+      final settings = next.valueOrNull;
+      if (settings == null || settings.setupDone || _offeredSetup) return;
+      _offeredSetup = true;
+      ref.read(routerProvider).push('/setup');
     });
     ref.listen<WidgetData?>(widgetDataProvider, (previous, next) {
       if (next != null && next != previous) {

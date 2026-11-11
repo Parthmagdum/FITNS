@@ -39,4 +39,19 @@ void main() {
     expect(food(1840), '1,840 kcal eaten');
     expect(food(0), isEmpty);
   });
+
+  test('the streak, in weeks, or nothing before the first', () {
+    final d = widgetData(
+      day: day,
+      steps: 0,
+      stepGoal: 8000,
+      kcalEaten: 0,
+      kcalGoal: null,
+      nextWorkout: null,
+      streakWeeks: 3,
+    );
+    expect(d.streakWeeks, 3);
+    expect(d.streak, '\u{1F525} 3-week streak');
+    expect(streakLine(0), isEmpty);
+  });
 }

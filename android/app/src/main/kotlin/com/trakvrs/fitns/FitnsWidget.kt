@@ -21,7 +21,8 @@ class FitnsWidget : AppWidgetProvider() {
     }
 
     companion object {
-        private const val PREFS = "fitns_widget"
+        /** Shared with [StreakWidget], which shows part of the same data. */
+        const val PREFS = "fitns_widget"
 
         fun save(context: Context, data: Map<*, *>) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
@@ -30,11 +31,14 @@ class FitnsWidget : AppWidgetProvider() {
                 putInt("stepGoal", (data["stepGoal"] as? Number)?.toInt() ?: 0)
                 putString("food", data["food"] as? String)
                 putString("next", data["next"] as? String)
+                putInt("streakWeeks", (data["streakWeeks"] as? Number)?.toInt() ?: 0)
+                putString("streak", data["streak"] as? String)
                 apply()
             }
             val manager = AppWidgetManager.getInstance(context)
             val ids = manager.getAppWidgetIds(ComponentName(context, FitnsWidget::class.java))
             for (id in ids) manager.updateAppWidget(id, views(context))
+            StreakWidget.refresh(context)
         }
 
         private fun views(context: Context): RemoteViews {
@@ -59,6 +63,7 @@ class FitnsWidget : AppWidgetProvider() {
                 )
                 views.setTextViewText(R.id.widget_food, if (stale) "" else prefs.getString("food", "") ?: "")
                 views.setTextViewText(R.id.widget_next, prefs.getString("next", "") ?: "")
+                views.setTextViewText(R.id.widget_streak, prefs.getString("streak", "") ?: "")
             }
             val open = PendingIntent.getActivity(
                 context,

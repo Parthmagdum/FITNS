@@ -285,7 +285,32 @@ class SettingsScreen extends ConsumerWidget {
           onSelectionChanged: (s) =>
               save(SettingsCompanion(themeMode: Value(s.first.name))),
         ),
+        const SizedBox(height: 12),
+        Card(
+          child: SwitchListTile(
+            secondary: const Icon(Icons.animation),
+            title: const Text('Exercise animations'),
+            subtitle: const Text(
+              'Exercise guides play their photos and drawings by themselves. '
+              'Off, they wait until you tap play.',
+            ),
+            value: settings.exerciseAnimations,
+            onChanged: (on) =>
+                save(SettingsCompanion(exerciseAnimations: Value(on))),
+          ),
+        ),
         const SectionLabel('About'),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.flag_outlined),
+            title: const Text('Setup guide'),
+            subtitle: const Text(
+              'Units, goal, where you train, steps, reminders',
+            ),
+            onTap: () => context.push('/setup'),
+          ),
+        ),
+        const SizedBox(height: 12),
         Card(
           child: ListTile(
             leading: const Icon(Icons.info_outline),

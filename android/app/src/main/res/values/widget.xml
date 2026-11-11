@@ -6,5 +6,9 @@
     <string name="widget_title">FITNS · TODAY</string>
     <string name="widget_open_app">Open FITNS to start</string>
     <string name="widget_label">FITNS today</string>
-    <string name="widget_description">Steps, calories left and your next workout</string>
+    <string name="widget_description">Steps, calories left, your streak and next workout</string>
+    <string name="streak_widget_label">FITNS streak</string>
+    <string name="streak_widget_description">Weeks in a row with a workout</string>
+    <string name="streak_widget_weeks">weeks training in a row</string>
+    <string name="streak_widget_none">Train this week to start a streak</string>
 </resources>

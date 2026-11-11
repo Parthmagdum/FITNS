@@ -43,6 +43,15 @@
         android:textSize="14sp"/>
 
     <TextView
+        android:id="@+id/widget_streak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/widget_text"
+        android:textSize="13sp"
+        android:textStyle="bold"/>
+
+    <TextView
         android:id="@+id/widget_next"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

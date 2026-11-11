@@ -122,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -209,6 +209,25 @@ class AppDatabase extends _$AppDatabase {
       }
       // Created whole (weights included) by the v7 step on older files.
       if (from < 10 && from >= 7) await m.addColumn(places, places.weights);
+      if (from < 11) {
+        for (final column in <GeneratedColumn>[
+          settings.waterIntervalMinutes,
+          settings.waterStartMinute,
+          settings.waterEndMinute,
+          settings.bedtimeReminderMinute,
+          settings.exerciseAnimations,
+          settings.setupDone,
+        ]) {
+          await m.addColumn(settings, column);
+        }
+        // Someone updating has used FITNS already: no setup guide — even
+        // if they never got as far as a settings row.
+        await customStatement('UPDATE settings SET setup_done = 1');
+        await into(settings).insert(
+          const SettingsCompanion(id: Value(1), setupDone: Value(true)),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
     },
     beforeOpen: (details) async {
       // SQLite leaves foreign keys off unless asked, and the cascades in

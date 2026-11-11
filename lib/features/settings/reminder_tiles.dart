@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/notifications/reminders.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 
@@ -19,7 +20,7 @@ const _weekdays = [
 String _time(BuildContext context, int minute) =>
     TimeOfDay(hour: minute ~/ 60, minute: minute % 60).format(context);
 
-/// The reminders card in Settings: train, drink water, weigh in.
+/// The reminders card in Settings: train, drink water, weigh in, go to bed.
 class ReminderTiles extends ConsumerWidget {
   const ReminderTiles({super.key, required this.settings});
 
@@ -44,6 +45,7 @@ class ReminderTiles extends ConsumerWidget {
 
     final workout = settings.workoutReminderMinute;
     final weighIn = settings.weighInReminderMinute;
+    final bedtime = settings.bedtimeReminderMinute;
     final dayMask = settings.workoutReminderDays;
 
     return Card(
@@ -110,13 +112,73 @@ class ReminderTiles extends ConsumerWidget {
           SwitchListTile(
             secondary: const Icon(Icons.water_drop_outlined),
             title: const Text('Water reminders'),
-            subtitle: const Text('Every two hours, 9 am to 9 pm'),
+            subtitle: Text(
+              settings.waterReminders
+                  ? '${waterIntervalLabel(settings.waterIntervalMinutes)}, '
+                        '${_time(context, settings.waterStartMinute)} to '
+                        '${_time(context, settings.waterEndMinute)}'
+                  : 'Off',
+            ),
             value: settings.waterReminders,
             onChanged: (on) async {
               if (on) await askToNotify();
               await save(SettingsCompanion(waterReminders: Value(on)));
             },
           ),
+          if (settings.waterReminders)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  DropdownButton<int>(
+                    value:
+                        waterIntervals.contains(settings.waterIntervalMinutes)
+                        ? settings.waterIntervalMinutes
+                        : 120,
+                    items: [
+                      for (final m in waterIntervals)
+                        DropdownMenuItem(
+                          value: m,
+                          child: Text(waterIntervalLabel(m)),
+                        ),
+                    ],
+                    onChanged: (m) => m == null
+                        ? null
+                        : save(
+                            SettingsCompanion(waterIntervalMinutes: Value(m)),
+                          ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final m = await pickTime(settings.waterStartMinute);
+                      if (m != null) {
+                        await save(
+                          SettingsCompanion(waterStartMinute: Value(m)),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.wb_sunny_outlined),
+                    label: Text(
+                      'From ${_time(context, settings.waterStartMinute)}',
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final m = await pickTime(settings.waterEndMinute);
+                      if (m != null) {
+                        await save(SettingsCompanion(waterEndMinute: Value(m)));
+                      }
+                    },
+                    icon: const Icon(Icons.nights_stay_outlined),
+                    label: Text(
+                      'Until ${_time(context, settings.waterEndMinute)}',
+                    ),
+                  ),
+                ],
+              ),
+            ),
           SwitchListTile(
             secondary: const Icon(Icons.monitor_weight_outlined),
             title: const Text('Weekly weigh-in'),
@@ -170,6 +232,43 @@ class ReminderTiles extends ConsumerWidget {
                     label: Text(_time(context, weighIn)),
                   ),
                 ],
+              ),
+            ),
+          SwitchListTile(
+            secondary: const Icon(Icons.bedtime_outlined),
+            title: const Text('Bedtime reminder'),
+            subtitle: Text(
+              bedtime == null
+                  ? 'Off'
+                  : 'Every night at ${_time(context, bedtime)}',
+            ),
+            value: bedtime != null,
+            onChanged: (on) async {
+              if (on) await askToNotify();
+              await save(
+                SettingsCompanion(
+                  bedtimeReminderMinute: Value(on ? 22 * 60 + 30 : null),
+                ),
+              );
+            },
+          ),
+          if (bedtime != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final m = await pickTime(bedtime);
+                    if (m != null) {
+                      await save(
+                        SettingsCompanion(bedtimeReminderMinute: Value(m)),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.schedule),
+                  label: Text('At ${_time(context, bedtime)}'),
+                ),
               ),
             ),
         ],

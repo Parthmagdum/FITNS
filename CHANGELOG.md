@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.1.4 — 2026-11-11
+
+**Training with what you have**
+- **Pairs or singles**: each weight at a place is now a pair or just one.
+  Exercises with a dumbbell in each hand use only the weights you have
+  two of, and swap for a one-dumbbell move when there's no pair.
+- **Too light? Something harder**: once you've logged an exercise, if
+  even the heaviest weight at a place would take over 30 reps, FITNS
+  swaps in a harder move for the same muscle (goblet squat to Bulgarian
+  split squat). At 30 reps with nothing heavier, it suggests a slow
+  tempo instead.
+- **First time**: an exercise you've never logged suggests a light
+  starting weight, from what the place has.
+- **Rest isn't exercise time**: the next exercise's clock now starts when
+  your rest ends. Skip or change the rest and it follows.
+
+**Easier to use**
+- **Quick actions** at the top of Today: start or continue a workout,
+  log food, add water, weigh in — one tap each.
+- **Swipe between tabs**, as well as tapping them.
+- **The rest countdown** shows in the workout bar on every tab.
+- **Setup guide** on first launch: units, goal, where you train, steps,
+  reminders. Every step can be skipped; it's in Settings too.
+
+**From issue #8**
+- **Drawn, animated guides** for the 18 exercises without photos —
+  burpees, jumping jacks, wall sits, band moves and more. Every built-in
+  exercise now shows its movement.
+- **Exercise animations** can be turned off (Settings → Appearance); the
+  guide then waits for you to tap play.
+- **Water reminders your way**: every 30 minutes to 4 hours, between the
+  times you choose.
+- **Bedtime reminder**, at the time you pick.
+- **Streak widgets**: the FITNS widget shows your training streak, and a
+  new small widget shows just the streak.
+
 ## 0.1.3 — 2026-11-10
 
 - **Real food photos**: every one of the 123 built-in foods now has a

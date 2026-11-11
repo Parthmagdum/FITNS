@@ -38,6 +38,18 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 11) {
+      for (final column in [
+        'water_interval_minutes',
+        'water_start_minute',
+        'water_end_minute',
+        'bedtime_reminder_minute',
+        'exercise_animations',
+        'setup_done',
+      ]) {
+        await db.customStatement('ALTER TABLE settings DROP COLUMN $column');
+      }
+    }
     if (schema < 10) {
       await db.customStatement('ALTER TABLE places DROP COLUMN weights');
     }
@@ -152,6 +164,7 @@ void main() {
     (7, '0.0.6'),
     (8, '0.0.7'),
     (9, '0.1.1'),
+    (10, '0.1.3'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
@@ -217,6 +230,12 @@ void main() {
           sleptAt: DateTime(2026, 11, 1, 23),
           wokeAt: DateTime(2026, 11, 2, 7),
         );
+        // Schema v11: someone updating isn't shown the setup guide, and
+        // water reminders keep their old two-hourly 9-to-9.
+        final s11 = await upgraded.getSettings();
+        expect(s11.setupDone, isTrue);
+        expect(s11.waterIntervalMinutes, 120);
+        expect(s11.exerciseAnimations, isTrue);
         // Schema v10: a place keeps its exact weights.
         final home = (await upgraded.watchPlaces().first)[1];
         await upgraded.savePlace(
@@ -798,5 +817,9 @@ void main() {
     expect((await db.watchExercises().first).length, fresh.exercises);
     expect((await db.watchRoutines().first).length, fresh.routines);
     expect((await db.watchPlaces().first).length, fresh.places);
+  });
+
+  test('a new install starts with the setup guide', () async {
+    expect((await db.getSettings()).setupDone, isFalse);
   });
 }

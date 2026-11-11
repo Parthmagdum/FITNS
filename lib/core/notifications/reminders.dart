@@ -14,8 +14,32 @@ typedef ReminderSpec = ({
   int? weekday,
 });
 
-/// The hours a water reminder goes off.
-const waterReminderHours = [9, 11, 13, 15, 17, 19, 21];
+/// The choices for how often the water reminder repeats, in minutes.
+const waterIntervals = [30, 45, 60, 90, 120, 180, 240];
+
+/// The minutes after midnight a water reminder goes off: every
+/// [interval] from [start] to [end], both included when they line up. An
+/// [end] before [start] runs past midnight. At most one a quarter-hour,
+/// so a mistyped setting can't flood the phone.
+List<int> waterReminderTimes({
+  required int start,
+  required int end,
+  required int interval,
+}) {
+  final step = interval < 15 ? 15 : interval;
+  final span = end >= start ? end - start : end + 24 * 60 - start;
+  return [for (var m = 0; m <= span; m += step) (start + m) % (24 * 60)];
+}
+
+/// "Every 2 hours", "Every 45 minutes", "Every 1½ hours".
+String waterIntervalLabel(int minutes) {
+  if (minutes < 60) return 'Every $minutes minutes';
+  if (minutes == 60) return 'Every hour';
+  final hours = minutes ~/ 60;
+  final half = minutes % 60 == 30;
+  if (minutes % 60 == 0) return 'Every $hours hours';
+  return half ? 'Every $hours½ hours' : 'Every $minutes minutes';
+}
 
 /// Every reminder [settings] asks for. Ids are stable per slot, so a sync
 /// replaces exactly what was there.
@@ -31,12 +55,16 @@ List<ReminderSpec> remindersFor(SettingRow settings) => [
           weekday: day,
         ),
   if (settings.waterReminders)
-    for (final hour in waterReminderHours)
+    for (final (i, minute) in waterReminderTimes(
+      start: settings.waterStartMinute,
+      end: settings.waterEndMinute,
+      interval: settings.waterIntervalMinutes,
+    ).indexed)
       (
-        id: 200 + hour,
+        id: 1000 + i,
         title: 'Drink some water',
         text: 'A glass now keeps you on pace for your goal.',
-        minute: hour * 60,
+        minute: minute,
         weekday: null,
       ),
   if (settings.weighInReminderMinute case final minute?)
@@ -46,6 +74,14 @@ List<ReminderSpec> remindersFor(SettingRow settings) => [
       text: 'Step on the scale before breakfast — it keeps your plan on track.',
       minute: minute,
       weekday: settings.weighInReminderWeekday,
+    ),
+  if (settings.bedtimeReminderMinute case final minute?)
+    (
+      id: 400,
+      title: 'Time to wind down',
+      text: 'Screens off soon: a good night is part of the training.',
+      minute: minute,
+      weekday: null,
     ),
 ];
 

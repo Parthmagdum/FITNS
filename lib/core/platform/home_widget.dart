@@ -14,7 +14,16 @@ typedef WidgetData = ({
 
   /// "Next: Push day" — or empty.
   String next,
+
+  /// Weeks in a row with a workout, ending this week or last.
+  int streakWeeks,
+
+  /// "🔥 3-week streak" — or empty before the first workout.
+  String streak,
 });
+
+/// "🔥 3-week streak", "🔥 1-week streak", or empty for none.
+String streakLine(int weeks) => weeks <= 0 ? '' : '🔥 $weeks-week streak';
 
 /// Builds the lines the widget shows.
 WidgetData widgetData({
@@ -24,6 +33,7 @@ WidgetData widgetData({
   required int kcalEaten,
   required int? kcalGoal,
   required String? nextWorkout,
+  int streakWeeks = 0,
 }) {
   final n = NumberFormat('#,##0');
   final String food;
@@ -41,6 +51,8 @@ WidgetData widgetData({
     stepGoal: stepGoal,
     food: food,
     next: nextWorkout == null ? '' : 'Next: $nextWorkout',
+    streakWeeks: streakWeeks,
+    streak: streakLine(streakWeeks),
   );
 }
 
@@ -59,6 +71,8 @@ class HomeWidget {
         'stepGoal': d.stepGoal,
         'food': d.food,
         'next': d.next,
+        'streakWeeks': d.streakWeeks,
+        'streak': d.streak,
       });
     } on MissingPluginException {
       // Not on Android.

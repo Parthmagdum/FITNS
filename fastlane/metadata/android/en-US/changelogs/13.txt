@@ -1,0 +1,7 @@
+Easier, and smarter about your weights.
+- Quick actions on Today, swipe between tabs, a setup guide
+- Animated guides for every exercise, with an off switch
+- Water reminders on your own schedule, and a bedtime reminder
+- Streak widgets for your home screen
+- Dumbbell pairs, harder moves when weights are too light
+- The next exercise's clock waits for your rest

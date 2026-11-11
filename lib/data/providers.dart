@@ -10,6 +10,7 @@ import '../core/platform/barcode_scanner.dart';
 import '../core/platform/document_files.dart';
 import '../core/platform/health_connect.dart';
 import '../core/platform/home_widget.dart';
+import '../core/progress.dart';
 import '../core/platform/photo_source.dart';
 import '../core/steps/step_sensor.dart';
 import '../core/steps/step_tracker.dart';
@@ -294,6 +295,7 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
   final logs = ref.watch(foodLogsProvider(today)).valueOrNull;
   final programs = ref.watch(programsProvider).valueOrNull;
   final lastDays = ref.watch(lastProgramDaysProvider).valueOrNull;
+  final history = ref.watch(workoutHistoryProvider).valueOrNull;
   if (settings == null || steps == null || logs == null) return null;
   String? next;
   for (final p in programs ?? const <ProgramDetail>[]) {
@@ -310,6 +312,9 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
     kcalEaten: logs.fold(0, (sum, l) => sum + l.kcal),
     kcalGoal: settings.calorieGoal,
     nextWorkout: next,
+    streakWeeks: weekStreak([
+      for (final h in history ?? const <WorkoutSummary>[]) h.workout.startedAt,
+    ], today),
   );
 });
 

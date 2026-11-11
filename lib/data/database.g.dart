@@ -332,6 +332,51 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _waterIntervalMinutesMeta =
+      const VerificationMeta('waterIntervalMinutes');
+  @override
+  late final GeneratedColumn<int> waterIntervalMinutes = GeneratedColumn<int>(
+    'water_interval_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(120),
+  );
+  static const VerificationMeta _waterStartMinuteMeta = const VerificationMeta(
+    'waterStartMinute',
+  );
+  @override
+  late final GeneratedColumn<int> waterStartMinute = GeneratedColumn<int>(
+    'water_start_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(9 * 60),
+  );
+  static const VerificationMeta _waterEndMinuteMeta = const VerificationMeta(
+    'waterEndMinute',
+  );
+  @override
+  late final GeneratedColumn<int> waterEndMinute = GeneratedColumn<int>(
+    'water_end_minute',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(21 * 60),
+  );
+  static const VerificationMeta _bedtimeReminderMinuteMeta =
+      const VerificationMeta('bedtimeReminderMinute');
+  @override
+  late final GeneratedColumn<int> bedtimeReminderMinute = GeneratedColumn<int>(
+    'bedtime_reminder_minute',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _weighInReminderMinuteMeta =
       const VerificationMeta('weighInReminderMinute');
   @override
@@ -383,6 +428,35 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _exerciseAnimationsMeta =
+      const VerificationMeta('exerciseAnimations');
+  @override
+  late final GeneratedColumn<bool> exerciseAnimations = GeneratedColumn<bool>(
+    'exercise_animations',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("exercise_animations" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _setupDoneMeta = const VerificationMeta(
+    'setupDone',
+  );
+  @override
+  late final GeneratedColumn<bool> setupDone = GeneratedColumn<bool>(
+    'setup_done',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("setup_done" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -414,10 +488,16 @@ class $SettingsTable extends Settings
     workoutReminderMinute,
     workoutReminderDays,
     waterReminders,
+    waterIntervalMinutes,
+    waterStartMinute,
+    waterEndMinute,
+    bedtimeReminderMinute,
     weighInReminderMinute,
     weighInReminderWeekday,
     cycleTracking,
     healthConnect,
+    exerciseAnimations,
+    setupDone,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -626,6 +706,42 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('water_interval_minutes')) {
+      context.handle(
+        _waterIntervalMinutesMeta,
+        waterIntervalMinutes.isAcceptableOrUnknown(
+          data['water_interval_minutes']!,
+          _waterIntervalMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('water_start_minute')) {
+      context.handle(
+        _waterStartMinuteMeta,
+        waterStartMinute.isAcceptableOrUnknown(
+          data['water_start_minute']!,
+          _waterStartMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('water_end_minute')) {
+      context.handle(
+        _waterEndMinuteMeta,
+        waterEndMinute.isAcceptableOrUnknown(
+          data['water_end_minute']!,
+          _waterEndMinuteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bedtime_reminder_minute')) {
+      context.handle(
+        _bedtimeReminderMinuteMeta,
+        bedtimeReminderMinute.isAcceptableOrUnknown(
+          data['bedtime_reminder_minute']!,
+          _bedtimeReminderMinuteMeta,
+        ),
+      );
+    }
     if (data.containsKey('weigh_in_reminder_minute')) {
       context.handle(
         _weighInReminderMinuteMeta,
@@ -660,6 +776,21 @@ class $SettingsTable extends Settings
           data['health_connect']!,
           _healthConnectMeta,
         ),
+      );
+    }
+    if (data.containsKey('exercise_animations')) {
+      context.handle(
+        _exerciseAnimationsMeta,
+        exerciseAnimations.isAcceptableOrUnknown(
+          data['exercise_animations']!,
+          _exerciseAnimationsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('setup_done')) {
+      context.handle(
+        _setupDoneMeta,
+        setupDone.isAcceptableOrUnknown(data['setup_done']!, _setupDoneMeta),
       );
     }
     return context;
@@ -797,6 +928,22 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}water_reminders'],
       )!,
+      waterIntervalMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}water_interval_minutes'],
+      )!,
+      waterStartMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}water_start_minute'],
+      )!,
+      waterEndMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}water_end_minute'],
+      )!,
+      bedtimeReminderMinute: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bedtime_reminder_minute'],
+      ),
       weighInReminderMinute: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}weigh_in_reminder_minute'],
@@ -812,6 +959,14 @@ class $SettingsTable extends Settings
       healthConnect: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}health_connect'],
+      )!,
+      exerciseAnimations: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}exercise_animations'],
+      )!,
+      setupDone: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}setup_done'],
       )!,
     );
   }
@@ -911,8 +1066,21 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// Days it fires: bit 0 Monday … bit 6 Sunday.
   final int workoutReminderDays;
 
-  /// A drink reminder every two hours from 9:00 to 21:00.
+  /// Drink reminders, every [waterIntervalMinutes] from [waterStartMinute]
+  /// to [waterEndMinute].
   final bool waterReminders;
+
+  /// How often the water reminder repeats, in minutes. Schema v11.
+  final int waterIntervalMinutes;
+
+  /// The first and last water reminders of the day, minutes after
+  /// midnight. Schema v11.
+  final int waterStartMinute;
+  final int waterEndMinute;
+
+  /// Minutes after midnight for the bedtime reminder; null = off.
+  /// Schema v11.
+  final int? bedtimeReminderMinute;
 
   /// Minutes after midnight for the weekly weigh-in reminder; null = off.
   final int? weighInReminderMinute;
@@ -928,6 +1096,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// Health Connect connected: steps and weight in, workouts out, on each
   /// open. Schema v9.
   final bool healthConnect;
+
+  /// Exercise guides play their photos or figures by themselves. Off, they
+  /// show the start position until tapped. Schema v11.
+  final bool exerciseAnimations;
+
+  /// The first-launch setup guide was finished or skipped. Schema v11;
+  /// installs from before it count as set up.
+  final bool setupDone;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -958,10 +1134,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     this.workoutReminderMinute,
     required this.workoutReminderDays,
     required this.waterReminders,
+    required this.waterIntervalMinutes,
+    required this.waterStartMinute,
+    required this.waterEndMinute,
+    this.bedtimeReminderMinute,
     this.weighInReminderMinute,
     required this.weighInReminderWeekday,
     required this.cycleTracking,
     required this.healthConnect,
+    required this.exerciseAnimations,
+    required this.setupDone,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1041,12 +1223,20 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     }
     map['workout_reminder_days'] = Variable<int>(workoutReminderDays);
     map['water_reminders'] = Variable<bool>(waterReminders);
+    map['water_interval_minutes'] = Variable<int>(waterIntervalMinutes);
+    map['water_start_minute'] = Variable<int>(waterStartMinute);
+    map['water_end_minute'] = Variable<int>(waterEndMinute);
+    if (!nullToAbsent || bedtimeReminderMinute != null) {
+      map['bedtime_reminder_minute'] = Variable<int>(bedtimeReminderMinute);
+    }
     if (!nullToAbsent || weighInReminderMinute != null) {
       map['weigh_in_reminder_minute'] = Variable<int>(weighInReminderMinute);
     }
     map['weigh_in_reminder_weekday'] = Variable<int>(weighInReminderWeekday);
     map['cycle_tracking'] = Variable<bool>(cycleTracking);
     map['health_connect'] = Variable<bool>(healthConnect);
+    map['exercise_animations'] = Variable<bool>(exerciseAnimations);
+    map['setup_done'] = Variable<bool>(setupDone);
     return map;
   }
 
@@ -1115,12 +1305,20 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           : Value(workoutReminderMinute),
       workoutReminderDays: Value(workoutReminderDays),
       waterReminders: Value(waterReminders),
+      waterIntervalMinutes: Value(waterIntervalMinutes),
+      waterStartMinute: Value(waterStartMinute),
+      waterEndMinute: Value(waterEndMinute),
+      bedtimeReminderMinute: bedtimeReminderMinute == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bedtimeReminderMinute),
       weighInReminderMinute: weighInReminderMinute == null && nullToAbsent
           ? const Value.absent()
           : Value(weighInReminderMinute),
       weighInReminderWeekday: Value(weighInReminderWeekday),
       cycleTracking: Value(cycleTracking),
       healthConnect: Value(healthConnect),
+      exerciseAnimations: Value(exerciseAnimations),
+      setupDone: Value(setupDone),
     );
   }
 
@@ -1177,6 +1375,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         json['workoutReminderDays'],
       ),
       waterReminders: serializer.fromJson<bool>(json['waterReminders']),
+      waterIntervalMinutes: serializer.fromJson<int>(
+        json['waterIntervalMinutes'],
+      ),
+      waterStartMinute: serializer.fromJson<int>(json['waterStartMinute']),
+      waterEndMinute: serializer.fromJson<int>(json['waterEndMinute']),
+      bedtimeReminderMinute: serializer.fromJson<int?>(
+        json['bedtimeReminderMinute'],
+      ),
       weighInReminderMinute: serializer.fromJson<int?>(
         json['weighInReminderMinute'],
       ),
@@ -1185,6 +1391,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       ),
       cycleTracking: serializer.fromJson<bool>(json['cycleTracking']),
       healthConnect: serializer.fromJson<bool>(json['healthConnect']),
+      exerciseAnimations: serializer.fromJson<bool>(json['exerciseAnimations']),
+      setupDone: serializer.fromJson<bool>(json['setupDone']),
     );
   }
   @override
@@ -1230,10 +1438,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'workoutReminderMinute': serializer.toJson<int?>(workoutReminderMinute),
       'workoutReminderDays': serializer.toJson<int>(workoutReminderDays),
       'waterReminders': serializer.toJson<bool>(waterReminders),
+      'waterIntervalMinutes': serializer.toJson<int>(waterIntervalMinutes),
+      'waterStartMinute': serializer.toJson<int>(waterStartMinute),
+      'waterEndMinute': serializer.toJson<int>(waterEndMinute),
+      'bedtimeReminderMinute': serializer.toJson<int?>(bedtimeReminderMinute),
       'weighInReminderMinute': serializer.toJson<int?>(weighInReminderMinute),
       'weighInReminderWeekday': serializer.toJson<int>(weighInReminderWeekday),
       'cycleTracking': serializer.toJson<bool>(cycleTracking),
       'healthConnect': serializer.toJson<bool>(healthConnect),
+      'exerciseAnimations': serializer.toJson<bool>(exerciseAnimations),
+      'setupDone': serializer.toJson<bool>(setupDone),
     };
   }
 
@@ -1267,10 +1481,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     Value<int?> workoutReminderMinute = const Value.absent(),
     int? workoutReminderDays,
     bool? waterReminders,
+    int? waterIntervalMinutes,
+    int? waterStartMinute,
+    int? waterEndMinute,
+    Value<int?> bedtimeReminderMinute = const Value.absent(),
     Value<int?> weighInReminderMinute = const Value.absent(),
     int? weighInReminderWeekday,
     bool? cycleTracking,
     bool? healthConnect,
+    bool? exerciseAnimations,
+    bool? setupDone,
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -1317,6 +1537,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         : this.workoutReminderMinute,
     workoutReminderDays: workoutReminderDays ?? this.workoutReminderDays,
     waterReminders: waterReminders ?? this.waterReminders,
+    waterIntervalMinutes: waterIntervalMinutes ?? this.waterIntervalMinutes,
+    waterStartMinute: waterStartMinute ?? this.waterStartMinute,
+    waterEndMinute: waterEndMinute ?? this.waterEndMinute,
+    bedtimeReminderMinute: bedtimeReminderMinute.present
+        ? bedtimeReminderMinute.value
+        : this.bedtimeReminderMinute,
     weighInReminderMinute: weighInReminderMinute.present
         ? weighInReminderMinute.value
         : this.weighInReminderMinute,
@@ -1324,6 +1550,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         weighInReminderWeekday ?? this.weighInReminderWeekday,
     cycleTracking: cycleTracking ?? this.cycleTracking,
     healthConnect: healthConnect ?? this.healthConnect,
+    exerciseAnimations: exerciseAnimations ?? this.exerciseAnimations,
+    setupDone: setupDone ?? this.setupDone,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -1398,6 +1626,18 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       waterReminders: data.waterReminders.present
           ? data.waterReminders.value
           : this.waterReminders,
+      waterIntervalMinutes: data.waterIntervalMinutes.present
+          ? data.waterIntervalMinutes.value
+          : this.waterIntervalMinutes,
+      waterStartMinute: data.waterStartMinute.present
+          ? data.waterStartMinute.value
+          : this.waterStartMinute,
+      waterEndMinute: data.waterEndMinute.present
+          ? data.waterEndMinute.value
+          : this.waterEndMinute,
+      bedtimeReminderMinute: data.bedtimeReminderMinute.present
+          ? data.bedtimeReminderMinute.value
+          : this.bedtimeReminderMinute,
       weighInReminderMinute: data.weighInReminderMinute.present
           ? data.weighInReminderMinute.value
           : this.weighInReminderMinute,
@@ -1410,6 +1650,10 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       healthConnect: data.healthConnect.present
           ? data.healthConnect.value
           : this.healthConnect,
+      exerciseAnimations: data.exerciseAnimations.present
+          ? data.exerciseAnimations.value
+          : this.exerciseAnimations,
+      setupDone: data.setupDone.present ? data.setupDone.value : this.setupDone,
     );
   }
 
@@ -1445,10 +1689,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('workoutReminderMinute: $workoutReminderMinute, ')
           ..write('workoutReminderDays: $workoutReminderDays, ')
           ..write('waterReminders: $waterReminders, ')
+          ..write('waterIntervalMinutes: $waterIntervalMinutes, ')
+          ..write('waterStartMinute: $waterStartMinute, ')
+          ..write('waterEndMinute: $waterEndMinute, ')
+          ..write('bedtimeReminderMinute: $bedtimeReminderMinute, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
           ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
           ..write('cycleTracking: $cycleTracking, ')
-          ..write('healthConnect: $healthConnect')
+          ..write('healthConnect: $healthConnect, ')
+          ..write('exerciseAnimations: $exerciseAnimations, ')
+          ..write('setupDone: $setupDone')
           ..write(')'))
         .toString();
   }
@@ -1484,10 +1734,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     workoutReminderMinute,
     workoutReminderDays,
     waterReminders,
+    waterIntervalMinutes,
+    waterStartMinute,
+    waterEndMinute,
+    bedtimeReminderMinute,
     weighInReminderMinute,
     weighInReminderWeekday,
     cycleTracking,
     healthConnect,
+    exerciseAnimations,
+    setupDone,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1522,10 +1778,16 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.workoutReminderMinute == this.workoutReminderMinute &&
           other.workoutReminderDays == this.workoutReminderDays &&
           other.waterReminders == this.waterReminders &&
+          other.waterIntervalMinutes == this.waterIntervalMinutes &&
+          other.waterStartMinute == this.waterStartMinute &&
+          other.waterEndMinute == this.waterEndMinute &&
+          other.bedtimeReminderMinute == this.bedtimeReminderMinute &&
           other.weighInReminderMinute == this.weighInReminderMinute &&
           other.weighInReminderWeekday == this.weighInReminderWeekday &&
           other.cycleTracking == this.cycleTracking &&
-          other.healthConnect == this.healthConnect);
+          other.healthConnect == this.healthConnect &&
+          other.exerciseAnimations == this.exerciseAnimations &&
+          other.setupDone == this.setupDone);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -1558,10 +1820,16 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<int?> workoutReminderMinute;
   final Value<int> workoutReminderDays;
   final Value<bool> waterReminders;
+  final Value<int> waterIntervalMinutes;
+  final Value<int> waterStartMinute;
+  final Value<int> waterEndMinute;
+  final Value<int?> bedtimeReminderMinute;
   final Value<int?> weighInReminderMinute;
   final Value<int> weighInReminderWeekday;
   final Value<bool> cycleTracking;
   final Value<bool> healthConnect;
+  final Value<bool> exerciseAnimations;
+  final Value<bool> setupDone;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -1592,10 +1860,16 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.workoutReminderMinute = const Value.absent(),
     this.workoutReminderDays = const Value.absent(),
     this.waterReminders = const Value.absent(),
+    this.waterIntervalMinutes = const Value.absent(),
+    this.waterStartMinute = const Value.absent(),
+    this.waterEndMinute = const Value.absent(),
+    this.bedtimeReminderMinute = const Value.absent(),
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
     this.cycleTracking = const Value.absent(),
     this.healthConnect = const Value.absent(),
+    this.exerciseAnimations = const Value.absent(),
+    this.setupDone = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1627,10 +1901,16 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.workoutReminderMinute = const Value.absent(),
     this.workoutReminderDays = const Value.absent(),
     this.waterReminders = const Value.absent(),
+    this.waterIntervalMinutes = const Value.absent(),
+    this.waterStartMinute = const Value.absent(),
+    this.waterEndMinute = const Value.absent(),
+    this.bedtimeReminderMinute = const Value.absent(),
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
     this.cycleTracking = const Value.absent(),
     this.healthConnect = const Value.absent(),
+    this.exerciseAnimations = const Value.absent(),
+    this.setupDone = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -1662,10 +1942,16 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<int>? workoutReminderMinute,
     Expression<int>? workoutReminderDays,
     Expression<bool>? waterReminders,
+    Expression<int>? waterIntervalMinutes,
+    Expression<int>? waterStartMinute,
+    Expression<int>? waterEndMinute,
+    Expression<int>? bedtimeReminderMinute,
     Expression<int>? weighInReminderMinute,
     Expression<int>? weighInReminderWeekday,
     Expression<bool>? cycleTracking,
     Expression<bool>? healthConnect,
+    Expression<bool>? exerciseAnimations,
+    Expression<bool>? setupDone,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1702,12 +1988,20 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (workoutReminderDays != null)
         'workout_reminder_days': workoutReminderDays,
       if (waterReminders != null) 'water_reminders': waterReminders,
+      if (waterIntervalMinutes != null)
+        'water_interval_minutes': waterIntervalMinutes,
+      if (waterStartMinute != null) 'water_start_minute': waterStartMinute,
+      if (waterEndMinute != null) 'water_end_minute': waterEndMinute,
+      if (bedtimeReminderMinute != null)
+        'bedtime_reminder_minute': bedtimeReminderMinute,
       if (weighInReminderMinute != null)
         'weigh_in_reminder_minute': weighInReminderMinute,
       if (weighInReminderWeekday != null)
         'weigh_in_reminder_weekday': weighInReminderWeekday,
       if (cycleTracking != null) 'cycle_tracking': cycleTracking,
       if (healthConnect != null) 'health_connect': healthConnect,
+      if (exerciseAnimations != null) 'exercise_animations': exerciseAnimations,
+      if (setupDone != null) 'setup_done': setupDone,
     });
   }
 
@@ -1741,10 +2035,16 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<int?>? workoutReminderMinute,
     Value<int>? workoutReminderDays,
     Value<bool>? waterReminders,
+    Value<int>? waterIntervalMinutes,
+    Value<int>? waterStartMinute,
+    Value<int>? waterEndMinute,
+    Value<int?>? bedtimeReminderMinute,
     Value<int?>? weighInReminderMinute,
     Value<int>? weighInReminderWeekday,
     Value<bool>? cycleTracking,
     Value<bool>? healthConnect,
+    Value<bool>? exerciseAnimations,
+    Value<bool>? setupDone,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -1777,12 +2077,19 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           workoutReminderMinute ?? this.workoutReminderMinute,
       workoutReminderDays: workoutReminderDays ?? this.workoutReminderDays,
       waterReminders: waterReminders ?? this.waterReminders,
+      waterIntervalMinutes: waterIntervalMinutes ?? this.waterIntervalMinutes,
+      waterStartMinute: waterStartMinute ?? this.waterStartMinute,
+      waterEndMinute: waterEndMinute ?? this.waterEndMinute,
+      bedtimeReminderMinute:
+          bedtimeReminderMinute ?? this.bedtimeReminderMinute,
       weighInReminderMinute:
           weighInReminderMinute ?? this.weighInReminderMinute,
       weighInReminderWeekday:
           weighInReminderWeekday ?? this.weighInReminderWeekday,
       cycleTracking: cycleTracking ?? this.cycleTracking,
       healthConnect: healthConnect ?? this.healthConnect,
+      exerciseAnimations: exerciseAnimations ?? this.exerciseAnimations,
+      setupDone: setupDone ?? this.setupDone,
     );
   }
 
@@ -1890,6 +2197,20 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (waterReminders.present) {
       map['water_reminders'] = Variable<bool>(waterReminders.value);
     }
+    if (waterIntervalMinutes.present) {
+      map['water_interval_minutes'] = Variable<int>(waterIntervalMinutes.value);
+    }
+    if (waterStartMinute.present) {
+      map['water_start_minute'] = Variable<int>(waterStartMinute.value);
+    }
+    if (waterEndMinute.present) {
+      map['water_end_minute'] = Variable<int>(waterEndMinute.value);
+    }
+    if (bedtimeReminderMinute.present) {
+      map['bedtime_reminder_minute'] = Variable<int>(
+        bedtimeReminderMinute.value,
+      );
+    }
     if (weighInReminderMinute.present) {
       map['weigh_in_reminder_minute'] = Variable<int>(
         weighInReminderMinute.value,
@@ -1905,6 +2226,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     }
     if (healthConnect.present) {
       map['health_connect'] = Variable<bool>(healthConnect.value);
+    }
+    if (exerciseAnimations.present) {
+      map['exercise_animations'] = Variable<bool>(exerciseAnimations.value);
+    }
+    if (setupDone.present) {
+      map['setup_done'] = Variable<bool>(setupDone.value);
     }
     return map;
   }
@@ -1941,10 +2268,16 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('workoutReminderMinute: $workoutReminderMinute, ')
           ..write('workoutReminderDays: $workoutReminderDays, ')
           ..write('waterReminders: $waterReminders, ')
+          ..write('waterIntervalMinutes: $waterIntervalMinutes, ')
+          ..write('waterStartMinute: $waterStartMinute, ')
+          ..write('waterEndMinute: $waterEndMinute, ')
+          ..write('bedtimeReminderMinute: $bedtimeReminderMinute, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
           ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
           ..write('cycleTracking: $cycleTracking, ')
-          ..write('healthConnect: $healthConnect')
+          ..write('healthConnect: $healthConnect, ')
+          ..write('exerciseAnimations: $exerciseAnimations, ')
+          ..write('setupDone: $setupDone')
           ..write(')'))
         .toString();
   }
@@ -9573,10 +9906,16 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<int?> workoutReminderMinute,
       Value<int> workoutReminderDays,
       Value<bool> waterReminders,
+      Value<int> waterIntervalMinutes,
+      Value<int> waterStartMinute,
+      Value<int> waterEndMinute,
+      Value<int?> bedtimeReminderMinute,
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
       Value<bool> cycleTracking,
       Value<bool> healthConnect,
+      Value<bool> exerciseAnimations,
+      Value<bool> setupDone,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -9609,10 +9948,16 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<int?> workoutReminderMinute,
       Value<int> workoutReminderDays,
       Value<bool> waterReminders,
+      Value<int> waterIntervalMinutes,
+      Value<int> waterStartMinute,
+      Value<int> waterEndMinute,
+      Value<int?> bedtimeReminderMinute,
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
       Value<bool> cycleTracking,
       Value<bool> healthConnect,
+      Value<bool> exerciseAnimations,
+      Value<bool> setupDone,
     });
 
 class $$SettingsTableFilterComposer
@@ -9774,6 +10119,26 @@ class $$SettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get waterIntervalMinutes => $composableBuilder(
+    column: $table.waterIntervalMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get waterStartMinute => $composableBuilder(
+    column: $table.waterStartMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get waterEndMinute => $composableBuilder(
+    column: $table.waterEndMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bedtimeReminderMinute => $composableBuilder(
+    column: $table.bedtimeReminderMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get weighInReminderMinute => $composableBuilder(
     column: $table.weighInReminderMinute,
     builder: (column) => ColumnFilters(column),
@@ -9791,6 +10156,16 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get healthConnect => $composableBuilder(
     column: $table.healthConnect,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get exerciseAnimations => $composableBuilder(
+    column: $table.exerciseAnimations,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get setupDone => $composableBuilder(
+    column: $table.setupDone,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -9949,6 +10324,26 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get waterIntervalMinutes => $composableBuilder(
+    column: $table.waterIntervalMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get waterStartMinute => $composableBuilder(
+    column: $table.waterStartMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get waterEndMinute => $composableBuilder(
+    column: $table.waterEndMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bedtimeReminderMinute => $composableBuilder(
+    column: $table.bedtimeReminderMinute,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get weighInReminderMinute => $composableBuilder(
     column: $table.weighInReminderMinute,
     builder: (column) => ColumnOrderings(column),
@@ -9966,6 +10361,16 @@ class $$SettingsTableOrderingComposer
 
   ColumnOrderings<bool> get healthConnect => $composableBuilder(
     column: $table.healthConnect,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get exerciseAnimations => $composableBuilder(
+    column: $table.exerciseAnimations,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get setupDone => $composableBuilder(
+    column: $table.setupDone,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -10111,6 +10516,26 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get waterIntervalMinutes => $composableBuilder(
+    column: $table.waterIntervalMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get waterStartMinute => $composableBuilder(
+    column: $table.waterStartMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get waterEndMinute => $composableBuilder(
+    column: $table.waterEndMinute,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get bedtimeReminderMinute => $composableBuilder(
+    column: $table.bedtimeReminderMinute,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get weighInReminderMinute => $composableBuilder(
     column: $table.weighInReminderMinute,
     builder: (column) => column,
@@ -10130,6 +10555,14 @@ class $$SettingsTableAnnotationComposer
     column: $table.healthConnect,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get exerciseAnimations => $composableBuilder(
+    column: $table.exerciseAnimations,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get setupDone =>
+      $composableBuilder(column: $table.setupDone, builder: (column) => column);
 }
 
 class $$SettingsTableTableManager
@@ -10192,10 +10625,16 @@ class $$SettingsTableTableManager
                 Value<int?> workoutReminderMinute = const Value.absent(),
                 Value<int> workoutReminderDays = const Value.absent(),
                 Value<bool> waterReminders = const Value.absent(),
+                Value<int> waterIntervalMinutes = const Value.absent(),
+                Value<int> waterStartMinute = const Value.absent(),
+                Value<int> waterEndMinute = const Value.absent(),
+                Value<int?> bedtimeReminderMinute = const Value.absent(),
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
                 Value<bool> cycleTracking = const Value.absent(),
                 Value<bool> healthConnect = const Value.absent(),
+                Value<bool> exerciseAnimations = const Value.absent(),
+                Value<bool> setupDone = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -10226,10 +10665,16 @@ class $$SettingsTableTableManager
                 workoutReminderMinute: workoutReminderMinute,
                 workoutReminderDays: workoutReminderDays,
                 waterReminders: waterReminders,
+                waterIntervalMinutes: waterIntervalMinutes,
+                waterStartMinute: waterStartMinute,
+                waterEndMinute: waterEndMinute,
+                bedtimeReminderMinute: bedtimeReminderMinute,
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
                 cycleTracking: cycleTracking,
                 healthConnect: healthConnect,
+                exerciseAnimations: exerciseAnimations,
+                setupDone: setupDone,
               ),
           createCompanionCallback:
               ({
@@ -10262,10 +10707,16 @@ class $$SettingsTableTableManager
                 Value<int?> workoutReminderMinute = const Value.absent(),
                 Value<int> workoutReminderDays = const Value.absent(),
                 Value<bool> waterReminders = const Value.absent(),
+                Value<int> waterIntervalMinutes = const Value.absent(),
+                Value<int> waterStartMinute = const Value.absent(),
+                Value<int> waterEndMinute = const Value.absent(),
+                Value<int?> bedtimeReminderMinute = const Value.absent(),
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
                 Value<bool> cycleTracking = const Value.absent(),
                 Value<bool> healthConnect = const Value.absent(),
+                Value<bool> exerciseAnimations = const Value.absent(),
+                Value<bool> setupDone = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -10296,10 +10747,16 @@ class $$SettingsTableTableManager
                 workoutReminderMinute: workoutReminderMinute,
                 workoutReminderDays: workoutReminderDays,
                 waterReminders: waterReminders,
+                waterIntervalMinutes: waterIntervalMinutes,
+                waterStartMinute: waterStartMinute,
+                waterEndMinute: waterEndMinute,
+                bedtimeReminderMinute: bedtimeReminderMinute,
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
                 cycleTracking: cycleTracking,
                 healthConnect: healthConnect,
+                exerciseAnimations: exerciseAnimations,
+                setupDone: setupDone,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

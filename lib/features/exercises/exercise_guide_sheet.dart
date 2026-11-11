@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/database.dart';
 import '../../data/exercise_guides.dart';
 import '../../data/pictures.dart';
+import '../../data/providers.dart';
+import 'exercise_figures.dart';
 import 'exercise_icons.dart';
 
 /// Opens the step-by-step guide for [exercise].
@@ -25,15 +28,18 @@ Future<void> showExerciseGuide(BuildContext context, ExerciseRow exercise) =>
       ),
     );
 
-class _GuideBody extends StatelessWidget {
+class _GuideBody extends ConsumerWidget {
   const _GuideBody({required this.exercise, required this.controller});
 
   final ExerciseRow exercise;
   final ScrollController controller;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final animate =
+        ref.watch(settingsProvider).valueOrNull?.exerciseAnimations ?? true;
+    final figure = exerciseFigures[exercise.seedKey];
     final guide = guideFor(
       seedKey: exercise.seedKey,
       kind: exercise.kind,
@@ -47,7 +53,9 @@ class _GuideBody extends StatelessWidget {
       children: [
         if (exercisePhotos(exercise.seedKey) case final photos
             when photos.isNotEmpty)
-          ExercisePhotoPlayer(photos: photos, color: color)
+          ExercisePhotoPlayer(photos: photos, color: color, autoplay: animate)
+        else if (figure != null)
+          ExerciseFigurePlayer(figure: figure, color: color, autoplay: animate)
         else
           ExerciseHero(exercise: exercise),
         const SizedBox(height: 16),
@@ -118,10 +126,15 @@ class ExercisePhotoPlayer extends StatefulWidget {
     super.key,
     required this.photos,
     required this.color,
+    this.autoplay = true,
   });
 
   final List<String> photos;
   final Color color;
+
+  /// Play by itself — the user's "Exercise animations" setting. The
+  /// phone asking for less motion wins over it.
+  final bool autoplay;
 
   /// How long each position shows while playing.
   static const frame = Duration(milliseconds: 1100);
@@ -141,7 +154,9 @@ class _ExercisePhotoPlayerState extends State<ExercisePhotoPlayer> {
     // Decided once, when first shown.
     if (_playing == null) {
       _playing =
-          widget.photos.length > 1 && !MediaQuery.disableAnimationsOf(context);
+          widget.autoplay &&
+          widget.photos.length > 1 &&
+          !MediaQuery.disableAnimationsOf(context);
       if (_playing!) _start();
     }
   }

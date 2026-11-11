@@ -122,6 +122,7 @@ void main() {
     MotionSensors motion = const MotionSensors(),
     DocumentFiles files = const DocumentFiles(),
     Future<void> Function(AppDatabase db)? seed,
+    bool setUp = true,
   }) async {
     // A typical phone: 360 × 780 dp.
     tester.view.physicalSize = const Size(1080, 2340);
@@ -130,6 +131,13 @@ void main() {
 
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    // Most tests start past the first-launch guide.
+    if (setUp) {
+      await tester.runAsync(
+        () =>
+            db.updateSettings(const SettingsCompanion(setupDone: Value(true))),
+      );
+    }
     if (seed != null) await tester.runAsync(() => seed(db));
     await tester.pumpWidget(
       ProviderScope(
@@ -145,6 +153,35 @@ void main() {
     await settle(tester);
     return db;
   }
+
+  testWidgets('a new install opens the setup guide, once', (tester) async {
+    final db = await pumpApp(tester, setUp: false);
+    expect(find.text('Welcome to FITNS'), findsOneWidget);
+    expect(find.text('1 of 5'), findsOneWidget);
+    for (final page in ['Your goal', 'Where you train', 'Steps', 'Reminders']) {
+      await tester.tap(find.text('Next'));
+      await settle(tester);
+      expect(find.text(page), findsWidgets);
+    }
+    expect(find.text('Bedtime reminder'), findsOneWidget);
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+    expect(find.text('Log food'), findsOneWidget);
+    expect((await tester.runAsync(db.getSettings))!.setupDone, isTrue);
+
+    // It opens again from Settings, and Skip all leaves it.
+    await tester.tap(find.text('Settings').last);
+    await settle(tester);
+    await scrollToMiddle(tester, find.text('Setup guide'));
+    await tester.tap(find.text('Setup guide'));
+    await settle(tester);
+    expect(find.text('Welcome to FITNS'), findsOneWidget);
+    await tester.tap(find.text('Skip all'));
+    await settle(tester);
+    expect(find.text('Welcome to FITNS'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 
   testWidgets('swiping moves between the tabs, and the bar follows', (
     tester,

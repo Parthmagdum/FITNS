@@ -274,9 +274,25 @@ class Settings extends Table {
   IntColumn get workoutReminderDays =>
       integer().withDefault(const Constant(0x7f))();
 
-  /// A drink reminder every two hours from 9:00 to 21:00.
+  /// Drink reminders, every [waterIntervalMinutes] from [waterStartMinute]
+  /// to [waterEndMinute].
   BoolColumn get waterReminders =>
       boolean().withDefault(const Constant(false))();
+
+  /// How often the water reminder repeats, in minutes. Schema v11.
+  IntColumn get waterIntervalMinutes =>
+      integer().withDefault(const Constant(120))();
+
+  /// The first and last water reminders of the day, minutes after
+  /// midnight. Schema v11.
+  IntColumn get waterStartMinute =>
+      integer().withDefault(const Constant(9 * 60))();
+  IntColumn get waterEndMinute =>
+      integer().withDefault(const Constant(21 * 60))();
+
+  /// Minutes after midnight for the bedtime reminder; null = off.
+  /// Schema v11.
+  IntColumn get bedtimeReminderMinute => integer().nullable()();
 
   /// Minutes after midnight for the weekly weigh-in reminder; null = off.
   IntColumn get weighInReminderMinute => integer().nullable()();
@@ -295,6 +311,15 @@ class Settings extends Table {
   /// open. Schema v9.
   BoolColumn get healthConnect =>
       boolean().withDefault(const Constant(false))();
+
+  /// Exercise guides play their photos or figures by themselves. Off, they
+  /// show the start position until tapped. Schema v11.
+  BoolColumn get exerciseAnimations =>
+      boolean().withDefault(const Constant(true))();
+
+  /// The first-launch setup guide was finished or skipped. Schema v11;
+  /// installs from before it count as set up.
+  BoolColumn get setupDone => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
