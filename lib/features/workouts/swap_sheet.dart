@@ -5,7 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/training/swaps.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
-import '../exercises/exercise_icons.dart';
+import 'workout_art.dart';
 
 /// Offers stand-ins for a workout's exercise — same muscle, fitting where
 /// the user is training — best first, and the way back to the routine's own.
@@ -104,7 +104,7 @@ class _SwapSheet extends ConsumerWidget {
           ),
           if (original.id != current.id)
             ListTile(
-              leading: ExerciseAvatar(original),
+              leading: ExerciseThumb(original, width: 64),
               title: Text('Back to ${original.name}'),
               subtitle: Text(
                 conditions.problemWith(original) ?? "The routine's own",
@@ -115,7 +115,7 @@ class _SwapSheet extends ConsumerWidget {
           for (final e in options.take(15))
             if (e.id != original.id)
               ListTile(
-                leading: ExerciseAvatar(e),
+                leading: ExerciseThumb(e, width: 64),
                 title: Text(e.name),
                 subtitle: Text(
                   [

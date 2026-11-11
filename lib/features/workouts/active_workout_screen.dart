@@ -12,12 +12,12 @@ import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_guide_sheet.dart';
-import '../exercises/exercise_icons.dart';
 import '../../core/training/loads.dart';
 import '../../core/training/time_box.dart';
 import '../../data/seed_exercises.dart';
 import 'rep_profiles.dart';
 import 'swap_sheet.dart';
+import 'workout_art.dart';
 import 'rest_timer.dart';
 import 'set_format.dart';
 
@@ -380,23 +380,24 @@ class _ExerciseCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8, bottom: 8),
+              child: _ExerciseBanner(exercise: exercise),
+            ),
             Row(
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => showExerciseGuide(context, exercise),
-                    child: ExerciseAvatar(exercise),
-                  ),
-                ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.only(left: 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(exercise.name, style: theme.textTheme.titleMedium),
+                        Text(
+                          exercise.name,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         Text(
                           restSeconds == 0
                               ? exercise.muscle.label
@@ -635,6 +636,75 @@ class _SetupTools extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The exercise's picture across the top of its card, with what it trains
+/// and a way into the step-by-step guide.
+class _ExerciseBanner extends StatelessWidget {
+  const _ExerciseBanner({required this.exercise});
+
+  final ExerciseRow exercise;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget pill(IconData icon, String text) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+    return Material(
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showExerciseGuide(context, exercise),
+        child: SizedBox(
+          height: 150,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ExerciseArt(exercise),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.center,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x00000000), Color(0x80000000)],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: pill(Icons.my_location, exercise.muscle.label),
+              ),
+              Positioned(
+                right: 10,
+                bottom: 10,
+                child: pill(Icons.play_circle_outline, 'How to do it'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -260,6 +260,7 @@ void main() {
 
     await tester.tap(find.text('Add exercises'));
     await settle(tester);
+    await scrollToMiddle(tester, find.text('Bench Press (Barbell)'));
     await tester.tap(find.text('Bench Press (Barbell)'));
     await settle(tester);
     await tester.tap(find.text('Add 1'));
@@ -283,6 +284,7 @@ void main() {
     expect(find.textContaining('About '), findsOneWidget);
     expect(find.text('Add warm-up'), findsOneWidget);
     expect(find.text('Add cool-down'), findsOneWidget);
+    await scrollToMiddle(tester, find.text('Start workout'));
     await tester.tap(find.text('Start workout'));
     await settle(tester);
     expect(find.text('Setting up · clock not started'), findsNothing);

@@ -10,8 +10,8 @@ import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_guide_sheet.dart';
-import '../exercises/exercise_icons.dart';
 import 'set_format.dart';
+import 'workout_art.dart';
 
 /// A finished workout, read-only.
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -183,7 +183,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(10),
                           onTap: () =>
                               showExerciseGuide(context, entry.exercise),
-                          child: ExerciseAvatar(entry.exercise, size: 32),
+                          child: ExerciseThumb(entry.exercise, width: 56),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

@@ -14,6 +14,7 @@ import '../../data/providers.dart';
 import '../places/training_setup_card.dart';
 import 'set_format.dart';
 import 'workout_actions.dart';
+import 'workout_art.dart';
 
 class WorkoutsScreen extends ConsumerWidget {
   const WorkoutsScreen({super.key});
@@ -195,41 +196,21 @@ class _RoutineCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final names = routine.items.map((i) => i.exercise.name).join(', ');
-    return SectionCard(
-      padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+    final rest =
+        ref.watch(settingsProvider).valueOrNull?.defaultRestSeconds ?? 90;
+    final items = routine.items;
+    return PhotoBanner(
+      cover: coverExercise(items),
+      title: routine.routine.name,
+      subtitle: items.isEmpty
+          ? 'No exercises yet: tap to add some'
+          : routineSummary(items, defaultRest: rest),
+      chips: [for (final m in routineMuscles(items)) m.label],
       onTap: () => context.push('/routine/${routine.routine.id}'),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(routine.routine.name, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  names.isEmpty ? 'No exercises' : names,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.muted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
-            tooltip: 'Start ${routine.routine.name}',
-            onPressed: routine.items.isEmpty
-                ? null
-                : () =>
-                      startWorkout(context, ref, routineId: routine.routine.id),
-            icon: const Icon(Icons.play_arrow_rounded),
-          ),
-        ],
-      ),
+      playTooltip: 'Start ${routine.routine.name}',
+      onPlay: items.isEmpty
+          ? null
+          : () => startWorkout(context, ref, routineId: routine.routine.id),
     );
   }
 }
@@ -242,7 +223,6 @@ class _ProgramCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final next = this.next;
     final day = next == null ? null : program.days[next.index];
     final String status;
@@ -258,41 +238,29 @@ class _ProgramCard extends ConsumerWidget {
           ? 'Rest day — then $up'
           : '${next.restDaysBefore} rest days — then $up';
     }
-    return SectionCard(
-      padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+    final routines = ref.watch(routinesProvider).valueOrNull ?? const [];
+    final upNext = day == null
+        ? null
+        : routines.where((r) => r.routine.id == day.routine!.id).firstOrNull;
+    return PhotoBanner(
+      eyebrow: 'Program',
+      cover: upNext == null ? null : coverExercise(upNext.items),
+      title: program.program.name,
+      subtitle: status,
+      chips: [
+        if (upNext != null)
+          for (final m in routineMuscles(upNext.items)) m.label,
+      ],
       onTap: () => context.push('/program/${program.program.id}'),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(program.program.name, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  status,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.muted,
-                  ),
-                ),
-              ],
+      playTooltip: day == null ? null : 'Start ${day.routine!.name}',
+      onPlay: day == null
+          ? null
+          : () => startWorkout(
+              context,
+              ref,
+              routineId: day.routine!.id,
+              programDayId: day.day.id,
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
-            tooltip: day == null ? null : 'Start ${day.routine!.name}',
-            onPressed: day == null
-                ? null
-                : () => startWorkout(
-                    context,
-                    ref,
-                    routineId: day.routine!.id,
-                    programDayId: day.day.id,
-                  ),
-            icon: const Icon(Icons.play_arrow_rounded),
-          ),
-        ],
-      ),
     );
   }
 }

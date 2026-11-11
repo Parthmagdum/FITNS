@@ -18,6 +18,7 @@ import '../plan/goal_card.dart';
 import '../sleep/sleep_card.dart';
 import '../steps/steps_card.dart';
 import '../workouts/workout_actions.dart';
+import '../workouts/workout_art.dart';
 import '../workouts/workouts_screen.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -320,35 +321,48 @@ class _WorkoutSection extends ConsumerWidget {
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: const Text('Start workout'),
               ),
-              if (startable.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final r in startable.take(4))
-                      ActionChip(
-                        backgroundColor: Colors.white.withValues(alpha: 0.18),
-                        side: BorderSide.none,
-                        labelStyle: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        avatar: const Icon(
-                          Icons.play_arrow_rounded,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                        label: Text(r.routine.name),
-                        onPressed: () =>
-                            startWorkout(context, ref, routineId: r.routine.id),
-                      ),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
+        if (startable.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 156,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: startable.take(6).length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) {
+                final r = startable[i];
+                return SizedBox(
+                  width: 260,
+                  child: PhotoBanner(
+                    height: 156,
+                    cover: coverExercise(r.items),
+                    title: r.routine.name,
+                    subtitle: routineSummary(
+                      r.items,
+                      defaultRest:
+                          ref
+                              .watch(settingsProvider)
+                              .valueOrNull
+                              ?.defaultRestSeconds ??
+                          90,
+                    ),
+                    chips: [
+                      for (final m in routineMuscles(r.items, max: 2)) m.label,
+                    ],
+                    onTap: () =>
+                        startWorkout(context, ref, routineId: r.routine.id),
+                    playTooltip: 'Start ${r.routine.name}',
+                    onPlay: () =>
+                        startWorkout(context, ref, routineId: r.routine.id),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
         if (last != null) ...[
           const SizedBox(height: 12),
           WorkoutSummaryCard(summary: last, units: units),

@@ -7,8 +7,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
-import '../exercises/exercise_icons.dart';
 import '../workouts/set_format.dart';
+import '../workouts/workout_art.dart';
 
 /// One exercise line while the routine is being edited.
 class _Item {
@@ -282,7 +282,7 @@ class _ItemCardState extends State<_ItemCard> {
                     child: Icon(Icons.drag_indicator, color: theme.muted),
                   ),
                 ),
-                ExerciseAvatar(item.exercise, size: 32),
+                ExerciseThumb(item.exercise, width: 56),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
