@@ -668,6 +668,37 @@ class _ExerciseTimer extends ConsumerWidget {
     }
 
     Widget chip(DateTime now) {
+      // Next up, waiting for the rest after the last exercise to end.
+      final waiting = running && item.timerSince!.isAfter(now);
+      if (waiting) {
+        return Tooltip(
+          message: 'Starts when your rest ends. Tap to start now',
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => db.startExerciseTimer(item.id),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 16,
+                    color: theme.muted,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'After rest',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
       final color = running ? theme.accent : theme.muted;
       return Tooltip(
         message: running ? 'Pause this exercise' : 'Carry on with this one',
@@ -894,7 +925,10 @@ class _SetRowState extends ConsumerState<_SetRow> {
         completedAt: Value(DateTime.now()),
       ),
     );
-    await db.exerciseSetDone(_set.workoutExerciseId);
+    await db.exerciseSetDone(
+      _set.workoutExerciseId,
+      rest: Duration(seconds: widget.restSeconds),
+    );
     ref
         .read(restTimerProvider.notifier)
         .start(Duration(seconds: widget.restSeconds));

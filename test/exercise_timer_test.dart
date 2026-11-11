@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:fitns/data/database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,5 +116,73 @@ void main() {
     final id = await db.startWorkout(now: t0);
     await db.addExercisesToWorkout(id, [await exercise('push_up')]);
     expect((await entries(id)).single.item.timerSince, isNull);
+  });
+
+  group('the rest between exercises', () {
+    const rest = Duration(seconds: 90);
+
+    /// Ticks [set] of [exercise] at [when], then rests [rest] — as the
+    /// workout screen does.
+    Future<void> tickAndRest(
+      int id,
+      int exercise,
+      int set,
+      DateTime when,
+    ) async {
+      final e = (await entries(id))[exercise];
+      await db.updateSet(
+        e.sets[set].id,
+        WorkoutSetsCompanion(done: const Value(true), completedAt: Value(when)),
+      );
+      await db.exerciseSetDone(e.item.id, now: when, rest: rest);
+    }
+
+    test("isn't counted as the next exercise's time", () async {
+      final id = await workout();
+      await tickAndRest(id, 0, 0, at(2));
+      await tickAndRest(id, 0, 1, at(4));
+      // Bench is done at 4:00; squats wait for the rest to end at 5:30.
+      var e = await entries(id);
+      expect(e[1].item.timerSince, at(5, 30));
+      expect(exerciseTime(e[1].item, now: at(5)), Duration.zero);
+      expect(exerciseTime(e[1].item, now: at(6)), const Duration(seconds: 30));
+      // Bench stopped at its last set, rest not included.
+      expect(exerciseTime(e[0].item, now: at(6)), const Duration(minutes: 4));
+    });
+
+    test('a skipped or changed rest moves the start with it', () async {
+      final id = await workout();
+      await tickAndRest(id, 0, 0, at(2));
+      await tickAndRest(id, 0, 1, at(4));
+      // +15 s.
+      await db.movePendingExerciseTimers(at(5, 45), now: at(4, 10));
+      expect((await entries(id))[1].item.timerSince, at(5, 45));
+      // Skipped at 4:30: squats start now.
+      await db.movePendingExerciseTimers(at(4, 30), now: at(4, 30));
+      expect((await entries(id))[1].item.timerSince, at(4, 30));
+      // A running timer is never moved.
+      await db.movePendingExerciseTimers(at(9), now: at(5));
+      expect((await entries(id))[1].item.timerSince, at(4, 30));
+    });
+
+    test('getting on with it before the rest ends starts it then', () async {
+      final id = await workout();
+      await tickAndRest(id, 0, 0, at(2));
+      await tickAndRest(id, 0, 1, at(4));
+      // First squat set ticked at 5:00, before the rest would end.
+      await tickAndRest(id, 1, 0, at(5));
+      final e = await entries(id);
+      expect(e[1].item.timerSince, at(5));
+      expect(exerciseTime(e[1].item, now: at(6)), const Duration(minutes: 1));
+    });
+
+    test('tapping a waiting clock starts it now', () async {
+      final id = await workout();
+      await tickAndRest(id, 0, 0, at(2));
+      await tickAndRest(id, 0, 1, at(4));
+      final squat = (await entries(id))[1].item;
+      await db.startExerciseTimer(squat.id, now: at(4, 20));
+      expect((await entries(id))[1].item.timerSince, at(4, 20));
+    });
   });
 }

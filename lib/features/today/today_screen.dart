@@ -7,6 +7,8 @@ import '../../core/dates.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/providers.dart';
+import '../../data/tables.dart' show Meal;
+import '../body/body_log_sheet.dart';
 import '../body/body_screen.dart';
 import '../food/calories_card.dart';
 import '../food/water_card.dart';
@@ -56,13 +58,15 @@ class TodayScreen extends ConsumerWidget {
             ],
           ),
         ),
+        const _QuickActions(),
+        const SizedBox(height: 16),
+        const _WorkoutSection(),
+        const SizedBox(height: 12),
         const CheckInCard(),
         const CycleCard(),
         const GoalCard(),
         const SizedBox(height: 12),
         const StepsCard(),
-        const SectionLabel('Workout'),
-        const _WorkoutSection(),
         const SectionLabel('Food'),
         CaloriesCard(day: today, onTap: () => context.go('/food')),
         const SizedBox(height: 12),
@@ -90,6 +94,113 @@ String _greeting(int hour) => switch (hour) {
   < 17 => 'Good afternoon 👋',
   _ => 'Good evening 🌆',
 };
+
+/// The everyday things, one tap each, before anything else on Today.
+class _QuickActions extends ConsumerWidget {
+  const _QuickActions();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final active = ref.watch(activeWorkoutProvider).valueOrNull;
+    final presets = ref.watch(waterPresetsProvider);
+    final water = presets.isEmpty ? 250 : presets.first;
+    final today = ref.watch(todayProvider);
+    return Row(
+      children: [
+        _QuickAction(
+          icon: active == null
+              ? Icons.play_arrow_rounded
+              : Icons.fitness_center,
+          label: active == null ? 'Workout' : 'Continue',
+          onTap: () => active == null
+              ? startWorkout(context, ref)
+              : context.push('/workout/${active.id}/log'),
+        ),
+        _QuickAction(
+          icon: Icons.restaurant,
+          label: 'Log food',
+          onTap: () {
+            final meal = Meal.at(DateTime.now());
+            context.push('/food/add/${dayKey(today)}/${meal.name}');
+          },
+        ),
+        _QuickAction(
+          icon: Icons.water_drop_outlined,
+          label: '+$water ml',
+          onTap: () async {
+            final db = ref.read(dbProvider);
+            final messenger = ScaffoldMessenger.of(context);
+            final id = await db.addWater(water);
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text('Added $water ml of water'),
+                  action: SnackBarAction(
+                    label: 'Undo',
+                    onPressed: () => db.deleteWaterLog(id),
+                  ),
+                ),
+              );
+          },
+        ),
+        _QuickAction(
+          icon: Icons.monitor_weight_outlined,
+          label: 'Weigh in',
+          onTap: () => showBodyLogSheet(context),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Material(
+          color: theme.accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: theme.accent),
+                  const SizedBox(height: 6),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _WorkoutSection extends ConsumerWidget {
   const _WorkoutSection();

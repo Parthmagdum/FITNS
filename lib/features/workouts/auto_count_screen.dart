@@ -143,14 +143,14 @@ class _AutoCountScreenState extends ConsumerState<AutoCountScreen> {
     final db = ref.read(dbProvider);
     final defaultRest =
         ref.read(settingsProvider).valueOrNull?.defaultRestSeconds ?? 90;
+    final rest = Duration(seconds: entry.item.restSeconds ?? defaultRest);
     await db.completeNextSet(
       widget.itemId,
       reps: _reps == 0 ? null : _reps,
       durationSeconds: timed ? seconds : null,
+      rest: rest,
     );
-    ref
-        .read(restTimerProvider.notifier)
-        .start(Duration(seconds: entry.item.restSeconds ?? defaultRest));
+    ref.read(restTimerProvider.notifier).start(rest);
     if (mounted) context.pop();
   }
 

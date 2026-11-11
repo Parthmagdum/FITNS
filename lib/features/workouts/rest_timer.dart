@@ -37,14 +37,19 @@ class RestTimerController extends StateNotifier<RestTimerState?> {
     DateTime Function()? clock,
     RestAlerts? alerts,
     VoidCallback? onFinished,
+    void Function(DateTime endsAt)? onEndChanged,
   }) : _clock = clock ?? DateTime.now,
        _alerts = alerts,
        _onFinished = onFinished,
+       _onEndChanged = onEndChanged,
        super(null);
 
   final DateTime Function() _clock;
   final RestAlerts? _alerts;
   final VoidCallback? _onFinished;
+
+  /// When the rest will now end: on start, ±15 s, and on a skip (now).
+  final void Function(DateTime endsAt)? _onEndChanged;
   Timer? _timer;
 
   void start(Duration duration) {
@@ -68,10 +73,12 @@ class RestTimerController extends StateNotifier<RestTimerState?> {
   }
 
   void stop() {
+    final wasRunning = state != null;
     _timer?.cancel();
     _timer = null;
     state = null;
     _alerts?.cancel();
+    if (wasRunning) _onEndChanged?.call(_clock());
   }
 
   void _run(RestTimerState next) {
@@ -79,6 +86,7 @@ class RestTimerController extends StateNotifier<RestTimerState?> {
     state = next;
     _timer = Timer(next.endsAt.difference(_clock()), _finish);
     _alerts?.schedule(next.endsAt);
+    _onEndChanged?.call(next.endsAt);
   }
 
   /// Rest is over. The system alert is left alone: if FITNS is in front it
@@ -101,5 +109,8 @@ final restTimerProvider =
       (ref) => RestTimerController(
         alerts: ref.watch(restAlertsProvider),
         onFinished: HapticFeedback.vibrate,
+        // The next exercise's clock waits for the rest, wherever it ends.
+        onEndChanged: (endsAt) =>
+            ref.read(dbProvider).movePendingExerciseTimers(endsAt),
       ),
     );

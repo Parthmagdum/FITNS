@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/providers.dart';
+import '../../features/workouts/rest_timer.dart';
 import '../dates.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_page.dart';
@@ -68,6 +69,7 @@ class _ActiveWorkoutStrip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workout = ref.watch(activeWorkoutProvider).valueOrNull;
     if (workout == null) return const SizedBox.shrink();
+    final rest = ref.watch(restTimerProvider);
     final theme = Theme.of(context);
     return Material(
       color: theme.colorScheme.surfaceContainerHigh,
@@ -87,7 +89,17 @@ class _ActiveWorkoutStrip extends ConsumerWidget {
                   style: theme.textTheme.titleSmall,
                 ),
               ),
-              if (workout.inSetup)
+              if (rest != null)
+                TickerBuilder(
+                  builder: (context, now) => Text(
+                    'Rest ${formatClock(rest.remaining(now))}',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.accent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                )
+              else if (workout.inSetup)
                 Text(
                   'Setting up',
                   style: theme.textTheme.titleSmall?.copyWith(

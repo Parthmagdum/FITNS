@@ -722,12 +722,19 @@ class AppDatabase extends _$AppDatabase {
           .get();
 
   /// Starts timing [itemId] from [now], stopping any other exercise of its
-  /// workout at the same moment. Nothing changes if it is already running.
+  /// workout at the same moment. Nothing changes if it is already running;
+  /// one waiting for a rest to end starts now.
   Future<void> startExerciseTimer(int itemId, {DateTime? now}) =>
       transaction(() async {
         final at = now ?? DateTime.now();
         final item = await _item(itemId);
-        if (item == null || item.timerSince != null) return;
+        if (item == null) return;
+        if (item.timerSince case final since? when since.isAfter(at)) {
+          await (update(workoutExercises)..where((w) => w.id.equals(itemId)))
+              .write(WorkoutExercisesCompanion(timerSince: Value(at)));
+          return;
+        }
+        if (item.timerSince != null) return;
         for (final other in await _runningTimers(item.workoutId)) {
           await _stopTimer(other, at);
         }
@@ -748,58 +755,85 @@ class AppDatabase extends _$AppDatabase {
   /// own last ticked set (or when it started, if none) and this one picks up
   /// from that moment — the time since belongs to this exercise. Once every
   /// set of this one is done it stops, and the next unfinished exercise
-  /// starts from zero.
-  Future<void> exerciseSetDone(int itemId, {DateTime? now}) =>
-      transaction(() async {
-        final at = now ?? DateTime.now();
-        var item = await _item(itemId);
-        if (item == null) return;
-        if (item.timerSince == null) {
-          var handOver = at;
-          for (final other in await _runningTimers(item.workoutId)) {
-            final lastTick = (await _setsOf(other.id))
-                .where((s) => s.done && s.completedAt != null)
-                .map((s) => s.completedAt!)
-                .fold<DateTime>(
-                  other.timerSince!,
-                  (a, b) => b.isAfter(a) && !b.isAfter(at) ? b : a,
-                );
-            await _stopTimer(other, lastTick);
-            if (lastTick.isBefore(handOver)) handOver = lastTick;
-          }
-          await (update(workoutExercises)..where((w) => w.id.equals(itemId)))
-              .write(WorkoutExercisesCompanion(timerSince: Value(handOver)));
-          item = (await _item(itemId))!;
-        }
-        final sets = await _setsOf(itemId);
-        if (sets.isEmpty || sets.any((s) => !s.done)) return;
-        await _stopTimer(item, at);
-        final rest =
-            await (select(workoutExercises)
-                  ..where(
-                    (w) =>
-                        w.workoutId.equals(item!.workoutId) &
-                        w.id.equals(itemId).not() &
-                        w.timerSince.isNull(),
-                  )
-                  ..orderBy([
-                    (w) => OrderingTerm.asc(w.sort),
-                    (w) => OrderingTerm.asc(w.id),
-                  ]))
-                .get();
-        // The next one down the list with work left, else any above it.
-        final after = rest.where((w) => w.sort > item!.sort);
-        final before = rest.where((w) => w.sort <= item!.sort);
-        for (final candidate in [...after, ...before]) {
-          final left = await _setsOf(candidate.id);
-          if (left.isEmpty || left.any((s) => !s.done)) {
-            await (update(workoutExercises)
-                  ..where((w) => w.id.equals(candidate.id)))
-                .write(WorkoutExercisesCompanion(timerSince: Value(at)));
-            return;
-          }
-        }
-      });
+  /// starts from zero once the [rest] after it is over — resting isn't
+  /// time spent on the next exercise. See [movePendingExerciseTimers].
+  Future<void> exerciseSetDone(
+    int itemId, {
+    DateTime? now,
+    Duration rest = Duration.zero,
+  }) => transaction(() async {
+    final at = now ?? DateTime.now();
+    var item = await _item(itemId);
+    if (item == null) return;
+    // Waiting for a rest that the user cut short by getting on with it.
+    if (item.timerSince case final since? when since.isAfter(at)) {
+      await (update(workoutExercises)..where((w) => w.id.equals(itemId))).write(
+        WorkoutExercisesCompanion(timerSince: Value(at)),
+      );
+      item = (await _item(itemId))!;
+    }
+    if (item.timerSince == null) {
+      var handOver = at;
+      for (final other in await _runningTimers(item.workoutId)) {
+        final lastTick = (await _setsOf(other.id))
+            .where((s) => s.done && s.completedAt != null)
+            .map((s) => s.completedAt!)
+            .fold<DateTime>(
+              other.timerSince!,
+              (a, b) => b.isAfter(a) && !b.isAfter(at) ? b : a,
+            );
+        await _stopTimer(other, lastTick);
+        if (lastTick.isBefore(handOver)) handOver = lastTick;
+      }
+      await (update(workoutExercises)..where((w) => w.id.equals(itemId))).write(
+        WorkoutExercisesCompanion(timerSince: Value(handOver)),
+      );
+      item = (await _item(itemId))!;
+    }
+    final sets = await _setsOf(itemId);
+    if (sets.isEmpty || sets.any((s) => !s.done)) return;
+    await _stopTimer(item, at);
+    final others =
+        await (select(workoutExercises)
+              ..where(
+                (w) =>
+                    w.workoutId.equals(item!.workoutId) &
+                    w.id.equals(itemId).not() &
+                    w.timerSince.isNull(),
+              )
+              ..orderBy([
+                (w) => OrderingTerm.asc(w.sort),
+                (w) => OrderingTerm.asc(w.id),
+              ]))
+            .get();
+    // The next one down the list with work left, else any above it.
+    final after = others.where((w) => w.sort > item!.sort);
+    final before = others.where((w) => w.sort <= item!.sort);
+    for (final candidate in [...after, ...before]) {
+      final left = await _setsOf(candidate.id);
+      if (left.isEmpty || left.any((s) => !s.done)) {
+        await (update(
+          workoutExercises,
+        )..where((w) => w.id.equals(candidate.id))).write(
+          WorkoutExercisesCompanion(
+            timerSince: Value(at.add(rest.isNegative ? Duration.zero : rest)),
+          ),
+        );
+        return;
+      }
+    }
+  });
+
+  /// Exercise timers waiting for a rest to end start at [to] instead — the
+  /// rest was skipped or made longer or shorter. Never earlier than [now].
+  Future<void> movePendingExerciseTimers(DateTime to, {DateTime? now}) {
+    final at = now ?? DateTime.now();
+    return (update(
+      workoutExercises,
+    )..where((w) => w.timerSince.isBiggerThanValue(at))).write(
+      WorkoutExercisesCompanion(timerSince: Value(to.isAfter(at) ? to : at)),
+    );
+  }
 
   /// Appends exercises to a workout, each with as many empty sets as it had
   /// last time (or one, the first time).
@@ -905,6 +939,7 @@ class AppDatabase extends _$AppDatabase {
     int? reps,
     int? durationSeconds,
     DateTime? now,
+    Duration rest = Duration.zero,
   }) => transaction(() async {
     final item = await (select(
       workoutExercises,
@@ -937,7 +972,7 @@ class AppDatabase extends _$AppDatabase {
         completedAt: Value(now ?? DateTime.now()),
       ),
     );
-    await exerciseSetDone(itemId, now: now);
+    await exerciseSetDone(itemId, now: now, rest: rest);
     return target.id;
   });
 

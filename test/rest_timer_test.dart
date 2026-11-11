@@ -26,6 +26,23 @@ void main() {
     });
     tearDown(() => timer.dispose());
 
+    test('tells listeners where the end moved, for the next exercise', () {
+      final ends = <DateTime>[];
+      final t = RestTimerController(clock: () => now, onEndChanged: ends.add);
+      addTearDown(t.dispose);
+      t.start(const Duration(seconds: 90));
+      t.adjust(const Duration(seconds: 15));
+      now = now.add(const Duration(seconds: 20));
+      t.stop(); // skipped
+      t.stop(); // nothing running: nothing to say
+      final start = DateTime(2026, 10, 28, 18);
+      expect(ends, [
+        start.add(const Duration(seconds: 90)),
+        start.add(const Duration(seconds: 105)),
+        start.add(const Duration(seconds: 20)),
+      ]);
+    });
+
     test('counts down against the wall clock', () {
       timer.start(const Duration(seconds: 90));
       now = now.add(const Duration(seconds: 30));

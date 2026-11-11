@@ -136,9 +136,45 @@ void main() {
     return db;
   }
 
+  testWidgets('quick actions on Today do the everyday things in one tap', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+
+    await tester.tap(find.text('+250 ml'));
+    await settle(tester);
+    expect(find.text('Added 250 ml of water'), findsOneWidget);
+    expect(
+      await tester.runAsync(() => db.select(db.waterLogs).get()),
+      hasLength(1),
+    );
+    await tester.tap(find.text('Undo'));
+    await settle(tester);
+    expect(await tester.runAsync(() => db.select(db.waterLogs).get()), isEmpty);
+
+    await tester.tap(find.text('Log food'));
+    await settle(tester);
+    expect(find.textContaining('Add to '), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
+
+    await tester.tap(find.text('Workout'));
+    await settle(tester);
+    expect(find.text('Add an exercise to start logging.'), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
+    // A workout is open: the action takes you back to it.
+    expect(find.text('Continue'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
   testWidgets('log a workout from empty to finished', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Steps'), findsOneWidget);
+    // The everyday things come first on Today.
+    for (final action in ['Workout', 'Log food', '+250 ml', 'Weigh in']) {
+      expect(find.text(action), findsOneWidget);
+    }
 
     await scrollToMiddle(tester, find.text('Start workout'));
     await tester.tap(find.text('Start workout'));
@@ -550,6 +586,7 @@ void main() {
         );
       },
     );
+    await scrollToMiddle(tester, find.text('Steps'));
     await tester.tap(find.text('Steps'));
     await settle(tester);
 
@@ -910,6 +947,7 @@ void main() {
     );
 
     // Today asks, and says why.
+    await scrollToMiddle(tester, find.text("What's your goal?"));
     expect(find.text("What's your goal?"), findsOneWidget);
     expect(find.textContaining('above the healthy range'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Start'));
@@ -995,6 +1033,7 @@ void main() {
 
   testWidgets('every tab renders without errors', (tester) async {
     await pumpApp(tester, steps: StepSensorStatus.denied);
+    await scrollToMiddle(tester, find.text('Turn on step counting'));
     expect(find.text('Turn on step counting'), findsOneWidget);
     for (final tab in ['Workouts', 'Food', 'Body', 'Settings', 'Today']) {
       await tester.tap(find.text(tab).last);
