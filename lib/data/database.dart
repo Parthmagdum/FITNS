@@ -122,7 +122,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -209,6 +209,7 @@ class AppDatabase extends _$AppDatabase {
       }
       // Created whole (weights included) by the v7 step on older files.
       if (from < 10 && from >= 7) await m.addColumn(places, places.weights);
+      if (from < 12) await m.addColumn(settings, settings.musicTracks);
       if (from < 11) {
         for (final column in <GeneratedColumn>[
           settings.waterIntervalMinutes,

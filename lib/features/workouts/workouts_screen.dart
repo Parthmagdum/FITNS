@@ -266,7 +266,7 @@ class _ProgramCard extends ConsumerWidget {
 }
 
 /// One finished workout as a history line. Shared with the Today tab.
-class WorkoutSummaryCard extends StatelessWidget {
+class WorkoutSummaryCard extends ConsumerWidget {
   const WorkoutSummaryCard({
     super.key,
     required this.summary,
@@ -277,7 +277,7 @@ class WorkoutSummaryCard extends StatelessWidget {
   final UnitSystem units;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final w = summary.workout;
     final duration = w.endedAt!.difference(w.startedAt);
@@ -286,10 +286,31 @@ class WorkoutSummaryCard extends StatelessWidget {
       '${summary.setCount} ${summary.setCount == 1 ? 'set' : 'sets'}',
       if (summary.volumeGrams > 0) formatLiftVolume(summary.volumeGrams, units),
     ].join(' · ');
+    final routine = w.routineId == null
+        ? null
+        : (ref.watch(routinesProvider).valueOrNull ?? const [])
+              .where((r) => r.routine.id == w.routineId)
+              .firstOrNull;
+    final cover = routine == null ? null : coverExercise(routine.items);
     return SectionCard(
       onTap: () => context.push('/workout/${w.id}'),
       child: Row(
         children: [
+          if (cover != null)
+            ExerciseThumb(cover, width: 76)
+          else
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: theme.accentGradient),
+                child: const SizedBox(
+                  width: 76,
+                  height: 57,
+                  child: Icon(Icons.fitness_center, color: Colors.white),
+                ),
+              ),
+            ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

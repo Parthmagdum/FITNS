@@ -126,49 +126,77 @@ class WeightCard extends ConsumerWidget {
 
     return SectionCard(
       onTap: onTap,
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Weight · ${relativeDay(latest.measuredAt)}',
-            style: theme.textTheme.labelLarge?.copyWith(color: theme.muted),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            formatMass(latest.value, units),
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (change != null)
-            Text(
-              change == 0
-                  ? 'Same as ${DateFormat('d MMM').format(previous!.measuredAt)}'
-                  : '${change > 0 ? '+' : '−'}'
-                        '${formatMass(change.abs(), units)} since '
-                        '${DateFormat('d MMM').format(previous!.measuredAt)}',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.muted),
-            ),
-          const SizedBox(height: 12),
-          const Divider(),
-          const SizedBox(height: 12),
-          if (height == null)
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Add your height to see your BMI.',
-                    style: theme.textTheme.bodyMedium,
+          // The number that matters, big and bright.
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: theme.accentGradient),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Weight · ${relativeDay(latest.measuredAt)}',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatMass(latest.value, units),
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (change != null)
+                          Text(
+                            change == 0
+                                ? 'Same as ${DateFormat('d MMM').format(previous!.measuredAt)}'
+                                : '${change > 0 ? '+' : '−'}'
+                                      '${formatMass(change.abs(), units)} since '
+                                      '${DateFormat('d MMM').format(previous!.measuredAt)}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () => editHeight(context, ref),
-                  child: const Text('Add height'),
-                ),
-              ],
-            )
-          else
-            _BmiRow(weightGrams: latest.value, heightMm: height),
+                  const Icon(
+                    Icons.monitor_weight_outlined,
+                    size: 48,
+                    color: Colors.white38,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: height == null
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Add your height to see your BMI.',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => editHeight(context, ref),
+                        child: const Text('Add height'),
+                      ),
+                    ],
+                  )
+                : _BmiRow(weightGrams: latest.value, heightMm: height),
+          ),
         ],
       ),
     );

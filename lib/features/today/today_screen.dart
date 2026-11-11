@@ -17,6 +17,7 @@ import '../plan/cycle_card.dart';
 import '../plan/goal_card.dart';
 import '../sleep/sleep_card.dart';
 import '../steps/steps_card.dart';
+import '../music/music_sheet.dart';
 import '../workouts/workout_actions.dart';
 import '../workouts/workout_art.dart';
 import '../workouts/workouts_screen.dart';
@@ -33,6 +34,7 @@ class TodayScreen extends ConsumerWidget {
     return AppPage(
       title: 'Today',
       actions: [
+        const MusicButton(),
         IconButton(
           tooltip: 'Progress',
           onPressed: () => context.push('/progress'),

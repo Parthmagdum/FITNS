@@ -136,5 +136,20 @@
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE"/>
         </intent>
+        <!-- Workout music: which streaming apps are installed, for the
+             shortcuts. Must match lib/features/music/music_apps.dart. -->
+        <package android:name="com.spotify.music"/>
+        <package android:name="com.google.android.apps.youtube.music"/>
+        <package android:name="com.jio.media.jiobeats"/>
+        <package android:name="com.gaana"/>
+        <package android:name="com.bsbportal.music"/>
+        <package android:name="com.apple.android.music"/>
+        <package android:name="com.amazon.mp3"/>
+        <package android:name="com.soundcloud.android"/>
+        <package android:name="deezer.android.app"/>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.APP_MUSIC"/>
+        </intent>
     </queries>
 </manifest>

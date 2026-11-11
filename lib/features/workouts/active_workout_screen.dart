@@ -16,6 +16,7 @@ import '../../core/training/loads.dart';
 import '../../core/training/time_box.dart';
 import '../../data/seed_exercises.dart';
 import 'rep_profiles.dart';
+import '../music/music_sheet.dart';
 import 'swap_sheet.dart';
 import 'workout_art.dart';
 import 'rest_timer.dart';
@@ -133,6 +134,7 @@ class _WorkoutLog extends ConsumerWidget {
             ),
           ),
           actions: [
+            if (!editing) const MusicButton(),
             FilledButton(
               style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
               onPressed: editing

@@ -157,7 +157,15 @@ class PhotoBanner extends StatelessWidget {
     this.playTooltip,
     this.height = 176,
     this.eyebrow,
+    this.background,
+    this.action,
   });
+
+  /// A picture to use instead of [cover]'s — a food photo, say.
+  final Widget? background;
+
+  /// A button to show instead of the play button.
+  final Widget? action;
 
   /// Whose picture is behind it; null for a plain gradient.
   final ExerciseRow? cover;
@@ -192,7 +200,9 @@ class PhotoBanner extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (cover != null)
+                if (background != null)
+                  background!
+                else if (cover != null)
                   ExerciseArt(cover)
                 else
                   DecoratedBox(
@@ -292,7 +302,10 @@ class PhotoBanner extends StatelessWidget {
                               ],
                             ),
                           ),
-                          if (onPlay != null) ...[
+                          if (action != null) ...[
+                            const SizedBox(width: 12),
+                            action!,
+                          ] else if (onPlay != null) ...[
                             const SizedBox(width: 12),
                             Material(
                               color: Colors.white,

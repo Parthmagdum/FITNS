@@ -565,7 +565,7 @@ void main() {
     /// The Add button on a meal's own row.
     Future<void> addTo(String meal) async {
       final label = find.textContaining(meal);
-      await tester.scrollUntilVisible(label, 200, scrollable: pageScrollable);
+      await scrollToMiddle(tester, label);
       await tester.tap(
         find.descendant(
           of: find.ancestor(of: label, matching: find.byType(Row)).first,
@@ -582,7 +582,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Calories'), '300');
     await tester.tap(find.widgetWithText(FilledButton, 'Add to Breakfast'));
     await settle(tester);
-    expect(find.text('Breakfast · 300 kcal'), findsOneWidget);
+    expect(find.text('300 kcal · 1 food'), findsOneWidget);
 
     // A new saved food, logged as 2 servings at lunch.
     await addTo('Lunch');
@@ -601,7 +601,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Add to Lunch'));
     await settle(tester);
 
-    expect(find.text('Lunch · 240 kcal'), findsOneWidget);
+    expect(find.text('240 kcal · 1 food'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Calories'),
       -200,

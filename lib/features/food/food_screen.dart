@@ -6,8 +6,11 @@ import '../../core/dates.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
+import '../../data/pictures.dart';
 import '../../data/providers.dart';
+import '../workouts/workout_art.dart';
 import 'calories_card.dart';
+import 'food_picker_screen.dart' show FoodPicture;
 import 'food_sheets.dart';
 import 'nutrition.dart';
 import 'water_card.dart';
@@ -97,6 +100,25 @@ class _DaySwitcher extends ConsumerWidget {
   }
 }
 
+/// A typical dish for each meal, while it's empty.
+const _mealDefaults = {
+  Meal.breakfast: 'Poha',
+  Meal.lunch: 'Dal tadka',
+  Meal.dinner: 'Palak paneer',
+  Meal.snacks: 'Banana',
+};
+
+/// The meal's banner photo: the first food logged that has one, else a
+/// typical dish.
+Widget _mealPhoto(Meal meal, List<FoodLogRow> logs) {
+  final path =
+      logs.map((l) => foodPhoto(l.name)).nonNulls.firstOrNull ??
+      foodPhoto(_mealDefaults[meal]!);
+  return path == null
+      ? const SizedBox.shrink()
+      : Image.asset(path, fit: BoxFit.cover, cacheWidth: 900);
+}
+
 class _MealSection extends ConsumerWidget {
   const _MealSection({
     required this.day,
@@ -120,13 +142,28 @@ class _MealSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionLabel(
-          logs.isEmpty ? meal.label : '${meal.label} · ${formatKcal(kcal)}',
-          trailing: TextButton.icon(
-            onPressed: () =>
-                context.push('/food/add/${dayKey(day)}/${meal.name}'),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add'),
+        Padding(
+          padding: const EdgeInsets.only(top: 20, bottom: 10),
+          child: PhotoBanner(
+            height: 132,
+            cover: null,
+            background: _mealPhoto(meal, logs),
+            title: meal.label,
+            subtitle: logs.isEmpty
+                ? 'Nothing yet'
+                : '${formatKcal(kcal)} · ${logs.length} '
+                      '${logs.length == 1 ? 'food' : 'foods'}',
+            onTap: () => context.push('/food/add/${dayKey(day)}/${meal.name}'),
+            action: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: theme.accent,
+              ),
+              onPressed: () =>
+                  context.push('/food/add/${dayKey(day)}/${meal.name}'),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add'),
+            ),
           ),
         ),
         if (logs.isEmpty && dayBefore.isNotEmpty)
@@ -177,6 +214,7 @@ class _MealSection extends ConsumerWidget {
               children: [
                 for (final log in logs)
                   ListTile(
+                    leading: FoodPicture(log.name, size: 52),
                     title: Text(log.name),
                     subtitle: Text(
                       [

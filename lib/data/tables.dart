@@ -321,6 +321,11 @@ class Settings extends Table {
   /// installs from before it count as set up.
   BoolColumn get setupDone => boolean().withDefault(const Constant(false))();
 
+  /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
+  /// Links to files on this phone, so they're left out of backups.
+  /// Schema v12.
+  TextColumn get musicTracks => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -457,6 +457,17 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _musicTracksMeta = const VerificationMeta(
+    'musicTracks',
+  );
+  @override
+  late final GeneratedColumn<String> musicTracks = GeneratedColumn<String>(
+    'music_tracks',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -498,6 +509,7 @@ class $SettingsTable extends Settings
     healthConnect,
     exerciseAnimations,
     setupDone,
+    musicTracks,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -793,6 +805,15 @@ class $SettingsTable extends Settings
         setupDone.isAcceptableOrUnknown(data['setup_done']!, _setupDoneMeta),
       );
     }
+    if (data.containsKey('music_tracks')) {
+      context.handle(
+        _musicTracksMeta,
+        musicTracks.isAcceptableOrUnknown(
+          data['music_tracks']!,
+          _musicTracksMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -968,6 +989,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}setup_done'],
       )!,
+      musicTracks: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}music_tracks'],
+      ),
     );
   }
 
@@ -1104,6 +1129,11 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// The first-launch setup guide was finished or skipped. Schema v11;
   /// installs from before it count as set up.
   final bool setupDone;
+
+  /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
+  /// Links to files on this phone, so they're left out of backups.
+  /// Schema v12.
+  final String? musicTracks;
   const SettingRow({
     required this.id,
     required this.themeMode,
@@ -1144,6 +1174,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     required this.healthConnect,
     required this.exerciseAnimations,
     required this.setupDone,
+    this.musicTracks,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1237,6 +1268,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     map['health_connect'] = Variable<bool>(healthConnect);
     map['exercise_animations'] = Variable<bool>(exerciseAnimations);
     map['setup_done'] = Variable<bool>(setupDone);
+    if (!nullToAbsent || musicTracks != null) {
+      map['music_tracks'] = Variable<String>(musicTracks);
+    }
     return map;
   }
 
@@ -1319,6 +1353,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       healthConnect: Value(healthConnect),
       exerciseAnimations: Value(exerciseAnimations),
       setupDone: Value(setupDone),
+      musicTracks: musicTracks == null && nullToAbsent
+          ? const Value.absent()
+          : Value(musicTracks),
     );
   }
 
@@ -1393,6 +1430,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       healthConnect: serializer.fromJson<bool>(json['healthConnect']),
       exerciseAnimations: serializer.fromJson<bool>(json['exerciseAnimations']),
       setupDone: serializer.fromJson<bool>(json['setupDone']),
+      musicTracks: serializer.fromJson<String?>(json['musicTracks']),
     );
   }
   @override
@@ -1448,6 +1486,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'healthConnect': serializer.toJson<bool>(healthConnect),
       'exerciseAnimations': serializer.toJson<bool>(exerciseAnimations),
       'setupDone': serializer.toJson<bool>(setupDone),
+      'musicTracks': serializer.toJson<String?>(musicTracks),
     };
   }
 
@@ -1491,6 +1530,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     bool? healthConnect,
     bool? exerciseAnimations,
     bool? setupDone,
+    Value<String?> musicTracks = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -1552,6 +1592,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     healthConnect: healthConnect ?? this.healthConnect,
     exerciseAnimations: exerciseAnimations ?? this.exerciseAnimations,
     setupDone: setupDone ?? this.setupDone,
+    musicTracks: musicTracks.present ? musicTracks.value : this.musicTracks,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
     return SettingRow(
@@ -1654,6 +1695,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ? data.exerciseAnimations.value
           : this.exerciseAnimations,
       setupDone: data.setupDone.present ? data.setupDone.value : this.setupDone,
+      musicTracks: data.musicTracks.present
+          ? data.musicTracks.value
+          : this.musicTracks,
     );
   }
 
@@ -1698,7 +1742,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('cycleTracking: $cycleTracking, ')
           ..write('healthConnect: $healthConnect, ')
           ..write('exerciseAnimations: $exerciseAnimations, ')
-          ..write('setupDone: $setupDone')
+          ..write('setupDone: $setupDone, ')
+          ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
   }
@@ -1744,6 +1789,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     healthConnect,
     exerciseAnimations,
     setupDone,
+    musicTracks,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -1787,7 +1833,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.cycleTracking == this.cycleTracking &&
           other.healthConnect == this.healthConnect &&
           other.exerciseAnimations == this.exerciseAnimations &&
-          other.setupDone == this.setupDone);
+          other.setupDone == this.setupDone &&
+          other.musicTracks == this.musicTracks);
 }
 
 class SettingsCompanion extends UpdateCompanion<SettingRow> {
@@ -1830,6 +1877,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<bool> healthConnect;
   final Value<bool> exerciseAnimations;
   final Value<bool> setupDone;
+  final Value<String?> musicTracks;
   const SettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -1870,6 +1918,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.healthConnect = const Value.absent(),
     this.exerciseAnimations = const Value.absent(),
     this.setupDone = const Value.absent(),
+    this.musicTracks = const Value.absent(),
   });
   SettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -1911,6 +1960,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.healthConnect = const Value.absent(),
     this.exerciseAnimations = const Value.absent(),
     this.setupDone = const Value.absent(),
+    this.musicTracks = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
     Expression<int>? id,
@@ -1952,6 +2002,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<bool>? healthConnect,
     Expression<bool>? exerciseAnimations,
     Expression<bool>? setupDone,
+    Expression<String>? musicTracks,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2002,6 +2053,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (healthConnect != null) 'health_connect': healthConnect,
       if (exerciseAnimations != null) 'exercise_animations': exerciseAnimations,
       if (setupDone != null) 'setup_done': setupDone,
+      if (musicTracks != null) 'music_tracks': musicTracks,
     });
   }
 
@@ -2045,6 +2097,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<bool>? healthConnect,
     Value<bool>? exerciseAnimations,
     Value<bool>? setupDone,
+    Value<String?>? musicTracks,
   }) {
     return SettingsCompanion(
       id: id ?? this.id,
@@ -2090,6 +2143,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       healthConnect: healthConnect ?? this.healthConnect,
       exerciseAnimations: exerciseAnimations ?? this.exerciseAnimations,
       setupDone: setupDone ?? this.setupDone,
+      musicTracks: musicTracks ?? this.musicTracks,
     );
   }
 
@@ -2233,6 +2287,9 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (setupDone.present) {
       map['setup_done'] = Variable<bool>(setupDone.value);
     }
+    if (musicTracks.present) {
+      map['music_tracks'] = Variable<String>(musicTracks.value);
+    }
     return map;
   }
 
@@ -2277,7 +2334,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('cycleTracking: $cycleTracking, ')
           ..write('healthConnect: $healthConnect, ')
           ..write('exerciseAnimations: $exerciseAnimations, ')
-          ..write('setupDone: $setupDone')
+          ..write('setupDone: $setupDone, ')
+          ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
   }
@@ -9916,6 +9974,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<bool> healthConnect,
       Value<bool> exerciseAnimations,
       Value<bool> setupDone,
+      Value<String?> musicTracks,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
     SettingsCompanion Function({
@@ -9958,6 +10017,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<bool> healthConnect,
       Value<bool> exerciseAnimations,
       Value<bool> setupDone,
+      Value<String?> musicTracks,
     });
 
 class $$SettingsTableFilterComposer
@@ -10168,6 +10228,11 @@ class $$SettingsTableFilterComposer
     column: $table.setupDone,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get musicTracks => $composableBuilder(
+    column: $table.musicTracks,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$SettingsTableOrderingComposer
@@ -10373,6 +10438,11 @@ class $$SettingsTableOrderingComposer
     column: $table.setupDone,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get musicTracks => $composableBuilder(
+    column: $table.musicTracks,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableAnnotationComposer
@@ -10563,6 +10633,11 @@ class $$SettingsTableAnnotationComposer
 
   GeneratedColumn<bool> get setupDone =>
       $composableBuilder(column: $table.setupDone, builder: (column) => column);
+
+  GeneratedColumn<String> get musicTracks => $composableBuilder(
+    column: $table.musicTracks,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableManager
@@ -10635,6 +10710,7 @@ class $$SettingsTableTableManager
                 Value<bool> healthConnect = const Value.absent(),
                 Value<bool> exerciseAnimations = const Value.absent(),
                 Value<bool> setupDone = const Value.absent(),
+                Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -10675,6 +10751,7 @@ class $$SettingsTableTableManager
                 healthConnect: healthConnect,
                 exerciseAnimations: exerciseAnimations,
                 setupDone: setupDone,
+                musicTracks: musicTracks,
               ),
           createCompanionCallback:
               ({
@@ -10717,6 +10794,7 @@ class $$SettingsTableTableManager
                 Value<bool> healthConnect = const Value.absent(),
                 Value<bool> exerciseAnimations = const Value.absent(),
                 Value<bool> setupDone = const Value.absent(),
+                Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -10757,6 +10835,7 @@ class $$SettingsTableTableManager
                 healthConnect: healthConnect,
                 exerciseAnimations: exerciseAnimations,
                 setupDone: setupDone,
+                musicTracks: musicTracks,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

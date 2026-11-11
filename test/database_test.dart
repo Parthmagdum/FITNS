@@ -38,6 +38,9 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 12) {
+      await db.customStatement('ALTER TABLE settings DROP COLUMN music_tracks');
+    }
     if (schema < 11) {
       for (final column in [
         'water_interval_minutes',
@@ -165,6 +168,7 @@ void main() {
     (8, '0.0.7'),
     (9, '0.1.1'),
     (10, '0.1.3'),
+    (11, '0.1.4'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
@@ -233,7 +237,7 @@ void main() {
         // Schema v11: someone updating isn't shown the setup guide, and
         // water reminders keep their old two-hourly 9-to-9.
         final s11 = await upgraded.getSettings();
-        expect(s11.setupDone, isTrue);
+        if (schema < 11) expect(s11.setupDone, isTrue);
         expect(s11.waterIntervalMinutes, 120);
         expect(s11.exerciseAnimations, isTrue);
         // Schema v10: a place keeps its exact weights.

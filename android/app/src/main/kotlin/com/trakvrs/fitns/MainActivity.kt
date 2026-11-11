@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.provider.Settings
 import android.view.WindowManager
 import com.google.zxing.integration.android.IntentIntegrator
@@ -40,6 +41,10 @@ class MainActivity : FlutterActivity() {
     private var cameraUri: Uri? = null
     private var pendingScan: MethodChannel.Result? = null
 
+    /** Songs being picked to import, and the player that plays them. */
+    private var pendingMusic: MethodChannel.Result? = null
+    private var music: MusicPlayer? = null
+
     /** Health Connect, on Android 8+ only — the class isn't touched below. */
     private val health: HealthBridge? by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) HealthBridge(this) else null
@@ -55,6 +60,13 @@ class MainActivity : FlutterActivity() {
         inForeground = false
         RestAlert.showCountdown(this)
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        // The music belongs to FITNS being open; it stops with it.
+        music?.release()
+        music = null
+        super.onDestroy()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -238,6 +250,41 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // Workout music: songs the user imported, played here, and shortcuts
+        // into their streaming apps.
+        val musicChannel = MethodChannel(messenger, MUSIC_METHODS)
+        val player = MusicPlayer(this, musicChannel)
+        music = player
+        musicChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "pick" -> {
+                    pendingMusic?.success(emptyList<Any>())
+                    pendingMusic = result
+                    startActivityForResult(
+                        Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type = "audio/*"
+                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        },
+                        PICK_MUSIC_REQUEST,
+                    )
+                }
+                "play" -> result.success(player.play(call.argument<String>("uri") ?: ""))
+                "pause" -> { player.pause(); result.success(null) }
+                "resume" -> { player.resume(); result.success(null) }
+                "stop" -> { player.release(); result.success(null) }
+                "volume" -> {
+                    player.setVolume(call.argument<Double>("value") ?: 1.0)
+                    result.success(null)
+                }
+                "installed" -> result.success(
+                    player.installed(call.argument<List<String>>("packages") ?: emptyList()),
+                )
+                "open" -> result.success(player.open(call.argument<String>("package")))
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(messenger, REMINDER_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "sync" -> {
@@ -360,6 +407,12 @@ class MainActivity : FlutterActivity() {
             result.success(IntentIntegrator.parseActivityResult(resultCode, data)?.contents)
             return
         }
+        if (requestCode == PICK_MUSIC_REQUEST) {
+            val result = pendingMusic ?: return
+            pendingMusic = null
+            result.success(if (resultCode == RESULT_OK) importSongs(data) else emptyList<Any>())
+            return
+        }
         val uri = if (resultCode == RESULT_OK) data?.data else null
         when (requestCode) {
             CAMERA_REQUEST -> {
@@ -420,6 +473,40 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /**
+     * The songs picked, as `{uri, title}`. FITNS keeps the right to read
+     * them, so they still play after a restart.
+     */
+    private fun importSongs(data: Intent?): List<Map<String, String>> {
+        val uris = mutableListOf<Uri>()
+        val clip = data?.clipData
+        if (clip != null) {
+            for (i in 0 until clip.itemCount) uris.add(clip.getItemAt(i).uri)
+        } else {
+            data?.data?.let { uris.add(it) }
+        }
+        return uris.map { uri ->
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: SecurityException) {
+                // Some providers don't offer lasting access: it plays this time.
+            }
+            mapOf("uri" to uri.toString(), "title" to songTitle(uri))
+        }
+    }
+
+    /** The file's name without its extension, or "Song". */
+    private fun songTitle(uri: Uri): String {
+        val name = try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                if (it.moveToFirst()) it.getString(0) else null
+            }
+        } catch (e: Exception) {
+            null
+        }
+        return name?.substringBeforeLast('.')?.ifBlank { null } ?: "Song"
+    }
+
     companion object {
         /** Whether FITNS is on screen — the rest alert stays quiet if so. */
         @Volatile
@@ -437,6 +524,8 @@ class MainActivity : FlutterActivity() {
         private const val WIDGET_METHODS = "fitns/widget"
         private const val BARCODE_METHODS = "fitns/barcode"
         private const val HEALTH_METHODS = "fitns/health"
+        private const val MUSIC_METHODS = "fitns/music"
+        private const val PICK_MUSIC_REQUEST = 4110
         private const val CAMERA_REQUEST = 4108
         private const val PICK_PHOTO_REQUEST = 4109
         private const val PERMISSION_REQUEST = 4101

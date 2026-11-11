@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.5 — 2026-11-11
+
+**A fresh, picture-led look**
+- **Routines and programs are big photo cards**: the routine's best
+  exercise photo, a bold title, the muscles it trains, how long it takes,
+  and a play button. Today shows them as a row to start with one tap.
+- **Bigger exercise pictures everywhere**: each exercise in a workout opens
+  with a large picture (tap it for the guide), and the exercise picker,
+  routine editor and history show large photos.
+- **Food**: each meal opens with a photo of what you ate (or a typical
+  dish), and logged foods show their pictures.
+- **Body**: your weight, big and bright on the FITNS orange.
+
+**Workout music**
+- **Your own songs, offline**: add music files from your phone and play
+  them in FITNS, with play/pause, next, previous, shuffle, repeat and
+  volume. They pause for calls and keep playing while you switch apps.
+- **Shortcuts to your music apps**: Spotify, YouTube Music, JioSaavn,
+  Gaana, Wynk, Apple Music, Amazon Music, SoundCloud and Deezer, when
+  installed, or your phone's own music app.
+- The music button is on Today and in every workout.
+
 ## 0.1.4 — 2026-11-11
 
 **Training with what you have**

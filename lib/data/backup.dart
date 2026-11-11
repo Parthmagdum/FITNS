@@ -78,7 +78,9 @@ class BackupService {
       'appVersion': AppInfo.version,
       'schemaVersion': db.schemaVersion,
       'exportedAt': (now ?? DateTime.now()).toUtc().toIso8601String(),
-      'settings': (await db.getSettings()).toJson(),
+      // Imported songs are links to files on this phone: useless anywhere
+      // else, so a restore keeps the phone's own.
+      'settings': (await db.getSettings()).toJson()..remove('musicTracks'),
       'exercises': await all(db.exercises),
       'routines': await all(db.routines),
       'routineExercises': await all(db.routineExercises),
