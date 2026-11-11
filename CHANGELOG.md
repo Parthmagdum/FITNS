@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.6 — 2026-11-11
+
+**A proper finish to a workout**
+- The finished-workout screen now opens with the calories you burned, worked
+  out from your logged weight, how long you trained and what you did
+  (lifting, bodyweight moves, jumps, holds).
+- It also shows duration, exercises, sets, total reps, volume lifted,
+  personal records and the muscles you worked.
+
+**Fixes**
+- **Music**: songs picked with "Add songs" now really get added. Before, the
+  pick was lost on its way back to FITNS.
+
 ## 0.1.5 — 2026-11-11
 
 **A fresh, picture-led look**

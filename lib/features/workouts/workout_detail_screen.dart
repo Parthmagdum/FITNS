@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../core/dates.dart';
 import '../../core/insights.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/training/burn.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
@@ -103,70 +104,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          SectionCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  DateFormat('EEEE, d MMMM yyyy · h:mm a').format(w.startedAt),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.muted,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: StatTile(
-                        label: 'Duration',
-                        value: inProgress
-                            ? 'Running'
-                            : formatDuration(
-                                w.endedAt!.difference(w.startedAt),
-                              ),
-                      ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        label: 'Sets',
-                        value: '${detail.doneSets.length}',
-                      ),
-                    ),
-                    Expanded(
-                      child: StatTile(
-                        label: 'Volume',
-                        value: formatLiftVolume(detail.volumeGrams, units),
-                      ),
-                    ),
-                  ],
-                ),
-                if (records.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Icon(Icons.emoji_events, color: theme.accent),
-                      const SizedBox(width: 8),
-                      Text(
-                        records.length == 1
-                            ? '1 personal record'
-                            : '${records.length} personal records',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.accent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (inProgress) ...[
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.push('/workout/${w.id}/log'),
-                    child: const Text('Resume'),
-                  ),
-                ],
-              ],
-            ),
+          _Summary(
+            detail: detail,
+            records: records.length,
+            weightGrams: inProgress
+                ? null
+                : weightAt(ref.watch(weightHistoryProvider), w.startedAt),
           ),
           // An edit in progress may hold sets not yet saved; history shows
           // only what was done.
@@ -279,6 +222,244 @@ class _PrBadge extends StatelessWidget {
                 color: theme.accent,
                 fontWeight: FontWeight.w700,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The top of a workout: what it burned, how long, how much — big and
+/// bright, like the end of a workout should feel.
+class _Summary extends ConsumerWidget {
+  const _Summary({
+    required this.detail,
+    required this.records,
+    required this.weightGrams,
+  });
+
+  final WorkoutDetail detail;
+  final int records;
+  final int? weightGrams;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final units = ref.watch(unitsProvider);
+    final w = detail.workout;
+    final inProgress = w.endedAt == null;
+    final length = inProgress ? null : w.endedAt!.difference(w.startedAt);
+    final burn = length == null
+        ? null
+        : workoutBurn(detail, length: length, weightGrams: weightGrams);
+
+    final done = [
+      for (final e in detail.entries)
+        if (e.sets.any((s) => s.done)) e,
+    ];
+    var reps = 0;
+    for (final e in done) {
+      if (e.exercise.kind == ExerciseKind.duration) continue;
+      for (final s in e.sets) {
+        if (s.done) reps += s.reps ?? 0;
+      }
+    }
+    final volume = detail.volumeGrams;
+    final muscles = {for (final e in done) e.exercise.muscle.label};
+
+    Widget stat(IconData icon, String value, String label) => Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: theme.accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 22, color: theme.accent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: theme.muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    final stats = [
+      stat(
+        Icons.timer_outlined,
+        length == null ? 'Running' : formatDuration(length),
+        'Duration',
+      ),
+      stat(
+        Icons.fitness_center,
+        '${done.length}',
+        done.length == 1 ? 'Exercise' : 'Exercises',
+      ),
+      stat(Icons.check_circle_outline, '${detail.doneSets.length}', 'Sets'),
+      if (reps > 0) stat(Icons.repeat, '$reps', 'Reps'),
+      if (volume > 0)
+        stat(Icons.scale_outlined, formatLiftVolume(volume, units), 'Volume'),
+      if (records > 0)
+        stat(
+          Icons.emoji_events_outlined,
+          '$records',
+          records == 1 ? 'Record' : 'Records',
+        ),
+    ];
+
+    return SectionCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: theme.accentGradient),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          inProgress ? 'In progress' : 'Workout complete',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          DateFormat(
+                            'EEE, d MMM yyyy · h:mm a',
+                          ).format(w.startedAt),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        if (burn != null) ...[
+                          const SizedBox(height: 12),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '${burn.kcal}',
+                                  style: theme.textTheme.displaySmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: ' kcal burned',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    burn != null
+                        ? Icons.local_fire_department
+                        : Icons.fitness_center,
+                    size: 52,
+                    color: Colors.white54,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < stats.length; i += 2)
+                  Padding(
+                    padding: EdgeInsets.only(top: i == 0 ? 0 : 14),
+                    child: Row(
+                      children: [
+                        Expanded(child: stats[i]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: i + 1 < stats.length
+                              ? stats[i + 1]
+                              : const SizedBox(),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (muscles.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text('Muscles worked', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final m in muscles)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.track,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(m, style: theme.textTheme.labelMedium),
+                        ),
+                    ],
+                  ),
+                ],
+                if (burn != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    burn.fromWeight
+                        ? 'Calories are an estimate from your weight, how long '
+                              'you trained and what you did.'
+                        : 'Calories are estimated for 70 kg. Log your weight '
+                              'on Body for a closer number.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.muted,
+                    ),
+                  ),
+                ],
+                if (inProgress) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => context.push('/workout/${w.id}/log'),
+                      child: const Text('Resume'),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

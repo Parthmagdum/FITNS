@@ -313,6 +313,9 @@ void main() {
     await settle(tester);
 
     expect(find.text('60 kg × 8'), findsOneWidget);
+    expect(find.text('Workout complete'), findsOneWidget);
+    expect(find.text('Volume'), findsOneWidget);
+    expect(find.text('Muscles worked'), findsOneWidget);
 
     await tester.pageBack();
     await settle(tester);
@@ -752,7 +755,7 @@ void main() {
     await scrollToMiddle(tester, find.text('Bench 1'));
     await tester.tap(find.text('Bench 1'));
     await settle(tester);
-    expect(find.text('1 personal record'), findsOneWidget);
+    expect(find.text('Record'), findsOneWidget);
     expect(find.textContaining('PR · Heaviest'), findsOneWidget);
     await tester.pageBack();
     await settle(tester);

@@ -525,7 +525,8 @@ class MainActivity : FlutterActivity() {
         private const val BARCODE_METHODS = "fitns/barcode"
         private const val HEALTH_METHODS = "fitns/health"
         private const val MUSIC_METHODS = "fitns/music"
-        private const val PICK_MUSIC_REQUEST = 4110
+        // Request codes must differ from each other and from HealthBridge.REQUEST (4110).
+        private const val PICK_MUSIC_REQUEST = 4111
         private const val CAMERA_REQUEST = 4108
         private const val PICK_PHOTO_REQUEST = 4109
         private const val PERMISSION_REQUEST = 4101
