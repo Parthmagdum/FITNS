@@ -85,6 +85,16 @@ Future<void> settle(WidgetTester tester) async {
 
 /// Scrolls [finder] into the middle of the screen, clear of the bars at
 /// either edge, so a tap lands on it.
+/// The page's own list: the first scrollable that scrolls up and down —
+/// not the sideways tab pager, nor one inside a field.
+Finder get pageScrollable => find
+    .byWidgetPredicate(
+      (w) =>
+          w is Scrollable &&
+          axisDirectionToAxis(w.axisDirection) == Axis.vertical,
+    )
+    .first;
+
 Future<void> scrollToMiddle(
   WidgetTester tester,
   Finder finder, {
@@ -94,7 +104,7 @@ Future<void> scrollToMiddle(
   await tester.scrollUntilVisible(
     finder,
     up ? -200 : 200,
-    scrollable: find.byType(Scrollable).first,
+    scrollable: pageScrollable,
   );
   unawaited(Scrollable.ensureVisible(tester.element(finder), alignment: 0.5));
   await settle(tester);
@@ -135,6 +145,36 @@ void main() {
     await settle(tester);
     return db;
   }
+
+  testWidgets('swiping moves between the tabs, and the bar follows', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    int selected() =>
+        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+    expect(selected(), 0);
+
+    // Swipe left on Today: Workouts.
+    await tester.fling(find.byType(PageView), const Offset(-300, 0), 1500);
+    await settle(tester);
+    expect(selected(), 1);
+    expect(find.text('Edit places'), findsOneWidget);
+
+    // On to Food, then back right to Workouts.
+    await tester.fling(find.byType(PageView), const Offset(-300, 0), 1500);
+    await settle(tester);
+    expect(selected(), 2);
+    await tester.fling(find.byType(PageView), const Offset(300, 0), 1500);
+    await settle(tester);
+    expect(selected(), 1);
+
+    // Tapping still jumps straight to a tab.
+    await tester.tap(find.text('Settings').last);
+    await settle(tester);
+    expect(selected(), 4);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 
   testWidgets('quick actions on Today do the everyday things in one tap', (
     tester,
@@ -239,7 +279,11 @@ void main() {
     await settle(tester);
     await tester.tap(find.text('Workouts').last);
     await settle(tester);
-    await tester.scrollUntilVisible(find.textContaining('· 1 workout'), 200);
+    await tester.scrollUntilVisible(
+      find.textContaining('· 1 workout'),
+      200,
+      scrollable: pageScrollable,
+    );
     expect(find.textContaining('· 1 workout'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
@@ -435,7 +479,11 @@ void main() {
 
     await tester.tap(find.text('Settings').last);
     await settle(tester);
-    await tester.scrollUntilVisible(find.text('Back up'), 200);
+    await tester.scrollUntilVisible(
+      find.text('Back up'),
+      200,
+      scrollable: pageScrollable,
+    );
     await tester.tap(find.text('Back up'));
     await settle(tester);
     expect(files.saved, contains('"formatVersion"'));
@@ -478,7 +526,7 @@ void main() {
     /// The Add button on a meal's own row.
     Future<void> addTo(String meal) async {
       final label = find.textContaining(meal);
-      await tester.scrollUntilVisible(label, 200);
+      await tester.scrollUntilVisible(label, 200, scrollable: pageScrollable);
       await tester.tap(
         find.descendant(
           of: find.ancestor(of: label, matching: find.byType(Row)).first,
@@ -515,7 +563,11 @@ void main() {
     await settle(tester);
 
     expect(find.text('Lunch · 240 kcal'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Calories'), -200);
+    await tester.scrollUntilVisible(
+      find.text('Calories'),
+      -200,
+      scrollable: pageScrollable,
+    );
     expect(
       find.textContaining('540', findRichText: true),
       findsOneWidget,
@@ -603,7 +655,11 @@ void main() {
     await tester.tap(find.text('Month'));
     await settle(tester);
     expect(find.text('This month'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Longest streak'), 200);
+    await tester.scrollUntilVisible(
+      find.text('Longest streak'),
+      200,
+      scrollable: pageScrollable,
+    );
     expect(find.text('Records'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
@@ -669,7 +725,11 @@ void main() {
 
     await tester.tap(find.text('Food').last);
     await settle(tester);
-    await tester.scrollUntilVisible(find.text('Same as the day before?'), 200);
+    await tester.scrollUntilVisible(
+      find.text('Same as the day before?'),
+      200,
+      scrollable: pageScrollable,
+    );
     await settle(tester);
     expect(find.text('Same as the day before?'), findsOneWidget);
     await tester.tap(
@@ -719,7 +779,11 @@ void main() {
     await settle(tester);
     expect((await tester.runAsync(db.getSettings))!.activePlaceId, isNotNull);
 
-    await tester.scrollUntilVisible(find.text('My week'), 200);
+    await tester.scrollUntilVisible(
+      find.text('My week'),
+      200,
+      scrollable: pageScrollable,
+    );
     await settle(tester);
     await tester.tap(find.byTooltip('Start Chest day').first);
     await settle(tester);
@@ -906,7 +970,11 @@ void main() {
     await tester.pageBack();
     await settle(tester);
 
-    await tester.scrollUntilVisible(find.text('Create a program'), 200);
+    await tester.scrollUntilVisible(
+      find.text('Create a program'),
+      200,
+      scrollable: pageScrollable,
+    );
     await settle(tester);
     await tester.tap(find.text('Create a program'));
     await settle(tester);

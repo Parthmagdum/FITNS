@@ -27,8 +27,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/today',
     routes: [
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, shell) => AppShell(shell: shell),
+        // Side by side, so a swipe moves between neighbouring tabs.
+        navigatorContainerBuilder: (context, shell, children) =>
+            SwipeTabs(shell: shell, children: children),
         branches: [
           StatefulShellBranch(
             routes: [

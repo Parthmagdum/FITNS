@@ -8,8 +8,9 @@ import '../dates.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_page.dart';
 
-/// The five tabs, plus a "workout in progress" strip above them whenever
-/// one is running — so it is never more than a tap away.
+/// The five tabs — tap one, or swipe between them — plus a "workout in
+/// progress" strip above them whenever one is running, so it is never more
+/// than a tap away.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
 
@@ -123,5 +124,71 @@ class _ActiveWorkoutStrip extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// The tabs side by side: swipe left or right to move to the next one, as
+/// well as tapping the bar. Each tab keeps its place — scroll position,
+/// pages opened inside it — while another is shown. A swipe that starts on
+/// something that scrolls sideways itself (a row of cards) scrolls that.
+class SwipeTabs extends StatefulWidget {
+  const SwipeTabs({super.key, required this.shell, required this.children});
+
+  final StatefulNavigationShell shell;
+  final List<Widget> children;
+
+  @override
+  State<SwipeTabs> createState() => _SwipeTabsState();
+}
+
+class _SwipeTabsState extends State<SwipeTabs> {
+  late final _pages = PageController(initialPage: widget.shell.currentIndex);
+
+  @override
+  void didUpdateWidget(SwipeTabs old) {
+    super.didUpdateWidget(old);
+    // A tab tapped (or a link followed): go straight there, no slide past
+    // the tabs in between.
+    final index = widget.shell.currentIndex;
+    if (_pages.hasClients && (_pages.page?.round() ?? index) != index) {
+      _pages.jumpToPage(index);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PageView(
+    controller: _pages,
+    onPageChanged: (i) {
+      if (i != widget.shell.currentIndex) widget.shell.goBranch(i);
+    },
+    children: [for (final child in widget.children) _KeepAlive(child: child)],
+  );
+}
+
+/// Keeps a tab built while it's swiped out of view.
+class _KeepAlive extends StatefulWidget {
+  const _KeepAlive({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeepAlive> createState() => _KeepAliveState();
+}
+
+class _KeepAliveState extends State<_KeepAlive>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
