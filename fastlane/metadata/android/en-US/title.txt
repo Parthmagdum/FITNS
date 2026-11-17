@@ -1,1 +1,1 @@
-FITNS
+FITNS: Fitness Tracking App

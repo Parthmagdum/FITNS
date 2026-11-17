@@ -1,14 +1,10 @@
-# Draft build recipe for F-Droid. It doesn't do anything in this repo:
-# submit it as metadata/com.trakvrs.fitns.yml in a merge request to
-# https://gitlab.com/fdroid/fdroiddata, after tagging v0.1.0.
-# Keep the flutter srclib version in step with .github/workflows/*.yml.
 Categories:
   - Sports & Health
 License: MIT
 AuthorName: Parth Magdum
 SourceCode: https://github.com/Parthmagdum/FITNS
 IssueTracker: https://github.com/Parthmagdum/FITNS/issues
-Changelog: https://github.com/Parthmagdum/FITNS/blob/main/CHANGELOG.md
+Changelog: https://github.com/Parthmagdum/FITNS/blob/release/0.1.0/CHANGELOG.md
 
 AutoName: FITNS
 
@@ -16,9 +12,9 @@ RepoType: git
 Repo: https://github.com/Parthmagdum/FITNS.git
 
 Builds:
-  - versionName: 0.1.0
-    versionCode: 9
-    commit: v0.1.0
+  - versionName: 0.1.6
+    versionCode: 15
+    commit: 0ff53b35f6efbd52a73cb1fa6d627c9f89c6ae69
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
       - flutter@3.47.8
@@ -35,5 +31,5 @@ Builds:
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
-CurrentVersion: 0.1.0
-CurrentVersionCode: 9
+CurrentVersion: 0.1.6
+CurrentVersionCode: 15
