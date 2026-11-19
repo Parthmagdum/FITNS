@@ -367,6 +367,21 @@ class $SettingsTable extends Settings
     requiredDuringInsert: false,
     defaultValue: const Constant(21 * 60),
   );
+  static const VerificationMeta _waterInNotificationBarMeta =
+      const VerificationMeta('waterInNotificationBar');
+  @override
+  late final GeneratedColumn<bool> waterInNotificationBar =
+      GeneratedColumn<bool>(
+        'water_in_notification_bar',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("water_in_notification_bar" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   static const VerificationMeta _bedtimeReminderMinuteMeta =
       const VerificationMeta('bedtimeReminderMinute');
   @override
@@ -502,6 +517,7 @@ class $SettingsTable extends Settings
     waterIntervalMinutes,
     waterStartMinute,
     waterEndMinute,
+    waterInNotificationBar,
     bedtimeReminderMinute,
     weighInReminderMinute,
     weighInReminderWeekday,
@@ -745,6 +761,15 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('water_in_notification_bar')) {
+      context.handle(
+        _waterInNotificationBarMeta,
+        waterInNotificationBar.isAcceptableOrUnknown(
+          data['water_in_notification_bar']!,
+          _waterInNotificationBarMeta,
+        ),
+      );
+    }
     if (data.containsKey('bedtime_reminder_minute')) {
       context.handle(
         _bedtimeReminderMinuteMeta,
@@ -961,6 +986,10 @@ class $SettingsTable extends Settings
         DriftSqlType.int,
         data['${effectivePrefix}water_end_minute'],
       )!,
+      waterInNotificationBar: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}water_in_notification_bar'],
+      )!,
       bedtimeReminderMinute: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}bedtime_reminder_minute'],
@@ -1103,6 +1132,10 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   final int waterStartMinute;
   final int waterEndMinute;
 
+  /// Today's water stays in the notification bar, with buttons to log a
+  /// drink and to edit the reminders. Schema v13.
+  final bool waterInNotificationBar;
+
   /// Minutes after midnight for the bedtime reminder; null = off.
   /// Schema v11.
   final int? bedtimeReminderMinute;
@@ -1167,6 +1200,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     required this.waterIntervalMinutes,
     required this.waterStartMinute,
     required this.waterEndMinute,
+    required this.waterInNotificationBar,
     this.bedtimeReminderMinute,
     this.weighInReminderMinute,
     required this.weighInReminderWeekday,
@@ -1257,6 +1291,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     map['water_interval_minutes'] = Variable<int>(waterIntervalMinutes);
     map['water_start_minute'] = Variable<int>(waterStartMinute);
     map['water_end_minute'] = Variable<int>(waterEndMinute);
+    map['water_in_notification_bar'] = Variable<bool>(waterInNotificationBar);
     if (!nullToAbsent || bedtimeReminderMinute != null) {
       map['bedtime_reminder_minute'] = Variable<int>(bedtimeReminderMinute);
     }
@@ -1342,6 +1377,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       waterIntervalMinutes: Value(waterIntervalMinutes),
       waterStartMinute: Value(waterStartMinute),
       waterEndMinute: Value(waterEndMinute),
+      waterInNotificationBar: Value(waterInNotificationBar),
       bedtimeReminderMinute: bedtimeReminderMinute == null && nullToAbsent
           ? const Value.absent()
           : Value(bedtimeReminderMinute),
@@ -1417,6 +1453,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       ),
       waterStartMinute: serializer.fromJson<int>(json['waterStartMinute']),
       waterEndMinute: serializer.fromJson<int>(json['waterEndMinute']),
+      waterInNotificationBar: serializer.fromJson<bool>(
+        json['waterInNotificationBar'],
+      ),
       bedtimeReminderMinute: serializer.fromJson<int?>(
         json['bedtimeReminderMinute'],
       ),
@@ -1479,6 +1518,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'waterIntervalMinutes': serializer.toJson<int>(waterIntervalMinutes),
       'waterStartMinute': serializer.toJson<int>(waterStartMinute),
       'waterEndMinute': serializer.toJson<int>(waterEndMinute),
+      'waterInNotificationBar': serializer.toJson<bool>(waterInNotificationBar),
       'bedtimeReminderMinute': serializer.toJson<int?>(bedtimeReminderMinute),
       'weighInReminderMinute': serializer.toJson<int?>(weighInReminderMinute),
       'weighInReminderWeekday': serializer.toJson<int>(weighInReminderWeekday),
@@ -1523,6 +1563,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     int? waterIntervalMinutes,
     int? waterStartMinute,
     int? waterEndMinute,
+    bool? waterInNotificationBar,
     Value<int?> bedtimeReminderMinute = const Value.absent(),
     Value<int?> weighInReminderMinute = const Value.absent(),
     int? weighInReminderWeekday,
@@ -1580,6 +1621,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     waterIntervalMinutes: waterIntervalMinutes ?? this.waterIntervalMinutes,
     waterStartMinute: waterStartMinute ?? this.waterStartMinute,
     waterEndMinute: waterEndMinute ?? this.waterEndMinute,
+    waterInNotificationBar:
+        waterInNotificationBar ?? this.waterInNotificationBar,
     bedtimeReminderMinute: bedtimeReminderMinute.present
         ? bedtimeReminderMinute.value
         : this.bedtimeReminderMinute,
@@ -1676,6 +1719,9 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       waterEndMinute: data.waterEndMinute.present
           ? data.waterEndMinute.value
           : this.waterEndMinute,
+      waterInNotificationBar: data.waterInNotificationBar.present
+          ? data.waterInNotificationBar.value
+          : this.waterInNotificationBar,
       bedtimeReminderMinute: data.bedtimeReminderMinute.present
           ? data.bedtimeReminderMinute.value
           : this.bedtimeReminderMinute,
@@ -1736,6 +1782,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('waterIntervalMinutes: $waterIntervalMinutes, ')
           ..write('waterStartMinute: $waterStartMinute, ')
           ..write('waterEndMinute: $waterEndMinute, ')
+          ..write('waterInNotificationBar: $waterInNotificationBar, ')
           ..write('bedtimeReminderMinute: $bedtimeReminderMinute, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
           ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
@@ -1782,6 +1829,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     waterIntervalMinutes,
     waterStartMinute,
     waterEndMinute,
+    waterInNotificationBar,
     bedtimeReminderMinute,
     weighInReminderMinute,
     weighInReminderWeekday,
@@ -1827,6 +1875,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.waterIntervalMinutes == this.waterIntervalMinutes &&
           other.waterStartMinute == this.waterStartMinute &&
           other.waterEndMinute == this.waterEndMinute &&
+          other.waterInNotificationBar == this.waterInNotificationBar &&
           other.bedtimeReminderMinute == this.bedtimeReminderMinute &&
           other.weighInReminderMinute == this.weighInReminderMinute &&
           other.weighInReminderWeekday == this.weighInReminderWeekday &&
@@ -1870,6 +1919,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<int> waterIntervalMinutes;
   final Value<int> waterStartMinute;
   final Value<int> waterEndMinute;
+  final Value<bool> waterInNotificationBar;
   final Value<int?> bedtimeReminderMinute;
   final Value<int?> weighInReminderMinute;
   final Value<int> weighInReminderWeekday;
@@ -1911,6 +1961,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.waterIntervalMinutes = const Value.absent(),
     this.waterStartMinute = const Value.absent(),
     this.waterEndMinute = const Value.absent(),
+    this.waterInNotificationBar = const Value.absent(),
     this.bedtimeReminderMinute = const Value.absent(),
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
@@ -1953,6 +2004,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.waterIntervalMinutes = const Value.absent(),
     this.waterStartMinute = const Value.absent(),
     this.waterEndMinute = const Value.absent(),
+    this.waterInNotificationBar = const Value.absent(),
     this.bedtimeReminderMinute = const Value.absent(),
     this.weighInReminderMinute = const Value.absent(),
     this.weighInReminderWeekday = const Value.absent(),
@@ -1995,6 +2047,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<int>? waterIntervalMinutes,
     Expression<int>? waterStartMinute,
     Expression<int>? waterEndMinute,
+    Expression<bool>? waterInNotificationBar,
     Expression<int>? bedtimeReminderMinute,
     Expression<int>? weighInReminderMinute,
     Expression<int>? weighInReminderWeekday,
@@ -2043,6 +2096,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
         'water_interval_minutes': waterIntervalMinutes,
       if (waterStartMinute != null) 'water_start_minute': waterStartMinute,
       if (waterEndMinute != null) 'water_end_minute': waterEndMinute,
+      if (waterInNotificationBar != null)
+        'water_in_notification_bar': waterInNotificationBar,
       if (bedtimeReminderMinute != null)
         'bedtime_reminder_minute': bedtimeReminderMinute,
       if (weighInReminderMinute != null)
@@ -2090,6 +2145,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<int>? waterIntervalMinutes,
     Value<int>? waterStartMinute,
     Value<int>? waterEndMinute,
+    Value<bool>? waterInNotificationBar,
     Value<int?>? bedtimeReminderMinute,
     Value<int?>? weighInReminderMinute,
     Value<int>? weighInReminderWeekday,
@@ -2133,6 +2189,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       waterIntervalMinutes: waterIntervalMinutes ?? this.waterIntervalMinutes,
       waterStartMinute: waterStartMinute ?? this.waterStartMinute,
       waterEndMinute: waterEndMinute ?? this.waterEndMinute,
+      waterInNotificationBar:
+          waterInNotificationBar ?? this.waterInNotificationBar,
       bedtimeReminderMinute:
           bedtimeReminderMinute ?? this.bedtimeReminderMinute,
       weighInReminderMinute:
@@ -2260,6 +2318,11 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (waterEndMinute.present) {
       map['water_end_minute'] = Variable<int>(waterEndMinute.value);
     }
+    if (waterInNotificationBar.present) {
+      map['water_in_notification_bar'] = Variable<bool>(
+        waterInNotificationBar.value,
+      );
+    }
     if (bedtimeReminderMinute.present) {
       map['bedtime_reminder_minute'] = Variable<int>(
         bedtimeReminderMinute.value,
@@ -2328,6 +2391,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('waterIntervalMinutes: $waterIntervalMinutes, ')
           ..write('waterStartMinute: $waterStartMinute, ')
           ..write('waterEndMinute: $waterEndMinute, ')
+          ..write('waterInNotificationBar: $waterInNotificationBar, ')
           ..write('bedtimeReminderMinute: $bedtimeReminderMinute, ')
           ..write('weighInReminderMinute: $weighInReminderMinute, ')
           ..write('weighInReminderWeekday: $weighInReminderWeekday, ')
@@ -9967,6 +10031,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<int> waterIntervalMinutes,
       Value<int> waterStartMinute,
       Value<int> waterEndMinute,
+      Value<bool> waterInNotificationBar,
       Value<int?> bedtimeReminderMinute,
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
@@ -10010,6 +10075,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<int> waterIntervalMinutes,
       Value<int> waterStartMinute,
       Value<int> waterEndMinute,
+      Value<bool> waterInNotificationBar,
       Value<int?> bedtimeReminderMinute,
       Value<int?> weighInReminderMinute,
       Value<int> weighInReminderWeekday,
@@ -10191,6 +10257,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<int> get waterEndMinute => $composableBuilder(
     column: $table.waterEndMinute,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get waterInNotificationBar => $composableBuilder(
+    column: $table.waterInNotificationBar,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10404,6 +10475,11 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get waterInNotificationBar => $composableBuilder(
+    column: $table.waterInNotificationBar,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get bedtimeReminderMinute => $composableBuilder(
     column: $table.bedtimeReminderMinute,
     builder: (column) => ColumnOrderings(column),
@@ -10601,6 +10677,11 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get waterInNotificationBar => $composableBuilder(
+    column: $table.waterInNotificationBar,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get bedtimeReminderMinute => $composableBuilder(
     column: $table.bedtimeReminderMinute,
     builder: (column) => column,
@@ -10703,6 +10784,7 @@ class $$SettingsTableTableManager
                 Value<int> waterIntervalMinutes = const Value.absent(),
                 Value<int> waterStartMinute = const Value.absent(),
                 Value<int> waterEndMinute = const Value.absent(),
+                Value<bool> waterInNotificationBar = const Value.absent(),
                 Value<int?> bedtimeReminderMinute = const Value.absent(),
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
@@ -10744,6 +10826,7 @@ class $$SettingsTableTableManager
                 waterIntervalMinutes: waterIntervalMinutes,
                 waterStartMinute: waterStartMinute,
                 waterEndMinute: waterEndMinute,
+                waterInNotificationBar: waterInNotificationBar,
                 bedtimeReminderMinute: bedtimeReminderMinute,
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,
@@ -10787,6 +10870,7 @@ class $$SettingsTableTableManager
                 Value<int> waterIntervalMinutes = const Value.absent(),
                 Value<int> waterStartMinute = const Value.absent(),
                 Value<int> waterEndMinute = const Value.absent(),
+                Value<bool> waterInNotificationBar = const Value.absent(),
                 Value<int?> bedtimeReminderMinute = const Value.absent(),
                 Value<int?> weighInReminderMinute = const Value.absent(),
                 Value<int> weighInReminderWeekday = const Value.absent(),
@@ -10828,6 +10912,7 @@ class $$SettingsTableTableManager
                 waterIntervalMinutes: waterIntervalMinutes,
                 waterStartMinute: waterStartMinute,
                 waterEndMinute: waterEndMinute,
+                waterInNotificationBar: waterInNotificationBar,
                 bedtimeReminderMinute: bedtimeReminderMinute,
                 weighInReminderMinute: weighInReminderMinute,
                 weighInReminderWeekday: weighInReminderWeekday,

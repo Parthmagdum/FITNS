@@ -6,6 +6,7 @@ import '../core/insights.dart';
 import '../core/motion/motion_sensors.dart';
 import '../core/notifications/reminders.dart';
 import '../core/notifications/rest_alerts.dart';
+import '../core/notifications/water_bar.dart';
 import '../core/platform/barcode_scanner.dart';
 import '../core/platform/document_files.dart';
 import '../core/platform/health_connect.dart';
@@ -407,4 +408,23 @@ final waterPresetsProvider = Provider<List<int>>((ref) {
     for (final part in raw.split(','))
       if (int.tryParse(part.trim()) case final ml? when ml > 0) ml,
   ];
+});
+
+final waterBarProvider = Provider<WaterBar>((ref) => const WaterBar());
+
+/// What the water tracker in the notification bar should show right now.
+/// Null until the data it's made from has loaded.
+final waterBarStateProvider = Provider<WaterBarState?>((ref) {
+  final today = ref.watch(todayProvider);
+  final settings = ref.watch(settingsProvider).valueOrNull;
+  final week = ref.watch(waterWeekProvider(today)).valueOrNull;
+  if (settings == null || week == null) return null;
+  return (
+    on: settings.waterInNotificationBar,
+    day: today,
+    drunkMl: week.last.logs.fold(0, (sum, w) => sum + w.ml),
+    goalMl: settings.waterGoalMl,
+    presetsMl: ref.watch(waterPresetsProvider),
+    imperial: ref.watch(unitsProvider) == UnitSystem.imperial,
+  );
 });

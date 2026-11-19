@@ -13,7 +13,8 @@ import org.json.JSONArray
 import java.util.Calendar
 
 /**
- * Repeating reminders — train, drink water, weigh in. Dart decides what they
+ * Repeating reminders — train, drink water, weigh in. Water reminders carry
+ * buttons to log a glass or snooze, handled in `WaterBar.kt`. Dart decides what they
  * are (`lib/core/notifications/reminders.dart`) and hands over the whole list
  * with [sync]; this keeps it in preferences, sets one system alarm per
  * reminder for its next time, and on each alarm shows the notification and
@@ -27,6 +28,10 @@ object Reminders {
     private const val KEY = "list"
     private const val CHANNEL = "reminders"
     private const val EXTRA_ID = "id"
+    private const val KEY_SNOOZE = "water_snoozed_until"
+
+    /** The alarm for a snoozed water reminder; clear of every id `remindersFor` uses. */
+    private const val SNOOZE_ID = 999
 
     private class Reminder(
         val id: Int,
@@ -47,14 +52,57 @@ object Reminders {
 
     fun rescheduleAll(context: Context) {
         for (r in load(context)) schedule(context, r)
+        val snoozed = snoozedUntil(context)
+        if (snoozed != null) {
+            alarms(context).setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                snoozed,
+                alarmIntent(context, SNOOZE_ID),
+            )
+        }
+        // The water tracker shows when the next one is due.
+        WaterBar.refresh(context)
     }
 
     fun fire(context: Context, id: Int) {
+        if (id == SNOOZE_ID) {
+            prefs(context).edit().remove(KEY_SNOOZE).apply()
+            // A snoozed water reminder comes back as the water reminder.
+            val water = load(context).firstOrNull { isWater(it.id) }
+            if (water != null && !MainActivity.inForeground) show(context, water)
+            WaterBar.refresh(context)
+            return
+        }
         val reminder = load(context).firstOrNull { it.id == id } ?: return
         // A reminder to open the app while it's open is just noise.
         if (!MainActivity.inForeground) show(context, reminder)
         schedule(context, reminder)
+        if (isWater(id)) WaterBar.refresh(context)
     }
+
+    /** The water reminder again in [minutes], on top of the regular ones. */
+    fun snoozeWater(context: Context, minutes: Int) {
+        val at = System.currentTimeMillis() + minutes * 60_000L
+        prefs(context).edit().putLong(KEY_SNOOZE, at).apply()
+        alarms(context).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, alarmIntent(context, SNOOZE_ID))
+    }
+
+    /** When the next water reminder is due, snoozed or regular; null if none are set. */
+    fun nextWaterReminder(context: Context): Long? {
+        val now = System.currentTimeMillis()
+        val regular = load(context).filter { isWater(it.id) }.map { nextTime(it, now) }
+        return (regular + listOfNotNull(snoozedUntil(context))).minOrNull()
+    }
+
+    private fun snoozedUntil(context: Context): Long? {
+        val at = prefs(context).getLong(KEY_SNOOZE, 0L)
+        return if (at > System.currentTimeMillis()) at else null
+    }
+
+    /** Ids from `remindersFor` in lib/core/notifications/reminders.dart. */
+    private fun isWater(id: Int) = id in 1000..1999
+
+    private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     private fun schedule(context: Context, r: Reminder) {
         alarms(context).setAndAllowWhileIdle(
@@ -100,21 +148,35 @@ object Reminders {
             @Suppress("DEPRECATION")
             Notification.Builder(context)
         }
-        val open = PendingIntent.getActivity(
-            context,
-            r.id,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-        val notification = builder
-            .setSmallIcon(R.drawable.ic_stat_rest)
+        val water = isWater(r.id)
+        // Water reminders share one notification: the newest replaces the
+        // last, so its buttons are always the ones on screen.
+        val notificationId = NOTIFICATION_BASE + if (water) 1000 else r.id
+        val open = if (water) {
+            // Tapping a water reminder opens the page where it's edited.
+            WaterBar.openWater(context)
+        } else {
+            PendingIntent.getActivity(
+                context,
+                r.id,
+                Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        }
+        builder
+            .setSmallIcon(if (water) R.drawable.ic_stat_water else R.drawable.ic_stat_rest)
             .setContentTitle(r.title)
-            .setContentText(r.text)
+            .setContentText(if (water) WaterBar.progressLine(context) ?: r.text else r.text)
             .setContentIntent(open)
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_REMINDER)
-            .build()
-        manager.notify(NOTIFICATION_BASE + r.id, notification)
+        if (water) {
+            // Log the glass or put it off, without opening FITNS.
+            val ml = WaterBar.firstPreset(context) ?: 250
+            builder.addAction(WaterBar.addAction(context, ml, slot = 5, dismiss = notificationId))
+            builder.addAction(WaterBar.snoozeAction(context, dismiss = notificationId))
+        }
+        manager.notify(notificationId, builder.build())
     }
 
     private fun load(context: Context): List<Reminder> {

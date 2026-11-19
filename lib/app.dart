@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/branding/app_info.dart';
 import 'core/dates.dart';
 import 'core/notifications/reminders.dart';
+import 'core/notifications/water_bar.dart';
 import 'core/platform/health_connect.dart';
 import 'core/platform/home_widget.dart';
 import 'core/routing/app_router.dart';
@@ -27,7 +28,37 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startSteps();
       _syncHealth();
+      final water = ref.read(waterBarProvider);
+      water.listen(onLogged: _drainWater, onOpen: _openPage);
+      _drainWater();
+      water.takeOpen().then((page) {
+        if (page != null) _openPage(page);
+      });
     });
+  }
+
+  var _drainingWater = false;
+
+  /// Books the drinks logged from notifications while FITNS was closed.
+  Future<void> _drainWater() async {
+    if (_drainingWater || !mounted) return;
+    _drainingWater = true;
+    try {
+      final db = ref.read(dbProvider);
+      for (final drink in await ref.read(waterBarProvider).drain()) {
+        await db.addWater(drink.ml, at: drink.at);
+      }
+    } finally {
+      _drainingWater = false;
+    }
+  }
+
+  /// A notification's Edit button (or a tap on the tracker) opens a page.
+  void _openPage(String page) {
+    if (!mounted || page != 'water') return;
+    final router = ref.read(routerProvider);
+    if (router.routerDelegate.currentConfiguration.uri.path == '/water') return;
+    router.push('/water');
   }
 
   @override
@@ -48,6 +79,7 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
     _startSteps();
     ref.invalidate(restAlertStatusProvider);
     _syncHealth();
+    _drainWater();
   }
 
   /// Once connected, a quiet Health Connect sync each time FITNS opens.
@@ -70,6 +102,9 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
   /// reschedule every reminder.
   String? _syncedReminders;
 
+  /// What the water tracker was last told.
+  String? _syncedWaterBar;
+
   /// The setup guide opens once, the first time FITNS starts.
   var _offeredSetup = false;
 
@@ -89,6 +124,13 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
       if (settings == null || settings.setupDone || _offeredSetup) return;
       _offeredSetup = true;
       ref.read(routerProvider).push('/setup');
+    });
+    ref.listen<WaterBarState?>(waterBarStateProvider, (_, next) {
+      if (next == null) return;
+      final key = next.toString();
+      if (key == _syncedWaterBar) return;
+      _syncedWaterBar = key;
+      ref.read(waterBarProvider).update(next);
     });
     ref.listen<WidgetData?>(widgetDataProvider, (previous, next) {
       if (next != null && next != previous) {

@@ -553,6 +553,30 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets('the water page sets reminders and the notification bar', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+    await tester.tap(find.text('Food').last);
+    await settle(tester);
+    await tester.tap(find.byTooltip('Water reminders').first);
+    await settle(tester);
+    expect(find.text('Water'), findsWidgets);
+
+    await scrollToMiddle(tester, find.text('Water reminders'));
+    await tester.tap(find.text('Water reminders'));
+    await settle(tester);
+    await scrollToMiddle(tester, find.text('Show in notification bar'));
+    await tester.tap(find.text('Show in notification bar'));
+    await settle(tester);
+
+    final settings = (await tester.runAsync(db.getSettings))!;
+    expect(settings.waterReminders, isTrue);
+    expect(settings.waterInNotificationBar, isTrue);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
   testWidgets('water, quick add and a saved food on the Food tab', (
     tester,
   ) async {

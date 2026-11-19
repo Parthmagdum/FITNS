@@ -41,6 +41,12 @@ class MainActivity : FlutterActivity() {
     private var cameraUri: Uri? = null
     private var pendingScan: MethodChannel.Result? = null
 
+    /** The water channel, to tell Dart about drinks logged from a notification. */
+    private var water: MethodChannel? = null
+
+    /** A page a notification opened FITNS on, until Dart asks for it. */
+    private var pendingPage: String? = null
+
     /** Songs being picked to import, and the player that plays them. */
     private var pendingMusic: MethodChannel.Result? = null
     private var music: MusicPlayer? = null
@@ -66,7 +72,25 @@ class MainActivity : FlutterActivity() {
         // The music belongs to FITNS being open; it stops with it.
         music?.release()
         music = null
+        WaterBar.onLogged = null
+        water = null
         super.onDestroy()
+    }
+
+    /** Opened again from a notification while already running. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val page = takeOpen(intent) ?: return
+        water?.invokeMethod("open", page)
+    }
+
+    /** The page a notification asked FITNS to open, read once. */
+    private fun takeOpen(intent: Intent?): String? {
+        if (intent == null) return null
+        val page = intent.getStringExtra(WaterBar.EXTRA_OPEN) ?: return null
+        intent.removeExtra(WaterBar.EXTRA_OPEN)
+        return page
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -281,6 +305,26 @@ class MainActivity : FlutterActivity() {
                     player.installed(call.argument<List<String>>("packages") ?: emptyList()),
                 )
                 "open" -> result.success(player.open(call.argument<String>("package")))
+                else -> result.notImplemented()
+            }
+        }
+
+        // Water in the notification bar (WaterBar.kt).
+        pendingPage = takeOpen(intent)
+        val waterChannel = MethodChannel(messenger, WATER_METHODS)
+        water = waterChannel
+        WaterBar.onLogged = { waterChannel.invokeMethod("logged", null) }
+        waterChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "update" -> {
+                    WaterBar.update(this, call.arguments as? Map<*, *> ?: emptyMap<String, Any>())
+                    result.success(null)
+                }
+                "drain" -> result.success(WaterBar.drain(this))
+                "takeOpen" -> {
+                    result.success(pendingPage)
+                    pendingPage = null
+                }
                 else -> result.notImplemented()
             }
         }
@@ -525,6 +569,7 @@ class MainActivity : FlutterActivity() {
         private const val BARCODE_METHODS = "fitns/barcode"
         private const val HEALTH_METHODS = "fitns/health"
         private const val MUSIC_METHODS = "fitns/music"
+        private const val WATER_METHODS = "fitns/water"
         // Request codes must differ from each other and from HealthBridge.REQUEST (4110).
         private const val PICK_MUSIC_REQUEST = 4111
         private const val CAMERA_REQUEST = 4108

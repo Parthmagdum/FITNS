@@ -14,7 +14,8 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         if (StepLog.isAllDay(context)) StepCounterService.start(context)
-        // Alarms don't survive a reboot; reminders must be set again.
+        // Alarms don't survive a reboot; reminders must be set again. This
+        // also puts the water tracker back in the notification bar.
         Reminders.rescheduleAll(context)
     }
 }

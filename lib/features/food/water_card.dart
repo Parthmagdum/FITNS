@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/dates.dart';
 import '../../core/insights.dart';
@@ -13,10 +14,18 @@ import '../../data/providers.dart';
 /// Water drunk on [day]: one tap per glass, an undo for the last one, and
 /// optionally the week around it.
 class WaterCard extends ConsumerWidget {
-  const WaterCard({super.key, required this.day, this.showWeek = false});
+  const WaterCard({
+    super.key,
+    required this.day,
+    this.showWeek = false,
+    this.showRemindersLink = true,
+  });
 
   final DateTime day;
   final bool showWeek;
+
+  /// A bell that opens the Water page, where reminders are set.
+  final bool showRemindersLink;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -82,6 +91,12 @@ class WaterCard extends ConsumerWidget {
                   tooltip: 'Undo last',
                   onPressed: () => db.deleteWaterLog(today.last.id),
                   icon: const Icon(Icons.undo),
+                ),
+              if (showRemindersLink)
+                IconButton(
+                  tooltip: 'Water reminders',
+                  onPressed: () => context.push('/water'),
+                  icon: const Icon(Icons.notifications_none),
                 ),
             ],
           ),

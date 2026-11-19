@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.7 — 2026-11-19
+
+**Water from the notification bar**
+- Water reminders now have buttons: log a glass, or snooze for 30 minutes,
+  without opening FITNS. Tapping one opens the new Water page.
+- New **Show in notification bar** option: today's water, your goal and
+  the next reminder stay in the notification bar, with buttons to log a
+  drink and an Edit button to change your reminders.
+- A new **Water page** (the bell on the water card) holds today's drinks,
+  the week, and every water reminder setting.
+
 ## 0.1.6 — 2026-11-11
 
 **A proper finish to a workout**

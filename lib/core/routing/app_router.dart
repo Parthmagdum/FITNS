@@ -8,6 +8,7 @@ import '../../features/exercises/exercise_picker_screen.dart';
 import '../../features/food/food_picker_screen.dart';
 import '../../features/food/food_screen.dart';
 import '../../features/food/goals_screen.dart';
+import '../../features/food/water_screen.dart';
 import '../../features/places/places_screen.dart';
 import '../../features/plan/plan_screen.dart';
 import '../../features/progress/progress_screen.dart';
@@ -115,6 +116,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/settings/goals', builder: (_, _) => const GoalsScreen()),
       GoRoute(path: '/steps', builder: (_, _) => const StepsScreen()),
+      GoRoute(path: '/water', builder: (_, _) => const WaterScreen()),
       GoRoute(path: '/about', builder: (_, _) => const AboutScreen()),
       GoRoute(path: '/setup', builder: (_, _) => const SetupScreen()),
     ],

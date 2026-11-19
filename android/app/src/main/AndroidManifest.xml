@@ -87,6 +87,10 @@
         <receiver
             android:name=".ReminderReceiver"
             android:exported="false"/>
+        <!-- The water buttons in notifications (WaterBar.kt). -->
+        <receiver
+            android:name=".WaterReceiver"
+            android:exported="false"/>
         <!-- ZXing's scanner, allowed to turn with the phone. -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"

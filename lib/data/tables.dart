@@ -290,6 +290,11 @@ class Settings extends Table {
   IntColumn get waterEndMinute =>
       integer().withDefault(const Constant(21 * 60))();
 
+  /// Today's water stays in the notification bar, with buttons to log a
+  /// drink and to edit the reminders. Schema v13.
+  BoolColumn get waterInNotificationBar =>
+      boolean().withDefault(const Constant(false))();
+
   /// Minutes after midnight for the bedtime reminder; null = off.
   /// Schema v11.
   IntColumn get bedtimeReminderMinute => integer().nullable()();

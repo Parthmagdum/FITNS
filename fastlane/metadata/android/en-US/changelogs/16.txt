@@ -1,0 +1,4 @@
+Water from the notification bar.
+- Water reminders have buttons: log a glass or snooze 30 minutes
+- Optional water tracker in the notification bar, with quick add and Edit
+- New Water page for your drinks and all water reminder settings

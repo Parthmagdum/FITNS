@@ -38,6 +38,11 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 13) {
+      await db.customStatement(
+        'ALTER TABLE settings DROP COLUMN water_in_notification_bar',
+      );
+    }
     if (schema < 12) {
       await db.customStatement('ALTER TABLE settings DROP COLUMN music_tracks');
     }
@@ -169,6 +174,7 @@ void main() {
     (9, '0.1.1'),
     (10, '0.1.3'),
     (11, '0.1.4'),
+    (12, '0.1.6'),
   ]) {
     test(
       'a $release database (schema $schema) upgrades and keeps its data',
@@ -240,6 +246,8 @@ void main() {
         if (schema < 11) expect(s11.setupDone, isTrue);
         expect(s11.waterIntervalMinutes, 120);
         expect(s11.exerciseAnimations, isTrue);
+        // Schema v13: the water tracker starts off.
+        expect(s11.waterInNotificationBar, isFalse);
         // Schema v10: a place keeps its exact weights.
         final home = (await upgraded.watchPlaces().first)[1];
         await upgraded.savePlace(
