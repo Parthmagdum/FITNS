@@ -140,8 +140,8 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
     return MaterialApp.router(
       title: AppInfo.name,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
+      theme: ref.watch(glassThemeProvider) ? AppTheme.glass : AppTheme.light,
+      darkTheme: ref.watch(glassThemeProvider) ? AppTheme.glass : AppTheme.dark,
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(routerProvider),
     );

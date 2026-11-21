@@ -274,17 +274,29 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         const SectionLabel('Appearance'),
-        SegmentedButton<ThemeMode>(
+        SegmentedButton<String>(
           showSelectedIcon: false,
           segments: const [
-            ButtonSegment(value: ThemeMode.system, label: Text('System')),
-            ButtonSegment(value: ThemeMode.light, label: Text('Light')),
-            ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+            ButtonSegment(value: 'system', label: Text('System')),
+            ButtonSegment(value: 'light', label: Text('Light')),
+            ButtonSegment(value: 'dark', label: Text('Dark')),
+            ButtonSegment(value: 'glass', label: Text('Glass')),
           ],
-          selected: {ref.watch(themeModeProvider)},
+          selected: {ref.watch(appearanceProvider)},
           onSelectionChanged: (s) =>
-              save(SettingsCompanion(themeMode: Value(s.first.name))),
+              save(SettingsCompanion(themeMode: Value(s.first))),
         ),
+        if (ref.watch(glassThemeProvider))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text(
+              'Liquid Glass: frosted cards and a floating glass tab bar on '
+              'black, the same look as XPENC.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         const SizedBox(height: 12),
         Card(
           child: SwitchListTile(

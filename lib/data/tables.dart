@@ -194,7 +194,8 @@ enum ActivityLevel {
 class Settings extends Table {
   IntColumn get id => integer().withDefault(const Constant(1))();
 
-  /// `system`, `light` or `dark` — a [ThemeMode] name.
+  /// `system`, `light` or `dark` — a [ThemeMode] name — or `glass`, the
+  /// Liquid Glass look (always dark).
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
 
   TextColumn get unitSystem =>

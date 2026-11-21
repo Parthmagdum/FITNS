@@ -2,6 +2,10 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'glass.dart';
+
+export 'glass.dart' show AppSurface;
+
 /// Every colour the theme varies. The monochrome pair is XPENC's Classic
 /// palette value for value, so the two TRAKVRS apps read as siblings; only
 /// the accent is FITNS's own.
@@ -70,6 +74,22 @@ class Palette {
     primary: Color(0xFFF5F5F6),
     onPrimary: Color(0xFF0A0A0B),
   );
+
+  /// Glass: XPENC's Liquid Glass over pure black, iOS's dark label colours,
+  /// FITNS orange. Cards and sheets take their colours from [GlassTone].
+  static const glass = Palette(
+    brightness: Brightness.dark,
+    bg: Color(0xFF000000),
+    surface: Color(0xFF000000),
+    surfaceHigh: Color(0xFF1C1C1E),
+    track: GlassTone.track,
+    border: GlassTone.separator,
+    text: Color(0xFFF5F5F7),
+    textMuted: Color(0xFF9C9CA3),
+    accent: Color(0xFFFF7A2F),
+    primary: Color(0xFFF5F5F7),
+    onPrimary: Color(0xFF0A0A0B),
+  );
 }
 
 /// One UI–inspired: large rounded cards, generous spacing, big titles.
@@ -83,6 +103,9 @@ class AppTheme {
 
   static ThemeData get light => of(Palette.light);
   static ThemeData get dark => of(Palette.dark);
+
+  /// The Liquid Glass look, after XPENC's: always dark.
+  static ThemeData get glass => _liquidGlass(of(Palette.glass), Palette.glass);
 
   static ThemeData of(Palette p) {
     final isDark = p.brightness == Brightness.dark;
@@ -116,6 +139,7 @@ class AppTheme {
     );
 
     return base.copyWith(
+      extensions: const [AppSurface.solid],
       textTheme: text.copyWith(
         displaySmall: text.displaySmall?.copyWith(
           fontWeight: FontWeight.w800,
@@ -287,6 +311,103 @@ class AppTheme {
       ),
     );
   }
+}
+
+/// Glass's overrides, modelled on iOS (and XPENC's Glass): frosted cards
+/// with a hairline edge, capsule buttons, dense frosted sheets and menus,
+/// glass back buttons, iOS page transitions with swipe-back, no ripple.
+ThemeData _liquidGlass(ThemeData t, Palette p) {
+  const stadium = StadiumBorder();
+  final scheme = t.colorScheme.copyWith(
+    // Material paints menus, pickers and dropdowns with these, over content
+    // and with nothing blurred behind — so they stay near-opaque.
+    surfaceContainerLowest: GlassTone.solidFrost,
+    surfaceContainerLow: GlassTone.solidFrost,
+    surfaceContainer: GlassTone.solidFrost,
+    surfaceContainerHigh: GlassTone.solidFrost,
+    outline: GlassTone.separator,
+    outlineVariant: GlassTone.separator,
+  );
+  return t.copyWith(
+    colorScheme: scheme,
+    extensions: const [AppSurface(glass: true)],
+    canvasColor: GlassTone.solidFrost,
+    splashFactory: NoSplash.splashFactory,
+    highlightColor: const Color(0x1FFFFFFF),
+    cardTheme: t.cardTheme.copyWith(
+      color: GlassTone.frostHigh,
+      elevation: 0,
+      shape: RoundedSuperellipseBorder(
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        side: const BorderSide(color: GlassTone.edge, width: 0.5),
+      ),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: GlassTone.separator,
+      thickness: 0.5,
+      space: 1,
+    ),
+    chipTheme: t.chipTheme.copyWith(
+      backgroundColor: GlassTone.fill,
+      side: BorderSide.none,
+    ),
+    inputDecorationTheme: t.inputDecorationTheme.copyWith(
+      fillColor: GlassTone.fill,
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: t.filledButtonTheme.style?.copyWith(
+        shape: const WidgetStatePropertyAll(stadium),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: t.outlinedButtonTheme.style?.copyWith(
+        shape: const WidgetStatePropertyAll(stadium),
+        side: const WidgetStatePropertyAll(BorderSide(color: GlassTone.edge)),
+        backgroundColor: const WidgetStatePropertyAll(GlassTone.fill),
+      ),
+    ),
+    floatingActionButtonTheme: t.floatingActionButtonTheme.copyWith(
+      shape: stadium,
+    ),
+    bottomSheetTheme: t.bottomSheetTheme.copyWith(
+      backgroundColor: GlassTone.floating,
+      modalBackgroundColor: GlassTone.floating,
+      modalBarrierColor: GlassTone.barrier,
+    ),
+    dialogTheme: t.dialogTheme.copyWith(
+      backgroundColor: GlassTone.floating,
+      barrierColor: GlassTone.barrier,
+    ),
+    popupMenuTheme: const PopupMenuThemeData(color: GlassTone.solidFrost),
+    datePickerTheme: const DatePickerThemeData(
+      backgroundColor: GlassTone.solidFrost,
+      surfaceTintColor: Colors.transparent,
+    ),
+    timePickerTheme: const TimePickerThemeData(
+      backgroundColor: GlassTone.solidFrost,
+    ),
+    snackBarTheme: t.snackBarTheme.copyWith(
+      backgroundColor: GlassTone.floating,
+      contentTextStyle: TextStyle(color: p.text),
+      shape: stadium,
+    ),
+    progressIndicatorTheme: t.progressIndicatorTheme.copyWith(
+      linearTrackColor: GlassTone.track,
+      circularTrackColor: GlassTone.track,
+    ),
+    // iOS's slide, with swipe-back, on every platform.
+    pageTransitionsTheme: PageTransitionsTheme(
+      builders: {
+        for (final platform in TargetPlatform.values)
+          platform: const CupertinoPageTransitionsBuilder(),
+      },
+    ),
+    actionIconTheme: ActionIconThemeData(
+      backButtonIconBuilder: (_) =>
+          const GlassNavGlyph(Icons.arrow_back_ios_new_rounded),
+      closeButtonIconBuilder: (_) => const GlassNavGlyph(Icons.close_rounded),
+    ),
+  );
 }
 
 extension FitnsColors on ThemeData {

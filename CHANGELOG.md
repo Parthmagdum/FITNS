@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.8 — 2026-11-21
+
+**Liquid Glass theme**
+- New **Glass** look under Settings → Appearance, the same as XPENC's:
+  frosted cards lit along their top edge on pure black, a floating glass
+  tab bar with a droplet that slides to the selected tab and bends what
+  scrolls beneath it, glass back buttons, capsule buttons and iOS-style
+  page transitions with swipe-back.
+
 ## 0.1.7 — 2026-11-19
 
 **Water from the notification bar**

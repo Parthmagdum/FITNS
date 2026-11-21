@@ -47,10 +47,21 @@ final unitsProvider = Provider<UnitSystem>(
       UnitSystem.metric,
 );
 
+/// The look picked in Settings: `system`, `light`, `dark` or `glass`.
+final appearanceProvider = Provider<String>(
+  (ref) =>
+      ref.watch(settingsProvider.select((s) => s.valueOrNull?.themeMode)) ??
+      'system',
+);
+
+/// The Liquid Glass look (XPENC's), which is always dark.
+final glassThemeProvider = Provider<bool>(
+  (ref) => ref.watch(appearanceProvider) == 'glass',
+);
+
 final themeModeProvider = Provider<ThemeMode>((ref) {
-  final name = ref.watch(
-    settingsProvider.select((s) => s.valueOrNull?.themeMode),
-  );
+  final name = ref.watch(appearanceProvider);
+  if (name == 'glass') return ThemeMode.dark;
   return ThemeMode.values.asNameMap()[name] ?? ThemeMode.system;
 });
 

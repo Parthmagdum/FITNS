@@ -144,3 +144,30 @@ files are used. A CC BY-SA photo stays under CC BY-SA in its changed form.
 | Burger, veg | Roee Shpernik | CC BY-SA 4.0 | [המבורגר_טבעוני.jpg](https://commons.wikimedia.org/wiki/File:%D7%94%D7%9E%D7%91%D7%95%D7%A8%D7%92%D7%A8_%D7%98%D7%91%D7%A2%D7%95%D7%A0%D7%99.jpg) |
 | French fries | StockSnap | CC0 | [French_Fries.JPG](https://commons.wikimedia.org/wiki/File:French_Fries.JPG) |
 | Sandwich, veg grilled | Willis Lam | CC BY-SA 2.0 | [Classic_Grilled_Cheese_Sandwich_(25791331763)_(cropped).jpg](https://commons.wikimedia.org/wiki/File:Classic_Grilled_Cheese_Sandwich_(25791331763)_(cropped).jpg) |
+
+## Glass theme — `lib/core/theme/glass.dart`, `shaders/liquid_glass.frag`
+
+Adapted from the Liquid Glass theme of
+[XPENC](https://github.com/PATILYASHH/XPENC), under the MIT License:
+
+> MIT License
+>
+> Copyright (c) 2026 Yash Patil
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../theme/glass.dart';
 
 /// A tab-level page: One UI's large title that collapses into the bar as
 /// the content scrolls, over a padded list of [children].
@@ -38,7 +39,14 @@ class AppPage extends StatelessWidget {
         slivers: [
           SliverAppBar.large(title: Text(title), actions: actions),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+            // Clear of the FAB — and, under Glass, of the tab bar floating
+            // over the page (Scaffold reports it as bottom padding).
+            padding: EdgeInsets.fromLTRB(
+              16,
+              4,
+              16,
+              96 + MediaQuery.paddingOf(context).bottom,
+            ),
             sliver: SliverList.list(children: children),
           ),
         ],
@@ -114,13 +122,18 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(padding: padding, child: child),
-      ),
+    final content = InkWell(
+      onTap: onTap,
+      child: Padding(padding: padding, child: child),
     );
+    if (AppSurface.isGlass(context)) {
+      // Glass: a frosted pane lit along its top edge (XPENC's GlassPane).
+      return GlassPane(
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        child: Material(type: MaterialType.transparency, child: content),
+      );
+    }
+    return Card(clipBehavior: Clip.antiAlias, child: content);
   }
 }
 

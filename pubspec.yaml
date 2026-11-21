@@ -5,7 +5,7 @@ publish_to: 'none'
 # `AppInfo.version` / `AppInfo.buildNumber` mirror this line so the About screen
 # can show it without a platform plugin. `test/branding_test.dart` parses this
 # file and fails if the two ever disagree.
-version: 0.1.7+16
+version: 0.1.8+17
 
 environment:
   # Same floor as XPENC, so a contributor on stable Flutter can build both.
@@ -44,3 +44,7 @@ flutter:
   assets:
     - assets/food/
     - assets/exercises/
+
+  # The Glass theme's lens (from XPENC, MIT — see CREDITS.md).
+  shaders:
+    - shaders/liquid_glass.frag

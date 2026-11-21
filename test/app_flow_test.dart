@@ -1176,4 +1176,30 @@ void main() {
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
+
+  testWidgets('the Glass theme is picked in Settings and every tab renders', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+    await tester.tap(find.text('Settings').last);
+    await settle(tester);
+    await scrollToMiddle(tester, find.text('Glass'));
+    await tester.tap(find.text('Glass'));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.themeMode, 'glass');
+    expect(find.textContaining('Liquid Glass'), findsOneWidget);
+
+    for (final tab in ['Today', 'Workouts', 'Food', 'Body', 'Settings']) {
+      await tester.tap(find.text(tab).last);
+      await settle(tester);
+    }
+    // A pushed page wears the glass back button.
+    await tester.tap(find.text('Food').last);
+    await settle(tester);
+    await tester.tap(find.byTooltip('Water reminders').first);
+    await settle(tester);
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 }

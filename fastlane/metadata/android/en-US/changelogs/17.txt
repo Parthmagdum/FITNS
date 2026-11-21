@@ -1,0 +1,4 @@
+New Liquid Glass theme, the same look as XPENC.
+- Pick Glass under Settings > Appearance
+- Frosted cards on black and a floating glass tab bar
+- Glass back buttons and iOS-style page transitions
