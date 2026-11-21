@@ -609,17 +609,26 @@ class AppDatabase extends _$AppDatabase {
   /// and low-impact setting in [Settings]): any that can't be done there is
   /// swapped for the best stand-in that trains the same muscle, remembering
   /// the original. One with no stand-in at all is kept as it is.
+  ///
+  /// [template] starts one from exercises that aren't a saved routine — a
+  /// ready-made workout from the Workouts tab.
   Future<int> startWorkout({
     int? routineId,
     int? programDayId,
     DateTime? now,
     TrainingConditions? conditions,
+    ({String name, List<RoutineItemInput> items})? template,
   }) => transaction(() async {
     final active = await activeWorkout();
     if (active != null) return active.id;
 
     final start = now ?? DateTime.now();
     final routine = routineId == null ? null : await routineDetail(routineId);
+    final entries =
+        routine?.items ??
+        (template == null
+            ? const <RoutineItem>[]
+            : await _items(template.items));
     final fit = conditions ?? await trainingConditions();
     final library = fit.isUnrestricted
         ? const <ExerciseRow>[]
@@ -629,14 +638,13 @@ class AppDatabase extends _$AppDatabase {
     final workoutId = await into(workouts).insert(
       WorkoutsCompanion.insert(
         routineId: Value(routine?.routine.id),
-        name: routine?.routine.name ?? workoutNameFor(start),
+        name: routine?.routine.name ?? template?.name ?? workoutNameFor(start),
         startedAt: start,
         programDayId: Value(programDayId),
         inSetup: const Value(true),
       ),
     );
-    for (final (i, entry)
-        in (routine?.items ?? const <RoutineItem>[]).indexed) {
+    for (final (i, entry) in entries.indexed) {
       final original = entry.exercise;
       final chosen = swapFor(original, library, fit) ?? original;
       final itemId = await into(workoutExercises).insert(
@@ -653,6 +661,52 @@ class AppDatabase extends _$AppDatabase {
     }
     return workoutId;
   });
+
+  /// [inputs] as routine lines that belong to no routine, for a workout
+  /// started from a template.
+  Future<List<RoutineItem>> _items(List<RoutineItemInput> inputs) async {
+    final byId = {
+      for (final e in await (select(
+        exercises,
+      )..where((e) => e.id.isIn([for (final i in inputs) i.exerciseId]))).get())
+        e.id: e,
+    };
+    return [
+      for (final (i, input) in inputs.indexed)
+        if (byId[input.exerciseId] case final exercise?)
+          (
+            item: RoutineExerciseRow(
+              id: -1 - i,
+              routineId: 0,
+              exerciseId: exercise.id,
+              sort: i,
+              targetSets: input.targetSets,
+              targetReps: input.targetReps,
+              restSeconds: input.restSeconds,
+            ),
+            exercise: exercise,
+          ),
+    ];
+  }
+
+  /// When each muscle group was last trained: the start of the latest
+  /// finished workout with an exercise for it.
+  Stream<Map<MuscleGroup, DateTime>> watchLastTrained() {
+    final query = select(workoutExercises).join([
+      innerJoin(workouts, workouts.id.equalsExp(workoutExercises.workoutId)),
+      innerJoin(exercises, exercises.id.equalsExp(workoutExercises.exerciseId)),
+    ])..where(workouts.endedAt.isNotNull());
+    return query.watch().map((rows) {
+      final last = <MuscleGroup, DateTime>{};
+      for (final row in rows) {
+        final muscle = row.readTable(exercises).muscle;
+        final at = row.readTable(workouts).startedAt;
+        if (last[muscle] case final seen? when !at.isAfter(seen)) continue;
+        last[muscle] = at;
+      }
+      return last;
+    });
+  }
 
   /// Replaces the exercise of a workout line with [exerciseId], keeping its
   /// sets but clearing what they held — numbers for one exercise mean nothing

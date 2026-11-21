@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.9 — 2026-11-21
+
+**Ready-made workouts for every body part**
+- No time to plan a workout? The Workouts tab now has ready-made ones:
+  chest, back, shoulders, arms, legs & glutes, core & abs, full body, and
+  cardio & HIIT — each with a gym version and one that needs no gym.
+- **Picked for you**: the body part you trained longest ago, at the gym or
+  at home to suit where you train.
+- Start one in a tap, or open it to see its exercises and save it as your
+  own routine to change.
+
+**Fixes**
+- **Steps**: riding a motorbike, a bus or a bumpy road no longer adds
+  steps. Phone step counters count any rhythmic jolt as a step; FITNS now
+  checks the rhythm of every step and only counts steady walking and
+  running. A few steps across a room (fewer than ten) aren't counted
+  either.
+
 ## 0.1.8 — 2026-11-21
 
 **Liquid Glass theme**

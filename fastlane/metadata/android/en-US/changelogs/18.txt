@@ -1,0 +1,4 @@
+Ready-made workouts and a step fix.
+- Workouts for every body part, gym or home
+- Picked for you: the body part trained longest ago
+- Steps: bike and bus rides no longer count as steps

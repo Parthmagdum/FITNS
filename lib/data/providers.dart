@@ -71,6 +71,12 @@ final exercisesProvider = StreamProvider<List<ExerciseRow>>(
   (ref) => ref.watch(dbProvider).watchExercises(),
 );
 
+/// When each muscle group was last trained — for the "Picked for you"
+/// workout.
+final lastTrainedProvider = StreamProvider<Map<MuscleGroup, DateTime>>(
+  (ref) => ref.watch(dbProvider).watchLastTrained(),
+);
+
 final routinesProvider = StreamProvider<List<RoutineDetail>>(
   (ref) => ref.watch(dbProvider).watchRoutines(),
 );

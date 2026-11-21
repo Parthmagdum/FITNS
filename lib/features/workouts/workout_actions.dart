@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/app_page.dart';
+import '../../data/database.dart';
 import '../../data/providers.dart';
 
 /// Starts a workout (empty, or from [routineId], as [programDayId] of a
@@ -15,6 +16,7 @@ Future<void> startWorkout(
   WidgetRef ref, {
   int? routineId,
   int? programDayId,
+  ({String name, List<RoutineItemInput> items})? template,
 }) async {
   final db = ref.read(dbProvider);
   final messenger = ScaffoldMessenger.of(context);
@@ -36,6 +38,7 @@ Future<void> startWorkout(
   final id = await db.startWorkout(
     routineId: routineId,
     programDayId: programDayId,
+    template: template,
   );
   final swapped = (await db.watchWorkoutDetail(id).first)?.entries
       .where((e) => e.item.swappedFromId != null)

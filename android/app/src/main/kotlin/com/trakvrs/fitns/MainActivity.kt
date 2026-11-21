@@ -123,7 +123,7 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
-        EventChannel(messenger, STEP_EVENTS).setStreamHandler(StepCounterStream(sensors))
+        EventChannel(messenger, STEP_EVENTS).setStreamHandler(StepCounterStream(this, sensors))
 
         MethodChannel(messenger, MOTION_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {

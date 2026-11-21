@@ -13,6 +13,7 @@ import '../../core/training/programs.dart';
 import '../../data/providers.dart';
 import '../places/training_setup_card.dart';
 import 'set_format.dart';
+import 'suggested_workouts_section.dart';
 import 'workout_actions.dart';
 import 'workout_art.dart';
 
@@ -103,6 +104,8 @@ class WorkoutsScreen extends ConsumerWidget {
               next: nextProgramDay(p, lastDays[p.program.id]),
             ),
           ),
+        // No time to plan? Ready-made workouts for every body part.
+        const SuggestedWorkoutsSection(),
         SectionLabel(
           'Routines',
           trailing: TextButton.icon(

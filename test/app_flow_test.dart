@@ -1202,4 +1202,39 @@ void main() {
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
+
+  testWidgets('ready-made workouts: picked for you, by body part, start '
+      'or save', (tester) async {
+    final db = await pumpApp(tester);
+    await tester.tap(find.text('Workouts').last);
+    await settle(tester);
+    await scrollToMiddle(tester, find.text('PICKED FOR YOU'));
+    // Nothing trained yet: a full-body session to start.
+    expect(find.text('Total body strength'), findsOneWidget);
+
+    // Arms: a gym and a home workout.
+    await scrollToMiddle(tester, find.widgetWithText(ChoiceChip, 'Arms'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Arms'));
+    await settle(tester);
+    await scrollToMiddle(tester, find.text('Home arms'));
+    expect(find.text('Arm day'), findsOneWidget);
+
+    // Saved as a routine from its sheet.
+    await tester.tap(find.text('Home arms'));
+    await settle(tester);
+    await tester.tap(find.text('Save as my routine'));
+    await settle(tester);
+    final routines = (await tester.runAsync(() => db.watchRoutines().first))!;
+    expect(routines.map((r) => r.routine.name), contains('Home arms'));
+
+    // Started in one tap, without a routine.
+    await scrollToMiddle(tester, find.byTooltip('Start Arm day'));
+    await tester.tap(find.byTooltip('Start Arm day'));
+    await settle(tester);
+    final active = (await tester.runAsync(db.activeWorkout))!;
+    expect(active.name, 'Arm day');
+    expect(active.routineId, isNull);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 }

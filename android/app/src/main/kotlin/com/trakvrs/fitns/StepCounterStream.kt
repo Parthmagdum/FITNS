@@ -1,5 +1,6 @@
 package com.trakvrs.fitns
 
+import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -20,10 +21,17 @@ import io.flutter.plugin.common.EventChannel
  * All-day counting needs a foreground service; that arrives with GPS
  * tracking, which needs one anyway.
  */
-class StepCounterStream(private val sensors: SensorManager) :
-    EventChannel.StreamHandler, SensorEventListener {
+class StepCounterStream(
+    private val context: Context,
+    private val sensors: SensorManager,
+) : EventChannel.StreamHandler, SensorEventListener {
 
     private var sink: EventChannel.EventSink? = null
+    private var filtering = false
+
+    /** The newest counter reading not yet sent, and whether a send is due. */
+    private var latestRaw = -1L
+    private var sendDue = false
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
         val sensor = sensors.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
@@ -40,17 +48,32 @@ class StepCounterStream(private val sensors: SensorManager) :
         if (!registered) {
             events.error("denied", "Activity recognition permission is not granted", null)
             sink = null
+            return
         }
+        // Judges each step's rhythm, so vehicle vibration isn't counted.
+        StepFilter.acquire(context)
+        filtering = true
     }
 
     override fun onCancel(arguments: Any?) {
         sensors.unregisterListener(this)
         sink = null
+        if (filtering) StepFilter.release()
+        filtering = false
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        val bootMillis = System.currentTimeMillis() - SystemClock.elapsedRealtime()
-        sink?.success(mapOf("steps" to event.values[0].toLong(), "bootMillis" to bootMillis))
+        latestRaw = event.values[0].toLong()
+        // Readings come with nearly every step: send the newest once the
+        // detector has delivered its steps, not one flush per step.
+        if (sendDue) return
+        sendDue = true
+        StepFilter.afterFlush {
+            sendDue = false
+            val bootMillis = System.currentTimeMillis() - SystemClock.elapsedRealtime()
+            val steps = StepFilter.filtered(context, latestRaw, bootMillis)
+            sink?.success(mapOf("steps" to steps, "bootMillis" to bootMillis))
+        }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit

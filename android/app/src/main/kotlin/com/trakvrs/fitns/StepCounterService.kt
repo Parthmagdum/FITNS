@@ -33,6 +33,7 @@ class StepCounterService : Service(), SensorEventListener {
 
     private var latest: Reading? = null
     private var lastLoggedAt = 0L
+    private var filtering = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -47,24 +48,37 @@ class StepCounterService : Service(), SensorEventListener {
         // Let the hardware batch for minutes at a time: the counter is
         // cumulative, so a late delivery loses nothing, and the CPU can sleep.
         sensors.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL, BATCH_US)
+        // Judges each step's rhythm, so vehicle vibration isn't booked.
+        StepFilter.acquire(this)
+        filtering = true
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
         (getSystemService(SENSOR_SERVICE) as SensorManager).unregisterListener(this)
+        if (filtering) StepFilter.release()
         latest?.let { if (it.at > lastLoggedAt) log(it) }
         super.onDestroy()
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        // The event object is reused by Android: copy it before waiting.
+        val raw = event.values[0].toLong()
+        val timestamp = event.timestamp
+        // Let the detector deliver the steps it holds first, so they're
+        // judged before this reading is booked.
+        StepFilter.afterFlush { book(raw, timestamp) }
+    }
+
+    private fun book(raw: Long, timestamp: Long) {
         val boot = System.currentTimeMillis() - SystemClock.elapsedRealtime()
         val now = System.currentTimeMillis()
         // A batched event can arrive minutes late; its own timestamp (since
         // boot) says when the steps happened. Distrust anything implausible.
-        val stamped = boot + event.timestamp / 1_000_000
+        val stamped = boot + timestamp / 1_000_000
         val at = if (stamped in (now - DAY_MS)..(now + 60_000)) stamped else now
-        val reading = Reading(event.values[0].toLong(), at, boot)
+        val reading = Reading(StepFilter.filtered(this, raw, boot), at, boot)
 
         val previous = latest
         latest = reading
