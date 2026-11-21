@@ -56,7 +56,7 @@ Most fitness apps need an account and send your health data to a server. I wante
 * [x] An AuthorName must be added. It doesn't need to be the real name.
 * [ ] External repos are added as git submodules instead of srclibs. You can update git submodules without opening an MR in this repo and the submodule is covered by our scanner. _Flutter is pulled in as the `flutter@3.47.8` srclib. I can switch to a Flutter submodule if you prefer._
 * [ ] Enable [Reproducible Builds](https://f-droid.org/docs/Reproducible_Builds). We'll use your signature for improved security/reliability, also allowing users to switch between different channels. Do note that if you don't enable reproducible build then the apk will be signed with our key so you can't enable it later. If you can't enable this, please add the reasons here. _Not enabled yet. Please sign it with the F-Droid key._
-* [x] Setup abi split if the APK is large and the splitted ones can be much smaller.
+* [ ] Setup abi split if the APK is large and the splitted ones can be much smaller. _Not set up yet. Happy to add it if the APK size calls for it._
 * [x] Only the latest versions should be kept in the metadata before it's merged. If you update the metadata, please replace the old versions with the new ones.
 * [x] Don't add any disabled versions in the metadata.
 * [x] The `commit` field should be the full hash. Please don't use tag or branch in commit.
