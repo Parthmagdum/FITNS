@@ -12,9 +12,9 @@ RepoType: git
 Repo: https://github.com/Parthmagdum/FITNS.git
 
 Builds:
-  - versionName: 0.1.6
-    versionCode: 15
-    commit: 0ff53b35f6efbd52a73cb1fa6d627c9f89c6ae69
+  - versionName: 0.1.10
+    versionCode: 19
+    commit: 69801a1a38f2959d648dc6beb7d4add1bb158c08
     output: build/app/outputs/flutter-apk/app-release.apk
     srclibs:
       - flutter@3.47.8
@@ -31,5 +31,5 @@ Builds:
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: pubspec.yaml|version:\s.+\+(\d+)|.|version:\s(.+)\+
-CurrentVersion: 0.1.6
-CurrentVersionCode: 15
+CurrentVersion: 0.1.10
+CurrentVersionCode: 19
