@@ -8,6 +8,7 @@ import '../dates.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass.dart';
 import '../widgets/app_page.dart';
+import 'quick_add.dart';
 
 /// The five tabs: icon, selected icon, label.
 const _tabs = <(IconData, IconData, String)>[
@@ -27,6 +28,12 @@ class AppShell extends StatelessWidget {
 
   final StatefulNavigationShell shell;
 
+  /// Where the ➕ sits among the bar's slots.
+  static const _addSlot = 2;
+
+  /// The bar slot showing tab [index].
+  static int _slotOf(int index) => index < _addSlot ? index : index + 1;
+
   /// Tapping the current tab again returns it to its first page.
   void _select(int i) =>
       shell.goBranch(i, initialLocation: i == shell.currentIndex);
@@ -45,7 +52,19 @@ class AppShell extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const _ActiveWorkoutStrip(glass: true),
-              _GlassTabBar(index: shell.currentIndex, onSelect: _select),
+              Row(
+                children: [
+                  Expanded(
+                    child: _GlassTabBar(
+                      index: shell.currentIndex,
+                      onSelect: _select,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Tap for Quick add; hold and slide for quick actions.
+                  const QuickAddButton(glass: true),
+                ],
+              ),
             ],
           ),
         ),
@@ -57,16 +76,22 @@ class AppShell extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const _ActiveWorkoutStrip(),
+          // The ➕ sits in the middle of the bar, between the tabs: a tap
+          // for Quick add, a hold for quick actions (as in XPENC).
           NavigationBar(
-            selectedIndex: shell.currentIndex,
-            onDestinationSelected: _select,
+            selectedIndex: _slotOf(shell.currentIndex),
+            onDestinationSelected: (slot) {
+              if (slot != _addSlot) _select(slot > _addSlot ? slot - 1 : slot);
+            },
             destinations: [
-              for (final (icon, selected, label) in _tabs)
+              for (final (i, (icon, selected, label)) in _tabs.indexed) ...[
+                if (i == _addSlot) const QuickAddButton(),
                 NavigationDestination(
                   icon: Icon(icon),
                   selectedIcon: Icon(selected),
                   label: label,
                 ),
+              ],
             ],
           ),
         ],

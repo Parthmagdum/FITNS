@@ -1,0 +1,3 @@
+Hold the new + button for quick actions.
+- Tap + for Quick add: workout, food, water, weight, sleep, steps
+- Hold + and slide to an action to do it in one move

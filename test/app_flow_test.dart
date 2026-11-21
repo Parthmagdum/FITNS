@@ -9,6 +9,7 @@ import 'package:fitns/core/platform/document_files.dart';
 import 'package:fitns/core/steps/step_sensor.dart';
 import 'package:fitns/data/database.dart';
 import 'package:fitns/data/providers.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -187,6 +188,7 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
+    // The bar's slots: Today, Workouts, ➕, Food, Body, Settings.
     int selected() =>
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
     expect(selected(), 0);
@@ -200,7 +202,7 @@ void main() {
     // On to Food, then back right to Workouts.
     await tester.fling(find.byType(PageView), const Offset(-300, 0), 1500);
     await settle(tester);
-    expect(selected(), 2);
+    expect(selected(), 3);
     await tester.fling(find.byType(PageView), const Offset(300, 0), 1500);
     await settle(tester);
     expect(selected(), 1);
@@ -208,7 +210,7 @@ void main() {
     // Tapping still jumps straight to a tab.
     await tester.tap(find.text('Settings').last);
     await settle(tester);
-    expect(selected(), 4);
+    expect(selected(), 5);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
@@ -1234,6 +1236,70 @@ void main() {
     final active = (await tester.runAsync(db.activeWorkout))!;
     expect(active.name, 'Arm day');
     expect(active.routineId, isNull);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('a tap on ➕ opens Quick add', (tester) async {
+    final db = await pumpApp(tester);
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await settle(tester);
+    expect(find.text('Quick add'), findsOneWidget);
+    await tester.tap(find.text('Add water'));
+    await settle(tester);
+    final water = (await tester.runAsync(
+      () => db.watchWaterSince(DateTime(2000)).first,
+    ))!;
+    expect(water.single.ml, 250);
+    expect(find.text('Added 250 ml of water'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  /// Holds the ➕, slides by [offset] and lets go.
+  Future<void> holdAndSlide(WidgetTester tester, Offset offset) async {
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('quick-add'))),
+    );
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Slide to an action · let go on ✕ to cancel'), findsOne);
+    // In steps, as a thumb moves.
+    for (var i = 1; i <= 4; i++) {
+      await gesture.moveBy(offset / 4);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await settle(tester);
+  }
+
+  testWidgets('holding ➕ fans out quick actions: slide to one, or cancel', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+    // Straight back down onto the ➕: nothing happens.
+    await holdAndSlide(tester, const Offset(0, 5));
+    expect(find.text('Quick add'), findsNothing);
+    expect(await tester.runAsync(db.activeWorkout), isNull);
+
+    // Up and to the left, the innermost bubble: Start workout.
+    await holdAndSlide(tester, const Offset(-72, -86));
+    final active = await tester.runAsync(db.activeWorkout);
+    expect(active, isNotNull);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('under Glass the ➕ sits beside the tabs and fans into the '
+      'corner', (tester) async {
+    final db = await pumpApp(
+      tester,
+      seed: (db) =>
+          db.updateSettings(const SettingsCompanion(themeMode: Value('glass'))),
+    );
+    // The innermost bubble, straight up from the ➕: Start workout.
+    await holdAndSlide(tester, const Offset(-4, -118));
+    expect(await tester.runAsync(db.activeWorkout), isNotNull);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

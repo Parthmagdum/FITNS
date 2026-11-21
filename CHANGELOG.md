@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.10 — 2026-11-21
+
+**Hold ➕ for quick actions**
+- A new ➕ in the tab bar, as in XPENC: in the middle of the bar, or under
+  Glass a glass disc beside the tabs.
+- **Tap** it for Quick add: start a workout, log food (for the meal of the
+  hour), add a glass of water, log your weight or sleep, or see your steps.
+- **Hold** it and the same actions fan out around your thumb: slide to one
+  and let go to do it, or slide back onto the ✕ to cancel.
+
 ## 0.1.9 — 2026-11-21
 
 **Ready-made workouts for every body part**

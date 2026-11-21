@@ -145,9 +145,9 @@ files are used. A CC BY-SA photo stays under CC BY-SA in its changed form.
 | French fries | StockSnap | CC0 | [French_Fries.JPG](https://commons.wikimedia.org/wiki/File:French_Fries.JPG) |
 | Sandwich, veg grilled | Willis Lam | CC BY-SA 2.0 | [Classic_Grilled_Cheese_Sandwich_(25791331763)_(cropped).jpg](https://commons.wikimedia.org/wiki/File:Classic_Grilled_Cheese_Sandwich_(25791331763)_(cropped).jpg) |
 
-## Glass theme — `lib/core/theme/glass.dart`, `shaders/liquid_glass.frag`
+## Glass theme and hold-➕ quick actions — `lib/core/theme/glass.dart`, `shaders/liquid_glass.frag`, `lib/core/routing/hold_menu_geometry.dart`
 
-Adapted from the Liquid Glass theme of
+Adapted from the Liquid Glass theme and the hold-➕ quick actions of
 [XPENC](https://github.com/PATILYASHH/XPENC), under the MIT License:
 
 > MIT License
