@@ -196,7 +196,7 @@ class Settings extends Table {
 
   /// `system`, `light` or `dark` — a [ThemeMode] name — or `glass`, the
   /// Liquid Glass look (always dark).
-  TextColumn get themeMode => text().withDefault(const Constant('system'))();
+  TextColumn get themeMode => text().withDefault(const Constant('light'))();
 
   TextColumn get unitSystem =>
       textEnum<UnitSystem>().withDefault(Constant(UnitSystem.metric.name))();
@@ -326,6 +326,10 @@ class Settings extends Table {
   /// The first-launch setup guide was finished or skipped. Schema v11;
   /// installs from before it count as set up.
   BoolColumn get setupDone => boolean().withDefault(const Constant(false))();
+
+  /// The first-run tips (swipe between tabs, tap and hold the FITNS
+  /// button) were played through or skipped. Schema v15.
+  BoolColumn get tipsSeen => boolean().withDefault(const Constant(false))();
 
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.

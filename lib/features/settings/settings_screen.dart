@@ -325,6 +325,15 @@ class SettingsScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         Card(
           child: ListTile(
+            leading: const Icon(Icons.touch_app_outlined),
+            title: const Text('Show the tips again'),
+            subtitle: const Text('Swipe, tap and hold the FITNS button'),
+            onTap: () => save(const SettingsCompanion(tipsSeen: Value(false))),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('About ${AppInfo.name}'),
             subtitle: const Text(AppInfo.versionLabel),

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../data/providers.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/glass.dart';
+import 'first_run_tips.dart';
 import 'quick_add.dart';
 
 /// The five tabs: icon, selected icon, label. In the FITNS button's menu.
@@ -57,6 +61,19 @@ class AppShell extends StatelessWidget {
                 tabs: tabs,
                 currentTab: shell.currentIndex,
               ),
+            ),
+          ),
+          // Once, after the setup guide: how to get around (swipe, tap and
+          // hold the button), animated.
+          Positioned.fill(
+            child: Consumer(
+              builder: (context, ref, _) {
+                final s = ref.watch(settingsProvider).valueOrNull;
+                if (s == null || !s.setupDone || s.tipsSeen) {
+                  return const SizedBox.shrink();
+                }
+                return const FirstRunTips();
+              },
             ),
           ),
         ],

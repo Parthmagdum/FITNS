@@ -25,8 +25,18 @@ class AppPage extends StatelessWidget {
   /// Pinned under the list, above the system bar — a primary action.
   final Widget? bottom;
 
+  /// The big title over a tab, as in XPENC: Inter at 36, heavy and tight.
+  static TextStyle? largeTitle(ThemeData theme) =>
+      theme.textTheme.headlineMedium?.copyWith(
+        fontSize: 36,
+        height: 1.1,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -1.3,
+      );
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       floatingActionButton: floatingActionButton,
       // Bottom-left: the bottom-right corner is the FITNS button's.
@@ -39,7 +49,20 @@ class AppPage extends StatelessWidget {
             ),
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(title: Text(title), actions: actions),
+          // The large title takes the expanded style from headlineMedium;
+          // only here is it XPENC's size, so other headlines keep theirs.
+          Theme(
+            data: theme.copyWith(
+              textTheme: theme.textTheme.copyWith(
+                headlineMedium: largeTitle(theme),
+              ),
+            ),
+            child: SliverAppBar.large(
+              expandedHeight: 156,
+              title: Text(title),
+              actions: actions,
+            ),
+          ),
           SliverPadding(
             // Clear of the FAB and of the FITNS button in the corner.
             padding: EdgeInsets.fromLTRB(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -146,8 +147,12 @@ void main() {
     // Most tests start past the first-launch guide.
     if (setUp) {
       await tester.runAsync(
-        () =>
-            db.updateSettings(const SettingsCompanion(setupDone: Value(true))),
+        () => db.updateSettings(
+          const SettingsCompanion(
+            setupDone: Value(true),
+            tipsSeen: Value(true),
+          ),
+        ),
       );
     }
     if (seed != null) await tester.runAsync(() => seed(db));
@@ -178,6 +183,18 @@ void main() {
     expect(find.text('Bedtime reminder'), findsOneWidget);
     await tester.tap(find.text('Done'));
     await settle(tester);
+    // Then, once, the tips: swipe, tap, hold — animated, three steps.
+    expect(find.text('Swipe between pages'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await settle(tester);
+    expect(find.text('Tap the FITNS button'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await settle(tester);
+    expect(find.text('Hold it and slide'), findsOneWidget);
+    await tester.tap(find.text('Got it'));
+    await settle(tester);
+    expect(find.byKey(const Key('first-run-tips')), findsNothing);
+    expect((await tester.runAsync(db.getSettings))!.tipsSeen, isTrue);
     expect(find.text('Log food'), findsOneWidget);
     expect((await tester.runAsync(db.getSettings))!.setupDone, isTrue);
 
@@ -1424,6 +1441,33 @@ void main() {
           .workoutId,
       id,
     );
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('a new install is light, with big titles; the tips come back '
+      'from Settings and Skip ends them', (tester) async {
+    final db = await pumpApp(tester);
+    final settings = (await tester.runAsync(db.getSettings))!;
+    expect(settings.themeMode, 'light');
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.light);
+    // The tab's large title, XPENC's size.
+    final heights = [
+      for (final e in find.text('Today').evaluate())
+        (e.renderObject! as RenderBox).size.height,
+    ];
+    expect(heights.reduce(math.max), greaterThanOrEqualTo(36));
+
+    await goToTab(tester, 'Settings');
+    await scrollToMiddle(tester, find.text('Show the tips again'));
+    await tester.tap(find.text('Show the tips again'));
+    await settle(tester);
+    expect(find.text('Swipe between pages'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await settle(tester);
+    expect(find.byKey(const Key('first-run-tips')), findsNothing);
+    expect((await tester.runAsync(db.getSettings))!.tipsSeen, isTrue);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

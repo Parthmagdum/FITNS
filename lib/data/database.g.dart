@@ -29,7 +29,7 @@ class $SettingsTable extends Settings
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('system'),
+    defaultValue: const Constant('light'),
   );
   @override
   late final GeneratedColumnWithTypeConverter<UnitSystem, String> unitSystem =
@@ -472,6 +472,21 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _tipsSeenMeta = const VerificationMeta(
+    'tipsSeen',
+  );
+  @override
+  late final GeneratedColumn<bool> tipsSeen = GeneratedColumn<bool>(
+    'tips_seen',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("tips_seen" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _musicTracksMeta = const VerificationMeta(
     'musicTracks',
   );
@@ -525,6 +540,7 @@ class $SettingsTable extends Settings
     healthConnect,
     exerciseAnimations,
     setupDone,
+    tipsSeen,
     musicTracks,
   ];
   @override
@@ -830,6 +846,12 @@ class $SettingsTable extends Settings
         setupDone.isAcceptableOrUnknown(data['setup_done']!, _setupDoneMeta),
       );
     }
+    if (data.containsKey('tips_seen')) {
+      context.handle(
+        _tipsSeenMeta,
+        tipsSeen.isAcceptableOrUnknown(data['tips_seen']!, _tipsSeenMeta),
+      );
+    }
     if (data.containsKey('music_tracks')) {
       context.handle(
         _musicTracksMeta,
@@ -1018,6 +1040,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}setup_done'],
       )!,
+      tipsSeen: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}tips_seen'],
+      )!,
       musicTracks: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}music_tracks'],
@@ -1164,6 +1190,10 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// installs from before it count as set up.
   final bool setupDone;
 
+  /// The first-run tips (swipe between tabs, tap and hold the FITNS
+  /// button) were played through or skipped. Schema v15.
+  final bool tipsSeen;
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.
@@ -1209,6 +1239,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     required this.healthConnect,
     required this.exerciseAnimations,
     required this.setupDone,
+    required this.tipsSeen,
     this.musicTracks,
   });
   @override
@@ -1304,6 +1335,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     map['health_connect'] = Variable<bool>(healthConnect);
     map['exercise_animations'] = Variable<bool>(exerciseAnimations);
     map['setup_done'] = Variable<bool>(setupDone);
+    map['tips_seen'] = Variable<bool>(tipsSeen);
     if (!nullToAbsent || musicTracks != null) {
       map['music_tracks'] = Variable<String>(musicTracks);
     }
@@ -1390,6 +1422,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       healthConnect: Value(healthConnect),
       exerciseAnimations: Value(exerciseAnimations),
       setupDone: Value(setupDone),
+      tipsSeen: Value(tipsSeen),
       musicTracks: musicTracks == null && nullToAbsent
           ? const Value.absent()
           : Value(musicTracks),
@@ -1470,6 +1503,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       healthConnect: serializer.fromJson<bool>(json['healthConnect']),
       exerciseAnimations: serializer.fromJson<bool>(json['exerciseAnimations']),
       setupDone: serializer.fromJson<bool>(json['setupDone']),
+      tipsSeen: serializer.fromJson<bool>(json['tipsSeen']),
       musicTracks: serializer.fromJson<String?>(json['musicTracks']),
     );
   }
@@ -1527,6 +1561,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'healthConnect': serializer.toJson<bool>(healthConnect),
       'exerciseAnimations': serializer.toJson<bool>(exerciseAnimations),
       'setupDone': serializer.toJson<bool>(setupDone),
+      'tipsSeen': serializer.toJson<bool>(tipsSeen),
       'musicTracks': serializer.toJson<String?>(musicTracks),
     };
   }
@@ -1572,6 +1607,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     bool? healthConnect,
     bool? exerciseAnimations,
     bool? setupDone,
+    bool? tipsSeen,
     Value<String?> musicTracks = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
@@ -1636,6 +1672,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     healthConnect: healthConnect ?? this.healthConnect,
     exerciseAnimations: exerciseAnimations ?? this.exerciseAnimations,
     setupDone: setupDone ?? this.setupDone,
+    tipsSeen: tipsSeen ?? this.tipsSeen,
     musicTracks: musicTracks.present ? musicTracks.value : this.musicTracks,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
@@ -1742,6 +1779,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ? data.exerciseAnimations.value
           : this.exerciseAnimations,
       setupDone: data.setupDone.present ? data.setupDone.value : this.setupDone,
+      tipsSeen: data.tipsSeen.present ? data.tipsSeen.value : this.tipsSeen,
       musicTracks: data.musicTracks.present
           ? data.musicTracks.value
           : this.musicTracks,
@@ -1791,6 +1829,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('healthConnect: $healthConnect, ')
           ..write('exerciseAnimations: $exerciseAnimations, ')
           ..write('setupDone: $setupDone, ')
+          ..write('tipsSeen: $tipsSeen, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -1838,6 +1877,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     healthConnect,
     exerciseAnimations,
     setupDone,
+    tipsSeen,
     musicTracks,
   ]);
   @override
@@ -1884,6 +1924,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.healthConnect == this.healthConnect &&
           other.exerciseAnimations == this.exerciseAnimations &&
           other.setupDone == this.setupDone &&
+          other.tipsSeen == this.tipsSeen &&
           other.musicTracks == this.musicTracks);
 }
 
@@ -1928,6 +1969,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<bool> healthConnect;
   final Value<bool> exerciseAnimations;
   final Value<bool> setupDone;
+  final Value<bool> tipsSeen;
   final Value<String?> musicTracks;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -1970,6 +2012,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.healthConnect = const Value.absent(),
     this.exerciseAnimations = const Value.absent(),
     this.setupDone = const Value.absent(),
+    this.tipsSeen = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -2013,6 +2056,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.healthConnect = const Value.absent(),
     this.exerciseAnimations = const Value.absent(),
     this.setupDone = const Value.absent(),
+    this.tipsSeen = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
@@ -2056,6 +2100,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<bool>? healthConnect,
     Expression<bool>? exerciseAnimations,
     Expression<bool>? setupDone,
+    Expression<bool>? tipsSeen,
     Expression<String>? musicTracks,
   }) {
     return RawValuesInsertable({
@@ -2109,6 +2154,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (healthConnect != null) 'health_connect': healthConnect,
       if (exerciseAnimations != null) 'exercise_animations': exerciseAnimations,
       if (setupDone != null) 'setup_done': setupDone,
+      if (tipsSeen != null) 'tips_seen': tipsSeen,
       if (musicTracks != null) 'music_tracks': musicTracks,
     });
   }
@@ -2154,6 +2200,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<bool>? healthConnect,
     Value<bool>? exerciseAnimations,
     Value<bool>? setupDone,
+    Value<bool>? tipsSeen,
     Value<String?>? musicTracks,
   }) {
     return SettingsCompanion(
@@ -2202,6 +2249,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       healthConnect: healthConnect ?? this.healthConnect,
       exerciseAnimations: exerciseAnimations ?? this.exerciseAnimations,
       setupDone: setupDone ?? this.setupDone,
+      tipsSeen: tipsSeen ?? this.tipsSeen,
       musicTracks: musicTracks ?? this.musicTracks,
     );
   }
@@ -2351,6 +2399,9 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (setupDone.present) {
       map['setup_done'] = Variable<bool>(setupDone.value);
     }
+    if (tipsSeen.present) {
+      map['tips_seen'] = Variable<bool>(tipsSeen.value);
+    }
     if (musicTracks.present) {
       map['music_tracks'] = Variable<String>(musicTracks.value);
     }
@@ -2400,6 +2451,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('healthConnect: $healthConnect, ')
           ..write('exerciseAnimations: $exerciseAnimations, ')
           ..write('setupDone: $setupDone, ')
+          ..write('tipsSeen: $tipsSeen, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -10518,6 +10570,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<bool> healthConnect,
       Value<bool> exerciseAnimations,
       Value<bool> setupDone,
+      Value<bool> tipsSeen,
       Value<String?> musicTracks,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
@@ -10562,6 +10615,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<bool> healthConnect,
       Value<bool> exerciseAnimations,
       Value<bool> setupDone,
+      Value<bool> tipsSeen,
       Value<String?> musicTracks,
     });
 
@@ -10776,6 +10830,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get setupDone => $composableBuilder(
     column: $table.setupDone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get tipsSeen => $composableBuilder(
+    column: $table.tipsSeen,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10994,6 +11053,11 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get tipsSeen => $composableBuilder(
+    column: $table.tipsSeen,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => ColumnOrderings(column),
@@ -11194,6 +11258,9 @@ class $$SettingsTableAnnotationComposer
   GeneratedColumn<bool> get setupDone =>
       $composableBuilder(column: $table.setupDone, builder: (column) => column);
 
+  GeneratedColumn<bool> get tipsSeen =>
+      $composableBuilder(column: $table.tipsSeen, builder: (column) => column);
+
   GeneratedColumn<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => column,
@@ -11271,6 +11338,7 @@ class $$SettingsTableTableManager
                 Value<bool> healthConnect = const Value.absent(),
                 Value<bool> exerciseAnimations = const Value.absent(),
                 Value<bool> setupDone = const Value.absent(),
+                Value<bool> tipsSeen = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -11313,6 +11381,7 @@ class $$SettingsTableTableManager
                 healthConnect: healthConnect,
                 exerciseAnimations: exerciseAnimations,
                 setupDone: setupDone,
+                tipsSeen: tipsSeen,
                 musicTracks: musicTracks,
               ),
           createCompanionCallback:
@@ -11357,6 +11426,7 @@ class $$SettingsTableTableManager
                 Value<bool> healthConnect = const Value.absent(),
                 Value<bool> exerciseAnimations = const Value.absent(),
                 Value<bool> setupDone = const Value.absent(),
+                Value<bool> tipsSeen = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -11399,6 +11469,7 @@ class $$SettingsTableTableManager
                 healthConnect: healthConnect,
                 exerciseAnimations: exerciseAnimations,
                 setupDone: setupDone,
+                tipsSeen: tipsSeen,
                 musicTracks: musicTracks,
               ),
           withReferenceMapper: (p0) => p0

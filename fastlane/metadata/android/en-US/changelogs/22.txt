@@ -1,0 +1,3 @@
+- Bigger, bolder page titles, like XPENC
+- New installs start in the Light theme
+- Animated first-run tips: swipe between pages, tap and hold the FITNS button (replay from Settings)

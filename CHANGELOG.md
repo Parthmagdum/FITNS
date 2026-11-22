@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.13 — 2026-11-22
+
+**Bigger titles, like XPENC**
+- The big title on each tab (Today, Workouts, Food, Body, Settings) is now
+  larger, heavier and tighter, in XPENC's style.
+
+**Light by default**
+- A new install starts in the Light theme. If you already picked a theme,
+  nothing changes.
+
+**Learn the app as you open it**
+- The first time FITNS opens (right after the setup guide), short animated
+  tips show how to get around:
+  1. **Swipe** left or right to move between pages.
+  2. **Tap** the FITNS button for every page and Quick add.
+  3. **Hold** the button and slide to a bubble.
+- They play once. Skip them any time, or watch them again from
+  Settings → Show the tips again. If you're updating from an earlier
+  version, you'll see them once too.
+
 ## 0.1.12 — 2026-11-22
 
 **XPENC's font**
