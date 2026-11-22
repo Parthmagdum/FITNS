@@ -24,15 +24,29 @@ double cyclingMet(int cadence) => switch (cadence) {
   _ => 9.5,
 };
 
-/// Calories burned pedalling for [movingSeconds] at [cadence], for a rider
-/// weighing [weightKg] (70 kg when unknown).
+/// The effort of cycling at an average speed (MET), from the Compendium of
+/// Physical Activities: under 16 km/h leisurely, up to 19 light, up to 22.5
+/// moderate, up to 25.7 vigorous, faster very vigorous.
+double speedMet(double kmh) => switch (kmh) {
+  < 16 => 4.0,
+  < 19 => 6.8,
+  < 22.5 => 8.0,
+  < 25.7 => 10.0,
+  _ => 12.0,
+};
+
+/// Calories burned riding for [movingSeconds], for a rider weighing
+/// [weightKg] (70 kg when unknown): from the average speed when GPS gave
+/// one ([kmh]), else from the [cadence].
 int rideKcal({
   required int movingSeconds,
   required int cadence,
+  double? kmh,
   double? weightKg,
 }) {
   final hours = movingSeconds / 3600;
-  return (cyclingMet(cadence) * (weightKg ?? 70) * hours).round();
+  final met = kmh != null && kmh > 0 ? speedMet(kmh) : cyclingMet(cadence);
+  return (met * (weightKg ?? 70) * hours).round();
 }
 
 /// [metres] as "12.3 km" or "7.6 mi".

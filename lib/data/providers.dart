@@ -482,25 +482,34 @@ Future<void> bookRide(
   RideStatus ride,
   List<BodyEntryRow> weighIns,
 ) async {
-  final seconds = ride.moving.inSeconds;
-  if (seconds < 60 || ride.revolutions <= 0) return;
+  final seconds = rideMoving(ride).inSeconds;
+  // Under a minute on the move, with neither pedal turns nor 100 m of GPS
+  // track: it never got going.
+  if (seconds < 60 || (ride.revolutions <= 0 && ride.gpsMeters < 100)) {
+    return;
+  }
   final existing = await (db.select(
     db.bikeRides,
   )..where((r) => r.startedAt.equals(ride.startedAt))).get();
   if (existing.isNotEmpty) return;
-  final cadence = averageCadence(ride.revolutions, seconds);
+  final cadence = averageCadence(ride.revolutions, ride.moving.inSeconds);
+  final meters = rideMeters(ride);
+  final gpsKmh = ride.gpsMeters >= 50 && ride.gpsMoving.inSeconds > 0
+      ? ride.gpsMeters / ride.gpsMoving.inSeconds * 3.6
+      : null;
   final started = ride.startedAt;
-  final ended = ride.stoppedAt ?? started.add(ride.moving);
+  final ended = ride.stoppedAt ?? started.add(rideMoving(ride));
   await db.addBikeRide(
     BikeRidesCompanion.insert(
       startedAt: started,
-      endedAt: ended.isBefore(started) ? started.add(ride.moving) : ended,
+      endedAt: ended.isBefore(started) ? started.add(rideMoving(ride)) : ended,
       movingSeconds: seconds,
       revolutions: ride.revolutions,
-      distanceMeters: rideDistanceMeters(ride.revolutions),
+      distanceMeters: meters,
       kcal: rideKcal(
         movingSeconds: seconds,
         cadence: cadence,
+        kmh: gpsKmh,
         weightKg: weighIns.isEmpty ? null : weighIns.first.value / 1000,
       ),
     ),

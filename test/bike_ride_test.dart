@@ -30,6 +30,12 @@ void main() {
 
   test("RideService's status map is read, and junk is not a ride", () {
     final s = parseRideStatus({
+      'gpsOn': true,
+      'gpsFix': true,
+      'gpsMeters': 2500.4,
+      'gpsMovingMs': 300000,
+      'gpsSpeedMps': 5.0,
+      'gpsMaxMps': 7.5,
       'running': false,
       'startedAt': 1700000000000,
       'revolutions': 420,
@@ -41,6 +47,10 @@ void main() {
     expect(s.revolutions, 420);
     expect(s.moving, const Duration(minutes: 6));
     expect(s.stoppedAt, DateTime.fromMillisecondsSinceEpoch(1700000400000));
+    expect(s.gpsMeters, 2500);
+    expect(s.speedKmh, closeTo(18, 0.01));
+    expect(s.maxKmh, closeTo(27, 0.01));
+    expect(s.gpsMoving, const Duration(minutes: 5));
     expect(parseRideStatus({'running': true}), isNull);
     expect(parseRideStatus({'startedAt': 0}), isNull);
   });
@@ -58,6 +68,13 @@ void main() {
         moving: const Duration(minutes: 25),
         cadence: 0,
         stoppedAt: start.add(const Duration(minutes: 31)),
+        gpsOn: false,
+        gpsFix: false,
+        gpsMeters: 0,
+        gpsMoving: Duration.zero,
+        speedKmh: 0.0,
+        maxKmh: 0.0,
+        gyro: true,
       );
       await bookRide(db, ride, const []);
       await bookRide(db, ride, const []);
@@ -77,8 +94,52 @@ void main() {
         moving: const Duration(seconds: 30),
         cadence: 0,
         stoppedAt: null,
+        gpsOn: false,
+        gpsFix: false,
+        gpsMeters: 0,
+        gpsMoving: Duration.zero,
+        speedKmh: 0.0,
+        maxKmh: 0.0,
+        gyro: true,
       ), const []);
       expect(await db.watchBikeRidesSince(DateTime(2026)).first, hasLength(1));
     },
   );
+
+  test('a GPS ride takes its distance and calories from GPS', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final start = DateTime(2026, 11, 23, 7);
+    final ride = (
+      running: false,
+      startedAt: start,
+      // Phone in a bag: no pedal turns, but GPS saw 6 km in 20 minutes.
+      revolutions: 0,
+      moving: Duration.zero,
+      cadence: 0,
+      stoppedAt: start.add(const Duration(minutes: 25)),
+      gpsOn: true,
+      gpsFix: true,
+      gpsMeters: 6000,
+      gpsMoving: const Duration(minutes: 20),
+      speedKmh: 0.0,
+      maxKmh: 24.0,
+      gyro: true,
+    );
+    expect(rideMeters(ride), 6000);
+    expect(rideMoving(ride), const Duration(minutes: 20));
+    await bookRide(db, ride, const []);
+    final r = (await db.watchBikeRidesSince(DateTime(2026)).first).single;
+    expect(r.distanceMeters, 6000);
+    expect(r.movingSeconds, 1200);
+    // 18 km/h: 6.8 MET × 70 kg × 1/3 h.
+    expect(r.kcal, 159);
+  });
+
+  test('speed sets the effort when GPS gave one', () {
+    expect(speedMet(12), 4.0);
+    expect(speedMet(20), 8.0);
+    expect(rideKcal(movingSeconds: 3600, cadence: 90, kmh: 15), 280);
+    expect(rideKcal(movingSeconds: 3600, cadence: 90), 665);
+  });
 }

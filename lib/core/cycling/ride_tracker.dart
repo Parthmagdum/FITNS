@@ -14,6 +14,25 @@ typedef RideStatus = ({
 
   /// When it was stopped; null while running.
   DateTime? stoppedAt,
+
+  /// GPS is in use for this ride (location allowed, phone has GPS).
+  bool gpsOn,
+
+  /// A recent GPS fix: distance and speed are live.
+  bool gpsFix,
+
+  /// Distance from GPS, in metres.
+  int gpsMeters,
+
+  /// Time moving, from GPS.
+  Duration gpsMoving,
+
+  /// Speed now and the fastest, from GPS, in km/h.
+  double speedKmh,
+  double maxKmh,
+
+  /// Pedals are counted from the gyroscope (else the accelerometer).
+  bool gyro,
 });
 
 /// The Dart end of `RideService.kt`. Channel name must match
@@ -25,6 +44,10 @@ class RideTracker {
 
   /// The phone has an accelerometer to count with.
   Future<bool> available() => _call<bool>('available').then((v) => v ?? false);
+
+  /// Asks to use GPS for rides; true if allowed.
+  Future<bool> requestLocation() =>
+      _call<bool>('requestLocation').then((v) => v ?? false);
 
   /// Starts counting a ride; false if Android wouldn't.
   Future<bool> start() => _call<bool>('start').then((v) => v ?? false);
@@ -55,6 +78,7 @@ RideStatus? parseRideStatus(Map<Object?, Object?> map) {
   final started = map['startedAt'];
   if (started is! num || started <= 0) return null;
   int n(String key) => (map[key] as num?)?.toInt() ?? 0;
+  double d(String key) => (map[key] as num?)?.toDouble() ?? 0;
   return (
     running: map['running'] == true,
     startedAt: DateTime.fromMillisecondsSinceEpoch(started.toInt()),
@@ -64,5 +88,22 @@ RideStatus? parseRideStatus(Map<Object?, Object?> map) {
     stoppedAt: n('stoppedAt') > 0
         ? DateTime.fromMillisecondsSinceEpoch(n('stoppedAt'))
         : null,
+    gpsOn: map['gpsOn'] == true,
+    gpsFix: map['gpsFix'] == true,
+    gpsMeters: d('gpsMeters').round(),
+    gpsMoving: Duration(milliseconds: n('gpsMovingMs')),
+    speedKmh: d('gpsSpeedMps') * 3.6,
+    maxKmh: d('gpsMaxMps') * 3.6,
+    gyro: map['gyro'] == true,
   );
 }
+
+/// The ride's distance in metres: from GPS when it measured some, else
+/// estimated from the pedal turns.
+int rideMeters(RideStatus ride) =>
+    ride.gpsMeters >= 50 ? ride.gpsMeters : (ride.revolutions * 5.0).round();
+
+/// Time spent moving: the longer of what GPS and the pedals saw (GPS
+/// counts freewheeling too; pedals work without GPS).
+Duration rideMoving(RideStatus ride) =>
+    ride.gpsMoving > ride.moving ? ride.gpsMoving : ride.moving;

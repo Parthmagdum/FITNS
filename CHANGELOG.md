@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.15 — 2026-11-23
+
+**Cycling that actually tracks**
+- **Fixed: rides counted nothing.** Pedal turns were read from how hard the
+  phone shook, but in a pocket the thigh mostly *tilts* the phone, which
+  barely changes that. FITNS now reads the **gyroscope** (the thigh's
+  turning), or on phones without one the tilt itself, along whichever
+  direction it swings most, so it works however the phone sits in the
+  pocket.
+- **GPS distance and speed.** Allow location when starting a ride and FITNS
+  measures the real distance, live speed and top speed with the phone's
+  own GPS (no internet), with the phone anywhere: pocket, bag or
+  handlebar. Without it, distance is still estimated from pedal turns.
+- The ride card shows what's working, live: GPS found or still searching,
+  and a spinning "Pedalling" badge as your pedal strokes are counted.
+- Calories use your speed when GPS measured it.
+- Fixed: on Android 14 and newer a ride could fail to start if "Physical
+  activity" had been refused.
+
+**Softer menu zones**
+- The orange and pale zones behind the FITNS button's bubbles now fade into
+  the background, with no hard edges.
+
 ## 0.1.14 — 2026-11-22
 
 **Adding a food looks the part**

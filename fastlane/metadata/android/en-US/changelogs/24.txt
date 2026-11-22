@@ -1,0 +1,4 @@
+- Cycling fixed: pedal turns are now counted with the gyroscope, however the phone sits in your pocket
+- GPS distance, live speed and top speed for rides (optional, no internet)
+- Live status on the ride card: GPS and pedalling
+- Softer, edgeless zones behind the FITNS button menu

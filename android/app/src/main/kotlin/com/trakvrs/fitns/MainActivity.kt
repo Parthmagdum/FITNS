@@ -128,6 +128,8 @@ class MainActivity : FlutterActivity() {
         MethodChannel(messenger, RIDE_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "available" -> result.success(RideService.available(this))
+                "locationAllowed" -> result.success(RideService.locationAllowed(this))
+                "requestLocation" -> requestLocation(result)
                 "start" -> result.success(RideService.start(this))
                 "stop" -> {
                     RideService.stop(this)
@@ -441,12 +443,36 @@ class MainActivity : FlutterActivity() {
         requestPermissions(arrayOf(Manifest.permission.ACTIVITY_RECOGNITION), PERMISSION_REQUEST)
     }
 
+    private var pendingLocation: MethodChannel.Result? = null
+
+    /** Asks for GPS for bike rides; resolves to whether it's allowed. */
+    private fun requestLocation(result: MethodChannel.Result) {
+        if (RideService.locationAllowed(this) || !RideService.hasGps(this)) {
+            result.success(RideService.locationAllowed(this))
+            return
+        }
+        pendingLocation?.success(false)
+        pendingLocation = result
+        requestPermissions(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ),
+            LOCATION_REQUEST,
+        )
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_REQUEST) {
+            pendingLocation?.success(RideService.locationAllowed(this))
+            pendingLocation = null
+            return
+        }
         if (requestCode == NOTIFY_REQUEST) {
             pendingNotifications?.success(notificationsAllowed())
             pendingNotifications = null
@@ -596,5 +622,6 @@ class MainActivity : FlutterActivity() {
         private const val SAVE_REQUEST = 4105
         private const val OPEN_REQUEST = 4106
         private const val NOTIFY_REQUEST = 4107
+        private const val LOCATION_REQUEST = 4112
     }
 }

@@ -1,6 +1,6 @@
 # FITNS privacy policy
 
-_Last updated: 9 November 2026_
+_Last updated: 23 November 2026_
 
 FITNS is an offline fitness tracker made by Parth Magdum (TRAKVRS). This
 policy covers the FITNS Android app.
@@ -12,7 +12,7 @@ enter stays on your phone.
 
 ## What the app stores, and where
 
-Your workouts, routines, steps, food and water logs, body measurements,
+Your workouts, routines, steps, bike rides, food and water logs, body measurements,
 progress photos, sleep logs, cycle dates and settings are stored only in
 the app's private storage on your phone. Other apps can't read them.
 
@@ -24,7 +24,13 @@ reporting or third-party trackers.
 
 FITNS asks for each of these only when you use the feature that needs it:
 
-- **Physical activity** — to read your phone's step counter.
+- **Physical activity** — to read your phone's step counter, and to tell
+  walking from pedalling on a bike ride.
+- **Location** (optional) — only while a bike ride is being tracked, between
+  Start and Stop, to measure its distance and speed with your phone's GPS.
+  No internet is used, and the route itself is not stored: only the ride's
+  totals (distance, time, speed) are kept, on your phone. Rides work
+  without it; distance is then estimated from your pedal turns.
 - **Camera** — to scan barcodes on food packets. Images are not saved.
 - **Notifications** — for the rest timer, step counting and reminders.
 - **Alarms & reminders** — so the rest timer alert arrives on time.

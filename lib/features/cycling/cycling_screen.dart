@@ -13,12 +13,14 @@ import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 
-/// Starts counting a bike ride, asking for the activity permission first
-/// (Android needs it to count with the screen off).
+/// Starts tracking a bike ride. Asks first for "Physical activity" (to tell
+/// walking from pedalling) and for location (GPS distance and speed —
+/// optional: without it, distance comes from the pedal turns).
 Future<void> startRide(BuildContext context, WidgetRef ref) async {
   final sensor = ref.read(stepSensorProvider);
   final permission = await sensor.requestPermission();
   final tracker = ref.read(rideTrackerProvider);
+  await tracker.requestLocation();
   final started = await tracker.start();
   ref.invalidate(rideStatusProvider);
   if (started || !context.mounted) return;
@@ -115,11 +117,13 @@ class CyclingScreen extends ConsumerWidget {
             for (final r in rides) _RideTile(ride: r, units: units),
           const SizedBox(height: 16),
           Text(
-            'FITNS counts each turn of the pedals from the motion of your '
-            'leg, so keep the phone in a trouser pocket. Distance assumes '
-            '${metresPerPedalTurn.toStringAsFixed(0)} m per pedal turn (a '
-            'middle gear) and calories use your latest weigh-in: both are '
-            'estimates. Stops are left out of the time.',
+            'With location allowed, distance and speed come from your '
+            "phone's GPS (no internet needed). FITNS also counts each turn "
+            'of the pedals from the motion of your leg, so keep the phone in '
+            'a trouser pocket; without GPS, distance is estimated at '
+            '${metresPerPedalTurn.toStringAsFixed(0)} m per pedal turn. '
+            'Calories use your latest weigh-in. Stops are left out of the '
+            'time.',
             style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
           ),
         ],
@@ -166,8 +170,9 @@ class _RideHero extends ConsumerWidget {
             Text('Ready to ride?', style: big?.copyWith(fontSize: 28)),
             const SizedBox(height: 6),
             const Text(
-              'Tap Start, put your phone in your trouser pocket and pedal. '
-              'FITNS counts every turn of the pedals, screen off.',
+              'Tap Start and ride. GPS measures your distance and speed, and '
+              'with the phone in a trouser pocket FITNS counts every turn of '
+              'the pedals too. Screen off, no internet.',
             ),
             const SizedBox(height: 16),
             button,
@@ -175,7 +180,9 @@ class _RideHero extends ConsumerWidget {
         ),
       );
     }
-    final metres = rideDistanceMeters(ride.revolutions);
+    final metres = rideMeters(ride);
+    final pedalling = ride.cadence > 0;
+    final moving = pedalling || ride.speedKmh >= 3;
     return HeroCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +193,7 @@ class _RideHero extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  ride.cadence > 0 ? 'Riding' : 'Waiting for you to pedal',
+                  moving ? 'Riding' : 'Waiting for you to move',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -202,14 +209,46 @@ class _RideHero extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(formatRideDistance(metres, units), style: big),
-          const SizedBox(height: 12),
-          Row(
+          const SizedBox(height: 10),
+          // What is being tracked right now, live.
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
             children: [
-              Expanded(child: _HeroStat('Pedal turns', '${ride.revolutions}')),
-              Expanded(child: _HeroStat('Cadence', '${ride.cadence} rpm')),
-              Expanded(child: _HeroStat('Pedalling', formatClock(ride.moving))),
+              _Live(
+                icon: ride.gpsOn
+                    ? (ride.gpsFix ? Icons.gps_fixed : Icons.gps_not_fixed)
+                    : Icons.gps_off,
+                label: !ride.gpsOn
+                    ? 'No GPS · distance from pedals'
+                    : ride.gpsFix
+                    ? 'GPS'
+                    : 'Finding GPS…',
+                on: ride.gpsOn && ride.gpsFix,
+              ),
+              _Live(
+                icon: Icons.sync,
+                label: pedalling ? 'Pedalling' : 'Pedals: not yet',
+                on: pedalling,
+                spin: pedalling,
+              ),
             ],
           ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroStat(
+                  'Speed',
+                  ride.gpsOn ? rideSpeedText(ride.speedKmh, units) : '—',
+                ),
+              ),
+              Expanded(child: _HeroStat('Cadence', '${ride.cadence} rpm')),
+              Expanded(child: _HeroStat('Pedal turns', '${ride.revolutions}')),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _HeroStat('Moving', formatClock(rideMoving(ride))),
           const SizedBox(height: 16),
           button,
         ],
@@ -390,7 +429,7 @@ class CyclingCard extends ConsumerWidget {
     final String line;
     if (ride != null) {
       line =
-          'Riding now · ${formatRideDistance(rideDistanceMeters(ride.revolutions), units)}'
+          'Riding now · ${formatRideDistance(rideMeters(ride), units)}'
           ' · ${ride.revolutions} pedal turns';
     } else if (totals.rides > 0) {
       line =
@@ -423,6 +462,89 @@ class CyclingCard extends ConsumerWidget {
           ),
           Icon(Icons.chevron_right, color: theme.muted),
         ],
+      ),
+    );
+  }
+}
+
+/// A speed in km/h as "18.4 km/h" (or mph).
+String rideSpeedText(double kmh, UnitSystem units) => units == UnitSystem.metric
+    ? '${kmh.toStringAsFixed(1)} km/h'
+    : '${(kmh / 1.609344).toStringAsFixed(1)} mph';
+
+/// A live status pill on the ride card: bright when it's working.
+class _Live extends StatefulWidget {
+  const _Live({
+    required this.icon,
+    required this.label,
+    required this.on,
+    this.spin = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool on;
+  final bool spin;
+
+  @override
+  State<_Live> createState() => _LiveState();
+}
+
+class _LiveState extends State<_Live> with SingleTickerProviderStateMixin {
+  late final _turn = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.spin) _turn.repeat();
+  }
+
+  @override
+  void didUpdateWidget(_Live old) {
+    super.didUpdateWidget(old);
+    if (widget.spin && !_turn.isAnimating) _turn.repeat();
+    if (!widget.spin && _turn.isAnimating) _turn.stop();
+  }
+
+  @override
+  void dispose() {
+    _turn.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.on
+        ? Colors.white
+        : Colors.white.withValues(alpha: 0.6);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: widget.on ? 0.24 : 0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RotationTransition(
+              turns: _turn,
+              child: Icon(widget.icon, size: 15, color: color),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

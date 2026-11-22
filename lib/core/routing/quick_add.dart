@@ -843,9 +843,12 @@ class _ZonesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Each band glows rather than ends: its colour fades to nothing toward
+    // its inner and outer rims (a radial gradient), and its two ends are
+    // feathered (a blur), so it melts into the dimmed page — no edges.
     void band(double inner, double outer, Color color, double alpha) {
-      const from = -188 * math.pi / 180;
-      const sweep = 108 * math.pi / 180;
+      const from = -196 * math.pi / 180;
+      const sweep = 124 * math.pi / 180;
       final path = Path()
         ..arcTo(
           Rect.fromCircle(center: origin, radius: outer),
@@ -860,19 +863,24 @@ class _ZonesPainter extends CustomPainter {
           false,
         )
         ..close();
-      canvas
-        ..drawPath(path, Paint()..color = color.withValues(alpha: alpha * open))
-        ..drawPath(
-          path,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5
-            ..color = color.withValues(alpha: 0.45 * open),
-        );
+      final peak = color.withValues(alpha: alpha * open);
+      final clear = color.withValues(alpha: 0);
+      final mid = (inner + outer) / 2 / outer;
+      canvas.drawPath(
+        path,
+        Paint()
+          ..shader = RadialGradient(
+            center: Alignment.center,
+            radius: 0.5,
+            colors: [clear, peak, peak, clear],
+            stops: [inner / outer, (inner / outer + mid) / 2, (mid + 1) / 2, 1],
+          ).createShader(Rect.fromCircle(center: origin, radius: outer))
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+      );
     }
 
-    band(64, 206, quickAdd, 0.22);
-    if (hasTabs) band(212, 296, goTo, 0.12);
+    band(56, 214, quickAdd, 0.32);
+    if (hasTabs) band(204, 304, goTo, 0.16);
   }
 
   @override

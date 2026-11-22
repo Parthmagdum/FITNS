@@ -1,26 +1,36 @@
 package com.trakvrs.fitns
 
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
- * Counts pedal turns from the accelerometer. Pure logic, no Android:
- * [RideService] feeds it.
+ * Counts pedal turns from the phone's motion sensors. Pure logic, no
+ * Android: [RideService] feeds it.
  *
- * With the phone in a trouser pocket, each turn of the pedals lifts and
- * drops the thigh once, so the acceleration (gravity taken out) swings up
- * and down once per turn. A swing is counted when the signal goes clearly
+ * With the phone in a trouser pocket, each turn of the pedals swings the
+ * thigh up and back down once. The **gyroscope** sees that directly: the
+ * thigh's turning speed swings once per turn, strongly (a few rad/s),
+ * whichever way up the phone sits. Phones without one fall back to the
+ * **accelerometer**: the tilt shifts gravity across the phone's axes once
+ * per turn. (The accelerometer alone can go nearly blind at some
+ * cadences — the thigh's own swing cancels the tilt — so the gyroscope is
+ * used whenever there is one.)
+ *
+ * Either way the reading is taken along the direction it swings most in
+ * ([SwingAxis]), and a swing is counted when that signal goes clearly
  * below zero and then clearly above it (hysteresis, so road buzz doesn't
- * count), and then judged by its rhythm, like [StepRhythm] judges steps:
+ * count). Then each is judged by its rhythm, like [StepRhythm] judges
+ * steps:
  *
  *  * Turns only count once [CONFIRM] of them come at a steady pace between
  *    [MIN_GAP_NS] and [MAX_GAP_NS] apart (40–180 rpm) — then all of them
  *    count, the first ones too.
  *  * While pedalling holds, each turn keeps counting as long as it stays
- *    close to the typical pace. A pause or a jolt out of rhythm ends it,
+ *    close to the typical pace. A pause or a turn out of rhythm ends it,
  *    and turns that never settled into a rhythm don't count.
- *  * Hard or lopsided swings ([MAX_SWING], [LOPSIDED]) are footsteps or
- *    bumps, not pedalling, and walking (the step detector firing,
- *    [onStep]) stops counting too.
+ *  * Walking isn't pedalling: the step detector firing ([onStep]), the
+ *    sudden jolt of a footstep on the accelerometer ([JOLT]), or a lopsided swing
+ *    ([LOPSIDED]) stops counting.
  *
  * Moving time is the time between counted turns, so stops at lights are
  * left out.
@@ -31,13 +41,17 @@ class PedalCadence(
     /** Nanoseconds spent pedalling so far. */
     var movingNs: Long = 0,
 ) {
-    private var gravity = Double.NaN
-    private var smooth = 0.0
+    private val tilt = SwingAxis()
+    private val rotation = SwingAxis()
+    private var hasGyro = false
+
+    private var level = Double.NaN
+    private var lastJoltNs = 0L
+
     private var armed = false
     private var swingUp = 0.0
     private var swingDown = 0.0
-
-    private var joltSeen = false
+    private var lopsided = false
 
     private var lastTurnNs = 0L
     private val gaps = ArrayDeque<Long>()
@@ -51,36 +65,34 @@ class PedalCadence(
     val cadence: Int
         get() = if (!confirmed || gaps.isEmpty()) 0 else (60_000_000_000L / median(gaps)).toInt()
 
+    /** Counting from the gyroscope (else the accelerometer). */
+    val usingGyroscope: Boolean
+        get() = hasGyro
+
     /** One accelerometer reading (m/s²) at [ns] nanoseconds since boot. */
     fun onSample(ns: Long, x: Float, y: Float, z: Float) {
         val m = sqrt((x * x + y * y + z * z).toDouble())
-        if (gravity.isNaN()) gravity = m
-        // Gravity: a slow average (~1.5 s at 50 Hz); the rest is motion,
-        // smoothed to drop buzz above a few hertz.
-        gravity += (m - gravity) * 0.013
-        smooth += ((m - gravity) - smooth) * 0.3
-        if (smooth > swingUp) swingUp = smooth
-        if (-smooth > swingDown) swingDown = -smooth
-        if (smooth < -THRESHOLD) {
-            if (!armed) {
-                // A swing has ended: judge its shape. Pedalling rises and
-                // falls evenly; a footstep is a sharp jolt up and a long
-                // shallow dip.
-                val jolt = swingUp > MAX_SWING || swingUp > LOPSIDED * swingDown
-                swingUp = 0.0
-                swingDown = -smooth
-                if (jolt) joltSeen = true
-            }
-            armed = true
-        } else if (armed && smooth > THRESHOLD) {
+        if (level.isNaN()) level = m
+        // A footstep lands with a sudden jump; even hard pedalling changes
+        // smoothly. So it's the jump from one reading to the next that
+        // counts (lightly smoothed against buzz), not its size.
+        val before = level
+        level += (m - level) * 0.5
+        if (abs(level - before) > JOLT) lastJoltNs = ns
+        val signal = tilt.add(x.toDouble(), y.toDouble(), z.toDouble())
+        if (!hasGyro) onSignal(ns, signal, ACCEL_THRESHOLD)
+    }
+
+    /** One gyroscope reading (rad/s) at [ns] nanoseconds since boot. */
+    fun onRotation(ns: Long, x: Float, y: Float, z: Float) {
+        if (!hasGyro) {
+            // Switch over cleanly: whatever the accelerometer had pending
+            // is dropped.
+            hasGyro = true
+            endRun()
             armed = false
-            if (joltSeen) {
-                joltSeen = false
-                endRun()
-            } else {
-                onTurn(ns)
-            }
         }
+        onSignal(ns, rotation.add(x.toDouble(), y.toDouble(), z.toDouble()), GYRO_THRESHOLD)
     }
 
     /** A step-detector event: walking, so whatever is pending isn't pedalling. */
@@ -90,7 +102,34 @@ class PedalCadence(
         if (recentSteps >= 3) endRun()
     }
 
-    private fun walking(ns: Long) = recentSteps >= 3 && ns - lastStepNs < STEP_WINDOW_NS
+    private fun onSignal(ns: Long, s: Double, threshold: Double) {
+        if (s > swingUp) swingUp = s
+        if (-s > swingDown) swingDown = -s
+        if (s < -threshold) {
+            if (!armed) {
+                // A swing has ended: judge its shape. Pedalling rises and
+                // falls evenly.
+                val big = maxOf(swingUp, swingDown)
+                val small = minOf(swingUp, swingDown)
+                if (big > LOPSIDED * small) lopsided = true
+                swingUp = 0.0
+                swingDown = -s
+            }
+            armed = true
+        } else if (armed && s > threshold) {
+            armed = false
+            if (lopsided) {
+                lopsided = false
+                endRun()
+            } else {
+                onTurn(ns)
+            }
+        }
+    }
+
+    private fun walking(ns: Long) =
+        (recentSteps >= 3 && ns - lastStepNs < STEP_WINDOW_NS) ||
+            (lastJoltNs != 0L && ns - lastJoltNs < JOLT_WINDOW_NS)
 
     internal fun onTurn(ns: Long) {
         val gap = if (lastTurnNs == 0L) -1L else ns - lastTurnNs
@@ -144,20 +183,25 @@ class PedalCadence(
 
     companion object {
         /** Turns at a steady pace before pedalling counts. */
-        const val CONFIRM = 6
+        const val CONFIRM = 5
 
         /** 180 rpm at most; slower than 40 rpm is coasting or a stop. */
         const val MIN_GAP_NS = 333_000_000L
         const val MAX_GAP_NS = 1_500_000_000L
 
-        /** How far (m/s²) the motion must swing each way to count. */
-        const val THRESHOLD = 0.35
+        /** How far the signal must swing each way to count. */
+        const val ACCEL_THRESHOLD = 0.3 // m/s²
+        const val GYRO_THRESHOLD = 0.35 // rad/s
 
-        /** A swing harder than this is a footstep or a bump. */
-        const val MAX_SWING = 7.0
-
-        /** A swing this many times higher than its dip is a footstep. */
+        /** A swing this many times bigger one way than the other is a step. */
         const val LOPSIDED = 3.0
+
+        /**
+         * The accelerometer jumping this far (m/s²) between readings is a
+         * footstep landing (or a pothole).
+         */
+        const val JOLT = 3.0
+        const val JOLT_WINDOW_NS = 1_500_000_000L
 
         const val STEP_WINDOW_NS = 4_000_000_000L
 
@@ -176,5 +220,59 @@ class PedalCadence(
             val sorted = gaps.sorted()
             return if (sorted.isEmpty()) 1_000_000_000L else sorted[sorted.size / 2]
         }
+    }
+}
+
+/**
+ * A 3-axis reading's swing, along the direction it swings most in: each
+ * axis's slow average is taken out, the rest smoothed, and projected onto
+ * the main axis of the last few seconds' spread (found by power iteration,
+ * its sign kept steady so the signal never flips).
+ */
+class SwingAxis {
+    private var started = false
+    private val mean = DoubleArray(3)
+    private val swing = DoubleArray(3)
+
+    /** The spread (covariance): xx, yy, zz, xy, xz, yz. */
+    private val spread = DoubleArray(6)
+    private val axis = doubleArrayOf(0.577, 0.577, 0.577)
+    private var samples = 0
+
+    /** Adds a reading; returns the swing along the main axis. */
+    fun add(x: Double, y: Double, z: Double): Double {
+        val v = doubleArrayOf(x, y, z)
+        if (!started) {
+            v.copyInto(mean)
+            started = true
+        }
+        for (i in 0..2) {
+            // The slow average (~1.5 s at 50 Hz); the rest is the swing,
+            // smoothed to drop buzz above a few hertz.
+            mean[i] += (v[i] - mean[i]) * 0.013
+            swing[i] += ((v[i] - mean[i]) - swing[i]) * 0.3
+        }
+        val (a, b, c) = Triple(swing[0], swing[1], swing[2])
+        val products = doubleArrayOf(a * a, b * b, c * c, a * b, a * c, b * c)
+        // Weighted to the last ~2 s, so the axis settles quickly.
+        for (i in 0..5) spread[i] += (products[i] - spread[i]) * 0.01
+        if (++samples % 5 == 0) updateAxis()
+        return swing[0] * axis[0] + swing[1] * axis[1] + swing[2] * axis[2]
+    }
+
+    private fun updateAxis() {
+        var u = axis.copyOf()
+        repeat(4) {
+            val n = doubleArrayOf(
+                spread[0] * u[0] + spread[3] * u[1] + spread[4] * u[2],
+                spread[3] * u[0] + spread[1] * u[1] + spread[5] * u[2],
+                spread[4] * u[0] + spread[5] * u[1] + spread[2] * u[2],
+            )
+            val len = sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2])
+            if (len < 1e-12) return
+            u = doubleArrayOf(n[0] / len, n[1] / len, n[2] / len)
+        }
+        val same = u[0] * axis[0] + u[1] * axis[1] + u[2] * axis[2]
+        for (i in 0..2) axis[i] = if (same < 0) -u[i] else u[i]
     }
 }
