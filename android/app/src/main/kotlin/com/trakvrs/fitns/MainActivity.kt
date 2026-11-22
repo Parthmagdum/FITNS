@@ -125,6 +125,23 @@ class MainActivity : FlutterActivity() {
         }
         EventChannel(messenger, STEP_EVENTS).setStreamHandler(StepCounterStream(this, sensors))
 
+        MethodChannel(messenger, RIDE_METHODS).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "available" -> result.success(RideService.available(this))
+                "start" -> result.success(RideService.start(this))
+                "stop" -> {
+                    RideService.stop(this)
+                    result.success(null)
+                }
+                "status" -> result.success(RideService.status(this))
+                "clear" -> {
+                    RideService.clear(this)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         MethodChannel(messenger, MOTION_METHODS).setMethodCallHandler { call, result ->
             when (call.method) {
                 "available" -> result.success(
@@ -570,6 +587,7 @@ class MainActivity : FlutterActivity() {
         private const val HEALTH_METHODS = "fitns/health"
         private const val MUSIC_METHODS = "fitns/music"
         private const val WATER_METHODS = "fitns/water"
+        private const val RIDE_METHODS = "fitns/ride"
         // Request codes must differ from each other and from HealthBridge.REQUEST (4110).
         private const val PICK_MUSIC_REQUEST = 4111
         private const val CAMERA_REQUEST = 4108

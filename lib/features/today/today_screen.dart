@@ -10,6 +10,7 @@ import '../../data/providers.dart';
 import '../../data/tables.dart' show Meal;
 import '../body/body_log_sheet.dart';
 import '../body/body_screen.dart';
+import '../cycling/cycling_screen.dart';
 import '../food/calories_card.dart';
 import '../food/water_card.dart';
 import '../plan/check_in_card.dart';
@@ -70,6 +71,7 @@ class TodayScreen extends ConsumerWidget {
         const GoalCard(),
         const SizedBox(height: 12),
         const StepsCard(),
+        const CyclingCard(),
         const SectionLabel('Food'),
         CaloriesCard(day: today, onTap: () => context.go('/food')),
         const SizedBox(height: 12),

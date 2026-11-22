@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/body/body_screen.dart';
 import '../../data/database.dart' show Meal;
+import '../../features/cycling/cycling_screen.dart';
 import '../../features/exercises/exercise_picker_screen.dart';
 import '../../features/food/food_picker_screen.dart';
 import '../../features/food/food_screen.dart';
@@ -68,7 +69,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Full-screen pages, above the tab bar.
+      // Full-screen pages, above the tabs.
       GoRoute(
         path: '/workout/:id/count/:itemId',
         builder: (_, state) => AutoCountScreen(
@@ -116,6 +117,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/settings/goals', builder: (_, _) => const GoalsScreen()),
       GoRoute(path: '/steps', builder: (_, _) => const StepsScreen()),
+      GoRoute(path: '/cycling', builder: (_, _) => const CyclingScreen()),
       GoRoute(path: '/water', builder: (_, _) => const WaterScreen()),
       GoRoute(path: '/about', builder: (_, _) => const AboutScreen()),
       GoRoute(path: '/setup', builder: (_, _) => const SetupScreen()),

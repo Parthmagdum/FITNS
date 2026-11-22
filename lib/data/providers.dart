@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/cycling/ride_math.dart';
+import '../core/cycling/ride_tracker.dart';
 import '../core/dates.dart';
 import '../core/insights.dart';
 import '../core/motion/motion_sensors.dart';
@@ -444,4 +446,72 @@ final waterBarStateProvider = Provider<WaterBarState?>((ref) {
     presetsMl: ref.watch(waterPresetsProvider),
     imperial: ref.watch(unitsProvider) == UnitSystem.imperial,
   );
+});
+
+// ── Cycling ─────────────────────────────────────────────────────────────────
+
+final rideTrackerProvider = Provider<RideTracker>((ref) => const RideTracker());
+
+/// The bike ride being counted, read every two seconds while anything
+/// watches. A ride that has stopped (from FITNS or its notification) is
+/// booked here — once — and then reads as none.
+final rideStatusProvider = StreamProvider.autoDispose<RideStatus?>((
+  ref,
+) async* {
+  final tracker = ref.watch(rideTrackerProvider);
+  Future<RideStatus?> read() async {
+    final status = await tracker.status();
+    if (status == null || status.running) return status;
+    await bookRide(
+      ref.read(dbProvider),
+      status,
+      ref.read(weightHistoryProvider),
+    );
+    await tracker.clear();
+    return null;
+  }
+
+  yield await read();
+  yield* Stream.periodic(const Duration(seconds: 2)).asyncMap((_) => read());
+});
+
+/// Saves a stopped ride, with its distance and calories worked out — unless
+/// it was already saved, or never got going (under a minute of pedalling).
+Future<void> bookRide(
+  AppDatabase db,
+  RideStatus ride,
+  List<BodyEntryRow> weighIns,
+) async {
+  final seconds = ride.moving.inSeconds;
+  if (seconds < 60 || ride.revolutions <= 0) return;
+  final existing = await (db.select(
+    db.bikeRides,
+  )..where((r) => r.startedAt.equals(ride.startedAt))).get();
+  if (existing.isNotEmpty) return;
+  final cadence = averageCadence(ride.revolutions, seconds);
+  final started = ride.startedAt;
+  final ended = ride.stoppedAt ?? started.add(ride.moving);
+  await db.addBikeRide(
+    BikeRidesCompanion.insert(
+      startedAt: started,
+      endedAt: ended.isBefore(started) ? started.add(ride.moving) : ended,
+      movingSeconds: seconds,
+      revolutions: ride.revolutions,
+      distanceMeters: rideDistanceMeters(ride.revolutions),
+      kcal: rideKcal(
+        movingSeconds: seconds,
+        cadence: cadence,
+        weightKg: weighIns.isEmpty ? null : weighIns.first.value / 1000,
+      ),
+    ),
+  );
+}
+
+/// Rides from the last five weeks, newest first — enough for this month
+/// and this week.
+final bikeRidesProvider = StreamProvider<List<BikeRideRow>>((ref) {
+  final today = ref.watch(todayProvider);
+  return ref
+      .watch(dbProvider)
+      .watchBikeRidesSince(today.subtract(const Duration(days: 35)));
 });

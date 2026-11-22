@@ -1,0 +1,4 @@
+The tab bar is gone: one FITNS button in the corner does it all.
+- Tap it for tabs and quick actions; hold and slide to go anywhere
+- Pages grow out of the button as they open
+- New Cycling: start a ride, pocket your phone, and FITNS counts your pedal turns, distance, time and calories

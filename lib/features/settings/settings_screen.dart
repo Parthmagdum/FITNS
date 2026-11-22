@@ -290,7 +290,7 @@ class SettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
             child: Text(
-              'Liquid Glass: frosted cards and a floating glass tab bar on '
+              'Liquid Glass: frosted cards and a glass FITNS button on '
               'black, the same look as XPENC.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

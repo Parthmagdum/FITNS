@@ -682,3 +682,22 @@ class FoodLogs extends Table {
   IntColumn get carbsTenths => integer().withDefault(const Constant(0))();
   IntColumn get fatTenths => integer().withDefault(const Constant(0))();
 }
+
+/// A bike ride counted by the cycling tracker (RideService.kt): pedal turns
+/// counted from the phone's motion while riding. Distance and calories are
+/// estimates made when the ride is saved. Schema v14.
+@DataClassName('BikeRideRow')
+@TableIndex(name: 'bike_rides_time', columns: {#startedAt})
+class BikeRides extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get startedAt => dateTime()();
+  DateTimeColumn get endedAt => dateTime()();
+
+  /// Time spent pedalling, pauses left out.
+  IntColumn get movingSeconds => integer()();
+
+  /// Pedal turns counted.
+  IntColumn get revolutions => integer()();
+  IntColumn get distanceMeters => integer()();
+  IntColumn get kcal => integer()();
+}

@@ -29,6 +29,8 @@ class AppPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: floatingActionButton,
+      // Bottom-left: the bottom-right corner is the FITNS button's.
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       bottomNavigationBar: bottom == null
           ? null
           : SafeArea(
@@ -39,8 +41,7 @@ class AppPage extends StatelessWidget {
         slivers: [
           SliverAppBar.large(title: Text(title), actions: actions),
           SliverPadding(
-            // Clear of the FAB — and, under Glass, of the tab bar floating
-            // over the page (Scaffold reports it as bottom padding).
+            // Clear of the FAB and of the FITNS button in the corner.
             padding: EdgeInsets.fromLTRB(
               16,
               4,

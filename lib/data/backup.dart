@@ -59,7 +59,8 @@ class BackupService {
   /// 6 (0.0.8): adds sleepLogs, cycleStarts, reps in reserve on sets, and
   /// the reminder and cycle settings.
   /// 7 (0.1.2): adds the exact weights owned at each place.
-  static const formatVersion = 7;
+  /// 8 (0.1.11): adds bikeRides.
+  static const formatVersion = 8;
 
   static String fileName(DateTime now) =>
       'fitns-backup-${now.year}-${_two(now.month)}-${_two(now.day)}.json';
@@ -98,6 +99,7 @@ class BackupService {
       'programDays': await all(db.programDays),
       'sleepLogs': await all(db.sleepLogs),
       'cycleStarts': await all(db.cycleStarts),
+      'bikeRides': await all(db.bikeRides),
     };
     return const JsonEncoder.withIndent(' ').convert(data);
   }
@@ -125,6 +127,7 @@ class BackupService {
     'programDays',
     'sleepLogs',
     'cycleStarts',
+    'bikeRides',
   ];
 
   /// Checks [text] is a FITNS backup this version can read.
@@ -190,6 +193,7 @@ class BackupService {
           db.places,
           db.sleepLogs,
           db.cycleStarts,
+          db.bikeRides,
           // Photos aren't in backups — their files stay on the old phone —
           // so rows pointing at them go too.
           db.progressPhotos,
@@ -255,6 +259,10 @@ class BackupService {
           );
           b.insertAll(db.foods, rows('foods').map(FoodRow.fromJson));
           b.insertAll(db.foodLogs, rows('foodLogs').map(FoodLogRow.fromJson));
+          b.insertAll(
+            db.bikeRides,
+            rows('bikeRides').map(BikeRideRow.fromJson),
+          );
         });
         // A backup from an older FITNS lacks any built-ins added since.
         await db.seedExerciseLibrary();

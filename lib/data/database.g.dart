@@ -1057,7 +1057,8 @@ class $SettingsTable extends Settings
 class SettingRow extends DataClass implements Insertable<SettingRow> {
   final int id;
 
-  /// `system`, `light` or `dark` — a [ThemeMode] name.
+  /// `system`, `light` or `dark` — a [ThemeMode] name — or `glass`, the
+  /// Liquid Glass look (always dark).
   final String themeMode;
   final UnitSystem unitSystem;
 
@@ -9828,6 +9829,477 @@ class ProgressPhotosCompanion extends UpdateCompanion<ProgressPhotoRow> {
   }
 }
 
+class $BikeRidesTable extends BikeRides
+    with TableInfo<$BikeRidesTable, BikeRideRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BikeRidesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _movingSecondsMeta = const VerificationMeta(
+    'movingSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> movingSeconds = GeneratedColumn<int>(
+    'moving_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revolutionsMeta = const VerificationMeta(
+    'revolutions',
+  );
+  @override
+  late final GeneratedColumn<int> revolutions = GeneratedColumn<int>(
+    'revolutions',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _distanceMetersMeta = const VerificationMeta(
+    'distanceMeters',
+  );
+  @override
+  late final GeneratedColumn<int> distanceMeters = GeneratedColumn<int>(
+    'distance_meters',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kcalMeta = const VerificationMeta('kcal');
+  @override
+  late final GeneratedColumn<int> kcal = GeneratedColumn<int>(
+    'kcal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    startedAt,
+    endedAt,
+    movingSeconds,
+    revolutions,
+    distanceMeters,
+    kcal,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bike_rides';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BikeRideRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('moving_seconds')) {
+      context.handle(
+        _movingSecondsMeta,
+        movingSeconds.isAcceptableOrUnknown(
+          data['moving_seconds']!,
+          _movingSecondsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_movingSecondsMeta);
+    }
+    if (data.containsKey('revolutions')) {
+      context.handle(
+        _revolutionsMeta,
+        revolutions.isAcceptableOrUnknown(
+          data['revolutions']!,
+          _revolutionsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_revolutionsMeta);
+    }
+    if (data.containsKey('distance_meters')) {
+      context.handle(
+        _distanceMetersMeta,
+        distanceMeters.isAcceptableOrUnknown(
+          data['distance_meters']!,
+          _distanceMetersMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_distanceMetersMeta);
+    }
+    if (data.containsKey('kcal')) {
+      context.handle(
+        _kcalMeta,
+        kcal.isAcceptableOrUnknown(data['kcal']!, _kcalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kcalMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BikeRideRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BikeRideRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      )!,
+      movingSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}moving_seconds'],
+      )!,
+      revolutions: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revolutions'],
+      )!,
+      distanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distance_meters'],
+      )!,
+      kcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kcal'],
+      )!,
+    );
+  }
+
+  @override
+  $BikeRidesTable createAlias(String alias) {
+    return $BikeRidesTable(attachedDatabase, alias);
+  }
+}
+
+class BikeRideRow extends DataClass implements Insertable<BikeRideRow> {
+  final int id;
+  final DateTime startedAt;
+  final DateTime endedAt;
+
+  /// Time spent pedalling, pauses left out.
+  final int movingSeconds;
+
+  /// Pedal turns counted.
+  final int revolutions;
+  final int distanceMeters;
+  final int kcal;
+  const BikeRideRow({
+    required this.id,
+    required this.startedAt,
+    required this.endedAt,
+    required this.movingSeconds,
+    required this.revolutions,
+    required this.distanceMeters,
+    required this.kcal,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['ended_at'] = Variable<DateTime>(endedAt);
+    map['moving_seconds'] = Variable<int>(movingSeconds);
+    map['revolutions'] = Variable<int>(revolutions);
+    map['distance_meters'] = Variable<int>(distanceMeters);
+    map['kcal'] = Variable<int>(kcal);
+    return map;
+  }
+
+  BikeRidesCompanion toCompanion(bool nullToAbsent) {
+    return BikeRidesCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      movingSeconds: Value(movingSeconds),
+      revolutions: Value(revolutions),
+      distanceMeters: Value(distanceMeters),
+      kcal: Value(kcal),
+    );
+  }
+
+  factory BikeRideRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BikeRideRow(
+      id: serializer.fromJson<int>(json['id']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime>(json['endedAt']),
+      movingSeconds: serializer.fromJson<int>(json['movingSeconds']),
+      revolutions: serializer.fromJson<int>(json['revolutions']),
+      distanceMeters: serializer.fromJson<int>(json['distanceMeters']),
+      kcal: serializer.fromJson<int>(json['kcal']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime>(endedAt),
+      'movingSeconds': serializer.toJson<int>(movingSeconds),
+      'revolutions': serializer.toJson<int>(revolutions),
+      'distanceMeters': serializer.toJson<int>(distanceMeters),
+      'kcal': serializer.toJson<int>(kcal),
+    };
+  }
+
+  BikeRideRow copyWith({
+    int? id,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int? movingSeconds,
+    int? revolutions,
+    int? distanceMeters,
+    int? kcal,
+  }) => BikeRideRow(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt ?? this.endedAt,
+    movingSeconds: movingSeconds ?? this.movingSeconds,
+    revolutions: revolutions ?? this.revolutions,
+    distanceMeters: distanceMeters ?? this.distanceMeters,
+    kcal: kcal ?? this.kcal,
+  );
+  BikeRideRow copyWithCompanion(BikeRidesCompanion data) {
+    return BikeRideRow(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      movingSeconds: data.movingSeconds.present
+          ? data.movingSeconds.value
+          : this.movingSeconds,
+      revolutions: data.revolutions.present
+          ? data.revolutions.value
+          : this.revolutions,
+      distanceMeters: data.distanceMeters.present
+          ? data.distanceMeters.value
+          : this.distanceMeters,
+      kcal: data.kcal.present ? data.kcal.value : this.kcal,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BikeRideRow(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('movingSeconds: $movingSeconds, ')
+          ..write('revolutions: $revolutions, ')
+          ..write('distanceMeters: $distanceMeters, ')
+          ..write('kcal: $kcal')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    startedAt,
+    endedAt,
+    movingSeconds,
+    revolutions,
+    distanceMeters,
+    kcal,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BikeRideRow &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.movingSeconds == this.movingSeconds &&
+          other.revolutions == this.revolutions &&
+          other.distanceMeters == this.distanceMeters &&
+          other.kcal == this.kcal);
+}
+
+class BikeRidesCompanion extends UpdateCompanion<BikeRideRow> {
+  final Value<int> id;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> endedAt;
+  final Value<int> movingSeconds;
+  final Value<int> revolutions;
+  final Value<int> distanceMeters;
+  final Value<int> kcal;
+  const BikeRidesCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.movingSeconds = const Value.absent(),
+    this.revolutions = const Value.absent(),
+    this.distanceMeters = const Value.absent(),
+    this.kcal = const Value.absent(),
+  });
+  BikeRidesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime startedAt,
+    required DateTime endedAt,
+    required int movingSeconds,
+    required int revolutions,
+    required int distanceMeters,
+    required int kcal,
+  }) : startedAt = Value(startedAt),
+       endedAt = Value(endedAt),
+       movingSeconds = Value(movingSeconds),
+       revolutions = Value(revolutions),
+       distanceMeters = Value(distanceMeters),
+       kcal = Value(kcal);
+  static Insertable<BikeRideRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? movingSeconds,
+    Expression<int>? revolutions,
+    Expression<int>? distanceMeters,
+    Expression<int>? kcal,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (movingSeconds != null) 'moving_seconds': movingSeconds,
+      if (revolutions != null) 'revolutions': revolutions,
+      if (distanceMeters != null) 'distance_meters': distanceMeters,
+      if (kcal != null) 'kcal': kcal,
+    });
+  }
+
+  BikeRidesCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? startedAt,
+    Value<DateTime>? endedAt,
+    Value<int>? movingSeconds,
+    Value<int>? revolutions,
+    Value<int>? distanceMeters,
+    Value<int>? kcal,
+  }) {
+    return BikeRidesCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      movingSeconds: movingSeconds ?? this.movingSeconds,
+      revolutions: revolutions ?? this.revolutions,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      kcal: kcal ?? this.kcal,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (movingSeconds.present) {
+      map['moving_seconds'] = Variable<int>(movingSeconds.value);
+    }
+    if (revolutions.present) {
+      map['revolutions'] = Variable<int>(revolutions.value);
+    }
+    if (distanceMeters.present) {
+      map['distance_meters'] = Variable<int>(distanceMeters.value);
+    }
+    if (kcal.present) {
+      map['kcal'] = Variable<int>(kcal.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BikeRidesCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('movingSeconds: $movingSeconds, ')
+          ..write('revolutions: $revolutions, ')
+          ..write('distanceMeters: $distanceMeters, ')
+          ..write('kcal: $kcal')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9855,6 +10327,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SleepLogsTable sleepLogs = $SleepLogsTable(this);
   late final $CycleStartsTable cycleStarts = $CycleStartsTable(this);
   late final $ProgressPhotosTable progressPhotos = $ProgressPhotosTable(this);
+  late final $BikeRidesTable bikeRides = $BikeRidesTable(this);
   late final Index routineExercisesRoutine = Index(
     'routine_exercises_routine',
     'CREATE INDEX routine_exercises_routine ON routine_exercises (routine_id)',
@@ -9899,6 +10372,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'sleep_logs_woke',
     'CREATE INDEX sleep_logs_woke ON sleep_logs (woke_at)',
   );
+  late final Index bikeRidesTime = Index(
+    'bike_rides_time',
+    'CREATE INDEX bike_rides_time ON bike_rides (started_at)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -9924,6 +10401,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sleepLogs,
     cycleStarts,
     progressPhotos,
+    bikeRides,
     routineExercisesRoutine,
     workoutsEndedStarted,
     workoutExercisesWorkout,
@@ -9935,6 +10413,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     foodLogsFood,
     programDaysProgram,
     sleepLogsWoke,
+    bikeRidesTime,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -17206,6 +17685,244 @@ typedef $$ProgressPhotosTableProcessedTableManager =
       ProgressPhotoRow,
       PrefetchHooks Function()
     >;
+typedef $$BikeRidesTableCreateCompanionBuilder =
+    BikeRidesCompanion Function({
+      Value<int> id,
+      required DateTime startedAt,
+      required DateTime endedAt,
+      required int movingSeconds,
+      required int revolutions,
+      required int distanceMeters,
+      required int kcal,
+    });
+typedef $$BikeRidesTableUpdateCompanionBuilder =
+    BikeRidesCompanion Function({
+      Value<int> id,
+      Value<DateTime> startedAt,
+      Value<DateTime> endedAt,
+      Value<int> movingSeconds,
+      Value<int> revolutions,
+      Value<int> distanceMeters,
+      Value<int> kcal,
+    });
+
+class $$BikeRidesTableFilterComposer
+    extends Composer<_$AppDatabase, $BikeRidesTable> {
+  $$BikeRidesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get movingSeconds => $composableBuilder(
+    column: $table.movingSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revolutions => $composableBuilder(
+    column: $table.revolutions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BikeRidesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BikeRidesTable> {
+  $$BikeRidesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get movingSeconds => $composableBuilder(
+    column: $table.movingSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revolutions => $composableBuilder(
+    column: $table.revolutions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BikeRidesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BikeRidesTable> {
+  $$BikeRidesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get movingSeconds => $composableBuilder(
+    column: $table.movingSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revolutions => $composableBuilder(
+    column: $table.revolutions,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get kcal =>
+      $composableBuilder(column: $table.kcal, builder: (column) => column);
+}
+
+class $$BikeRidesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BikeRidesTable,
+          BikeRideRow,
+          $$BikeRidesTableFilterComposer,
+          $$BikeRidesTableOrderingComposer,
+          $$BikeRidesTableAnnotationComposer,
+          $$BikeRidesTableCreateCompanionBuilder,
+          $$BikeRidesTableUpdateCompanionBuilder,
+          (
+            BikeRideRow,
+            BaseReferences<_$AppDatabase, $BikeRidesTable, BikeRideRow>,
+          ),
+          BikeRideRow,
+          PrefetchHooks Function()
+        > {
+  $$BikeRidesTableTableManager(_$AppDatabase db, $BikeRidesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BikeRidesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BikeRidesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BikeRidesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime> endedAt = const Value.absent(),
+                Value<int> movingSeconds = const Value.absent(),
+                Value<int> revolutions = const Value.absent(),
+                Value<int> distanceMeters = const Value.absent(),
+                Value<int> kcal = const Value.absent(),
+              }) => BikeRidesCompanion(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                movingSeconds: movingSeconds,
+                revolutions: revolutions,
+                distanceMeters: distanceMeters,
+                kcal: kcal,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime startedAt,
+                required DateTime endedAt,
+                required int movingSeconds,
+                required int revolutions,
+                required int distanceMeters,
+                required int kcal,
+              }) => BikeRidesCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                movingSeconds: movingSeconds,
+                revolutions: revolutions,
+                distanceMeters: distanceMeters,
+                kcal: kcal,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BikeRidesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BikeRidesTable,
+      BikeRideRow,
+      $$BikeRidesTableFilterComposer,
+      $$BikeRidesTableOrderingComposer,
+      $$BikeRidesTableAnnotationComposer,
+      $$BikeRidesTableCreateCompanionBuilder,
+      $$BikeRidesTableUpdateCompanionBuilder,
+      (
+        BikeRideRow,
+        BaseReferences<_$AppDatabase, $BikeRidesTable, BikeRideRow>,
+      ),
+      BikeRideRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -17250,4 +17967,6 @@ class $AppDatabaseManager {
       $$CycleStartsTableTableManager(_db, _db.cycleStarts);
   $$ProgressPhotosTableTableManager get progressPhotos =>
       $$ProgressPhotosTableTableManager(_db, _db.progressPhotos);
+  $$BikeRidesTableTableManager get bikeRides =>
+      $$BikeRidesTableTableManager(_db, _db.bikeRides);
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:fitns/features/cycling/cycling_screen.dart';
 import 'package:fitns/app.dart';
 import 'package:fitns/core/motion/motion_sensors.dart';
 import 'package:fitns/core/motion/rep_detectors.dart';
@@ -111,6 +112,15 @@ Future<void> scrollToMiddle(
   await settle(tester);
 }
 
+/// Opens [tab] the way a user does with no tab bar: a tap on the FITNS
+/// button, then the tab in its sheet.
+Future<void> goToTab(WidgetTester tester, String tab) async {
+  await tester.tap(find.byKey(const Key('quick-add')));
+  await settle(tester);
+  await tester.tap(find.text(tab).last);
+  await settle(tester);
+}
+
 Future<void> unmount(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox());
   await tester.pump(const Duration(seconds: 1));
@@ -171,7 +181,7 @@ void main() {
     expect((await tester.runAsync(db.getSettings))!.setupDone, isTrue);
 
     // It opens again from Settings, and Skip all leaves it.
-    await tester.tap(find.text('Settings').last);
+    await goToTab(tester, 'Settings');
     await settle(tester);
     await scrollToMiddle(tester, find.text('Setup guide'));
     await tester.tap(find.text('Setup guide'));
@@ -184,13 +194,17 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('swiping moves between the tabs, and the bar follows', (
+  testWidgets('swiping moves between the tabs; the FITNS button jumps', (
     tester,
   ) async {
     await pumpApp(tester);
-    // The bar's slots: Today, Workouts, ➕, Food, Body, Settings.
-    int selected() =>
-        tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+    // No tab bar any more.
+    expect(find.byType(NavigationBar), findsNothing);
+    int selected() => tester
+        .widget<PageView>(find.byType(PageView))
+        .controller!
+        .page!
+        .round();
     expect(selected(), 0);
 
     // Swipe left on Today: Workouts.
@@ -202,15 +216,14 @@ void main() {
     // On to Food, then back right to Workouts.
     await tester.fling(find.byType(PageView), const Offset(-300, 0), 1500);
     await settle(tester);
-    expect(selected(), 3);
+    expect(selected(), 2);
     await tester.fling(find.byType(PageView), const Offset(300, 0), 1500);
     await settle(tester);
     expect(selected(), 1);
 
-    // Tapping still jumps straight to a tab.
-    await tester.tap(find.text('Settings').last);
-    await settle(tester);
-    expect(selected(), 5);
+    // The FITNS button jumps straight to a tab.
+    await goToTab(tester, 'Settings');
+    expect(selected(), 4);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
@@ -321,7 +334,7 @@ void main() {
 
     await tester.pageBack();
     await settle(tester);
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
     await tester.scrollUntilVisible(
       find.textContaining('· 1 workout'),
@@ -389,7 +402,7 @@ void main() {
 
   testWidgets('log a weigh-in on the Body tab', (tester) async {
     await pumpApp(tester);
-    await tester.tap(find.text('Body').last);
+    await goToTab(tester, 'Body');
     await settle(tester);
 
     await tester.tap(find.text('Log'));
@@ -486,7 +499,7 @@ void main() {
       },
     );
 
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
     await scrollToMiddle(tester, find.text('Evening workout'));
     await tester.tap(find.text('Evening workout'));
@@ -521,13 +534,8 @@ void main() {
       }),
     );
 
-    await tester.tap(find.text('Settings').last);
-    await settle(tester);
-    await tester.scrollUntilVisible(
-      find.text('Back up'),
-      200,
-      scrollable: pageScrollable,
-    );
+    await goToTab(tester, 'Settings');
+    await scrollToMiddle(tester, find.text('Back up'));
     await tester.tap(find.text('Back up'));
     await settle(tester);
     expect(files.saved, contains('"formatVersion"'));
@@ -559,7 +567,7 @@ void main() {
     tester,
   ) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Food').last);
+    await goToTab(tester, 'Food');
     await settle(tester);
     await tester.tap(find.byTooltip('Water reminders').first);
     await settle(tester);
@@ -583,7 +591,7 @@ void main() {
     tester,
   ) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Food').last);
+    await goToTab(tester, 'Food');
     await settle(tester);
 
     // Water: one tap per glass.
@@ -658,7 +666,7 @@ void main() {
         });
       },
     );
-    await tester.tap(find.text('Food').last);
+    await goToTab(tester, 'Food');
     await settle(tester);
     await tester.tap(find.text('Set a daily goal'));
     await settle(tester);
@@ -776,7 +784,7 @@ void main() {
       },
     );
 
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
     await scrollToMiddle(tester, find.text('Bench 1'));
     await tester.tap(find.text('Bench 1'));
@@ -786,12 +794,12 @@ void main() {
     await tester.pageBack();
     await settle(tester);
 
-    await tester.tap(find.text('Body').last);
+    await goToTab(tester, 'Body');
     await settle(tester);
     await scrollToMiddle(tester, find.textContaining('Losing about'));
     expect(find.textContaining('Losing about'), findsOneWidget);
 
-    await tester.tap(find.text('Food').last);
+    await goToTab(tester, 'Food');
     await settle(tester);
     await tester.scrollUntilVisible(
       find.text('Same as the day before?'),
@@ -837,7 +845,7 @@ void main() {
       },
     );
 
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
     expect(find.text('Training at'), findsOneWidget);
     expect(find.text('My week'), findsOneWidget);
@@ -884,7 +892,7 @@ void main() {
 
   testWidgets('a place lists the exact weights it has', (tester) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
     await tester.tap(find.text('Edit places'));
     await settle(tester);
@@ -1021,7 +1029,7 @@ void main() {
         ],
       ),
     );
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
 
     await tester.tap(find.text('Edit places'));
@@ -1172,7 +1180,7 @@ void main() {
     await scrollToMiddle(tester, find.text('Turn on step counting'));
     expect(find.text('Turn on step counting'), findsOneWidget);
     for (final tab in ['Workouts', 'Food', 'Body', 'Settings', 'Today']) {
-      await tester.tap(find.text(tab).last);
+      await goToTab(tester, tab);
       await settle(tester);
     }
     expect(tester.takeException(), isNull);
@@ -1183,7 +1191,7 @@ void main() {
     tester,
   ) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Settings').last);
+    await goToTab(tester, 'Settings');
     await settle(tester);
     await scrollToMiddle(tester, find.text('Glass'));
     await tester.tap(find.text('Glass'));
@@ -1192,11 +1200,11 @@ void main() {
     expect(find.textContaining('Liquid Glass'), findsOneWidget);
 
     for (final tab in ['Today', 'Workouts', 'Food', 'Body', 'Settings']) {
-      await tester.tap(find.text(tab).last);
+      await goToTab(tester, tab);
       await settle(tester);
     }
     // A pushed page wears the glass back button.
-    await tester.tap(find.text('Food').last);
+    await goToTab(tester, 'Food');
     await settle(tester);
     await tester.tap(find.byTooltip('Water reminders').first);
     await settle(tester);
@@ -1208,7 +1216,7 @@ void main() {
   testWidgets('ready-made workouts: picked for you, by body part, start '
       'or save', (tester) async {
     final db = await pumpApp(tester);
-    await tester.tap(find.text('Workouts').last);
+    await goToTab(tester, 'Workouts');
     await settle(tester);
     await scrollToMiddle(tester, find.text('PICKED FOR YOU'));
     // Nothing trained yet: a full-body session to start.
@@ -1240,11 +1248,14 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('a tap on ➕ opens Quick add', (tester) async {
+  testWidgets('a tap on the FITNS button opens tabs and Quick add', (
+    tester,
+  ) async {
     final db = await pumpApp(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await settle(tester);
     expect(find.text('Quick add'), findsOneWidget);
+    expect(find.text('Go to'), findsOneWidget);
     await tester.tap(find.text('Add water'));
     await settle(tester);
     final water = (await tester.runAsync(
@@ -1256,14 +1267,17 @@ void main() {
     await unmount(tester);
   });
 
-  /// Holds the ➕, slides by [offset] and lets go.
+  /// Holds the FITNS button, slides by [offset] and lets go.
   Future<void> holdAndSlide(WidgetTester tester, Offset offset) async {
     final gesture = await tester.startGesture(
       tester.getCenter(find.byKey(const Key('quick-add'))),
     );
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Slide to an action · let go on ✕ to cancel'), findsOne);
+    expect(
+      find.text('Slide to an action or page · let go on ✕ to cancel'),
+      findsOne,
+    );
     // In steps, as a thumb moves.
     for (var i = 1; i <= 4; i++) {
       await gesture.moveBy(offset / 4);
@@ -1273,33 +1287,88 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('holding ➕ fans out quick actions: slide to one, or cancel', (
-    tester,
-  ) async {
-    final db = await pumpApp(tester);
-    // Straight back down onto the ➕: nothing happens.
-    await holdAndSlide(tester, const Offset(0, 5));
-    expect(find.text('Quick add'), findsNothing);
-    expect(await tester.runAsync(db.activeWorkout), isNull);
+  testWidgets(
+    'holding the FITNS button fans out actions: slide to one, or cancel',
+    (tester) async {
+      final db = await pumpApp(tester);
+      // Straight back down onto the button: nothing happens.
+      await holdAndSlide(tester, const Offset(0, 5));
+      expect(find.text('Quick add'), findsNothing);
+      expect(await tester.runAsync(db.activeWorkout), isNull);
 
-    // Up and to the left, the innermost bubble: Start workout.
-    await holdAndSlide(tester, const Offset(-72, -86));
-    final active = await tester.runAsync(db.activeWorkout);
-    expect(active, isNotNull);
-    expect(tester.takeException(), isNull);
-    await unmount(tester);
-  });
+      // Straight up, the innermost bubble: Start workout.
+      await holdAndSlide(tester, const Offset(-4, -100));
+      final active = await tester.runAsync(db.activeWorkout);
+      expect(active, isNotNull);
+      expect(tester.takeException(), isNull);
+      await unmount(tester);
+    },
+  );
 
-  testWidgets('under Glass the ➕ sits beside the tabs and fans into the '
-      'corner', (tester) async {
+  testWidgets('under Glass the button sits in the same corner; its outer '
+      'ring is the tabs', (tester) async {
     final db = await pumpApp(
       tester,
       seed: (db) =>
           db.updateSettings(const SettingsCompanion(themeMode: Value('glass'))),
     );
-    // The innermost bubble, straight up from the ➕: Start workout.
-    await holdAndSlide(tester, const Offset(-4, -118));
+    expect(find.byType(NavigationBar), findsNothing);
+    final button = tester.getCenter(find.byKey(const Key('quick-add')));
+    expect(button.dx, greaterThan(300));
+    expect(button.dy, greaterThan(700));
+    // The last bubble of the outer ring, straight left: Settings.
+    await holdAndSlide(tester, const Offset(-244, -8));
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).controller!.page!.round(),
+      4,
+    );
+    // The innermost bubble, straight up: Start workout.
+    await holdAndSlide(tester, const Offset(-4, -100));
     expect(await tester.runAsync(db.activeWorkout), isNotNull);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('Cycling opens from the FITNS button; rides show and total up', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    await pumpApp(
+      tester,
+      seed: (db) => db.addBikeRide(
+        BikeRidesCompanion.insert(
+          startedAt: now.subtract(const Duration(minutes: 40)),
+          endedAt: now.subtract(const Duration(minutes: 5)),
+          movingSeconds: 1800,
+          revolutions: 2400,
+          distanceMeters: 12000,
+          kcal: 300,
+        ),
+      ),
+    );
+    // On Today, a Cycling card with today's ride.
+    await scrollToMiddle(tester, find.text('Cycling'));
+    expect(find.textContaining('12.0 km today'), findsOneWidget);
+    await scrollToMiddle(tester, find.text('Cycling'), up: true);
+
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await settle(tester);
+    await tester.tap(find.text('Cycling').last);
+    await settle(tester);
+    expect(find.text('Ready to ride?'), findsOneWidget);
+    expect(find.text('Start ride'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('12.0 km · 30m'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(CyclingScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(find.text('12.0 km · 30m'), findsOneWidget);
+    expect(find.text('This month'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

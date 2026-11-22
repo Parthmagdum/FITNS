@@ -10,7 +10,7 @@ import '../theme/glass.dart';
 import '../widgets/app_page.dart';
 import 'quick_add.dart';
 
-/// The five tabs: icon, selected icon, label.
+/// The five tabs: icon, selected icon, label. In the FITNS button's menu.
 const _tabs = <(IconData, IconData, String)>[
   (Icons.today_outlined, Icons.today, 'Today'),
   (Icons.fitness_center_outlined, Icons.fitness_center, 'Workouts'),
@@ -19,80 +19,55 @@ const _tabs = <(IconData, IconData, String)>[
   (Icons.settings_outlined, Icons.settings, 'Settings'),
 ];
 
-/// The five tabs — tap one, or swipe between them — plus a "workout in
-/// progress" strip above them whenever one is running, so it is never more
-/// than a tap away. Under Glass the tabs float over the page in a Liquid
-/// Glass capsule, as in XPENC.
+/// The five tabs, side by side — swipe between them — with the FITNS logo
+/// button in the bottom-right corner in every theme: no tab bar. Tap the
+/// button for a sheet of tabs and quick actions, or hold it and slide to
+/// one; pages open by growing out of it. A "workout in progress" capsule
+/// floats beside it whenever one is running, so it is never more than a
+/// tap away.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  /// Where the ➕ sits among the bar's slots.
-  static const _addSlot = 2;
-
-  /// The bar slot showing tab [index].
-  static int _slotOf(int index) => index < _addSlot ? index : index + 1;
-
-  /// Tapping the current tab again returns it to its first page.
+  /// Choosing the current tab again returns it to its first page.
   void _select(int i) =>
       shell.goBranch(i, initialLocation: i == shell.currentIndex);
 
   @override
   Widget build(BuildContext context) {
-    if (AppSurface.isGlass(context)) {
-      return Scaffold(
-        // The page runs on under the floating bar; the lens bends it.
-        extendBody: true,
-        body: shell,
-        bottomNavigationBar: SafeArea(
-          top: false,
-          minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const _ActiveWorkoutStrip(glass: true),
-              Row(
+    final tabs = <QuickAction>[
+      for (final (i, (_, selected, label)) in _tabs.indexed)
+        (
+          label: label,
+          icon: selected,
+          opensPage: true,
+          run: (context, ref) async => _select(i),
+        ),
+    ];
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(child: shell),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
                 children: [
-                  Expanded(
-                    child: _GlassTabBar(
-                      index: shell.currentIndex,
-                      onSelect: _select,
-                    ),
+                  const Expanded(child: _ActiveWorkoutStrip()),
+                  const SizedBox(width: 12),
+                  QuickAddButton(
+                    glass: AppSurface.isGlass(context),
+                    tabs: tabs,
+                    currentTab: shell.currentIndex,
                   ),
-                  const SizedBox(width: 10),
-                  // Tap for Quick add; hold and slide for quick actions.
-                  const QuickAddButton(glass: true),
                 ],
               ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Scaffold(
-      body: shell,
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const _ActiveWorkoutStrip(),
-          // The ➕ sits in the middle of the bar, between the tabs: a tap
-          // for Quick add, a hold for quick actions (as in XPENC).
-          NavigationBar(
-            selectedIndex: _slotOf(shell.currentIndex),
-            onDestinationSelected: (slot) {
-              if (slot != _addSlot) _select(slot > _addSlot ? slot - 1 : slot);
-            },
-            destinations: [
-              for (final (i, (icon, selected, label)) in _tabs.indexed) ...[
-                if (i == _addSlot) const QuickAddButton(),
-                NavigationDestination(
-                  icon: Icon(icon),
-                  selectedIcon: Icon(selected),
-                  label: label,
-                ),
-              ],
-            ],
+            ),
           ),
         ],
       ),
@@ -100,104 +75,9 @@ class AppShell extends StatelessWidget {
   }
 }
 
-/// Glass's tab bar, after XPENC's (and iOS's): a floating Liquid Glass
-/// capsule of tabs, with a glass droplet that slides to the selected one.
-class _GlassTabBar extends StatelessWidget {
-  const _GlassTabBar({required this.index, required this.onSelect});
-
-  final int index;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      height: 64,
-      child: LiquidGlass(
-        blur: GlassStyle.barBlur,
-        frost: GlassTone.barFrost,
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: LayoutBuilder(
-            builder: (context, box) {
-              final width = box.maxWidth / _tabs.length;
-              return Stack(
-                children: [
-                  // The droplet: a lens of its own, sliding on a soft
-                  // spring with one small overshoot.
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 380),
-                    curve: const Cubic(0.2, 1.25, 0.4, 1),
-                    left: width * index,
-                    top: 0,
-                    bottom: 0,
-                    width: width,
-                    child: const LiquidGlass(
-                      backdrop: false,
-                      shadow: false,
-                      frost: GlassTone.selected,
-                      child: SizedBox.expand(),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      for (final (i, (icon, selectedIcon, label))
-                          in _tabs.indexed)
-                        Expanded(
-                          child: Semantics(
-                            button: true,
-                            selected: i == index,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => onSelect(i),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    i == index ? selectedIcon : icon,
-                                    size: 24,
-                                    color: i == index
-                                        ? theme.accent
-                                        : theme.muted,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.fade,
-                                    softWrap: false,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: i == index
-                                          ? FontWeight.w600
-                                          : FontWeight.w500,
-                                      color: i == index
-                                          ? theme.colorScheme.onSurface
-                                          : theme.muted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+/// The running workout, as a capsule floating beside the FITNS button.
 class _ActiveWorkoutStrip extends ConsumerWidget {
-  const _ActiveWorkoutStrip({this.glass = false});
-
-  /// A glass capsule floating above the glass tab bar.
-  final bool glass;
+  const _ActiveWorkoutStrip();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -205,10 +85,14 @@ class _ActiveWorkoutStrip extends ConsumerWidget {
     if (workout == null) return const SizedBox.shrink();
     final rest = ref.watch(restTimerProvider);
     final theme = Theme.of(context);
+    final glass = AppSurface.isGlass(context);
     final strip = Material(
       color: glass
           ? Colors.transparent
           : theme.colorScheme.surfaceContainerHigh,
+      elevation: glass ? 0 : 6,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => context.push('/workout/${workout.id}/log'),
         child: Padding(
@@ -260,20 +144,17 @@ class _ActiveWorkoutStrip extends ConsumerWidget {
       ),
     );
     if (!glass) return strip;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: LiquidGlass(
-        blur: GlassStyle.barBlur,
-        frost: GlassTone.barFrost,
-        borderRadius: BorderRadius.circular(22),
-        child: strip,
-      ),
+    return LiquidGlass(
+      blur: GlassStyle.barBlur,
+      frost: GlassTone.barFrost,
+      borderRadius: BorderRadius.circular(999),
+      child: strip,
     );
   }
 }
 
 /// The tabs side by side: swipe left or right to move to the next one, as
-/// well as tapping the bar. Each tab keeps its place — scroll position,
+/// well as choosing one from the FITNS button. Each tab keeps its place — scroll position,
 /// pages opened inside it — while another is shown. A swipe that starts on
 /// something that scrolls sideways itself (a row of cards) scrolls that.
 class SwipeTabs extends StatefulWidget {

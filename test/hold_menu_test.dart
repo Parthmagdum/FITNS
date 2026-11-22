@@ -2,53 +2,49 @@ import 'package:fitns/core/routing/hold_menu_geometry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  void fansOutClear(List<Offset> centres, Offset anchor, {bool above = true}) {
-    expect(centres, hasLength(6));
+  // The logo button in the bottom-right corner of a 360-wide phone.
+  const anchor = Offset(313, 720);
+
+  test('12 items fan up and left from the corner on three rings', () {
+    final centres = cornerFanCenters(anchor, 12);
+    expect(centres, hasLength(12));
     for (final c in centres) {
-      // Above the ➕, clear of the tab bar (Glass's last bubble sits
-      // straight left of it, over the tab capsule, as in XPENC).
-      if (above) expect(anchor.dy - c.dy, greaterThan(60));
+      // Never right of the button, never off the left edge.
+      expect(c.dx, lessThanOrEqualTo(anchor.dx + 1));
+      expect(c.dx, greaterThan(28));
+      // Never below it.
+      expect(c.dy, lessThanOrEqualTo(anchor.dy + 1));
     }
-    // No two bubbles (56 across) overlap.
+    // No two bubbles (54 across) overlap.
     for (var i = 0; i < centres.length; i++) {
       for (var j = i + 1; j < centres.length; j++) {
         expect((centres[i] - centres[j]).distance, greaterThan(60));
       }
     }
-  }
-
-  test('Classic fans straight up over the ➕ in the middle', () {
-    const anchor = Offset(180, 740);
-    final centres = classicFanCenters(anchor, 6);
-    fansOutClear(centres, anchor);
-    expect(centres.first.dx, lessThan(anchor.dx));
-    expect(centres[2].dx, greaterThan(anchor.dx));
-    for (final c in centres) {
-      expect(c.dx, inInclusiveRange(28, 360 - 28));
-    }
+    // Ring by ring outwards: the tabs (the last five) are the outer ring.
+    final d = [for (final c in centres) (c - anchor).distance];
+    expect(d.take(3).every((r) => r < 110), isTrue);
+    expect(d.skip(7).every((r) => r > 230), isTrue);
   });
 
-  test('Glass fans up and left from the corner', () {
-    const anchor = Offset(320, 740);
-    final centres = glassFanCenters(anchor, 6);
-    fansOutClear(centres, anchor, above: false);
-    for (final c in centres) {
-      expect(c.dx, lessThanOrEqualTo(anchor.dx + 1));
-      expect(c.dx, greaterThan(28));
-    }
+  test('fewer items fill the inner rings first', () {
+    final centres = cornerFanCenters(anchor, 4);
+    expect(centres, hasLength(4));
+    expect((centres[3] - anchor).distance, greaterThan(150));
   });
 
-  test('the bubble under the thumb, or none back on the ➕', () {
-    const anchor = Offset(180, 740);
-    final centres = classicFanCenters(anchor, 6);
-    expect(
-      fanHoveredIndex(anchor: anchor, pointer: centres[4], centres: centres),
-      4,
-    );
+  test('the bubble under the thumb, or none back on the button', () {
+    final centres = cornerFanCenters(anchor, 12);
+    for (final i in [0, 5, 11]) {
+      expect(
+        fanHoveredIndex(anchor: anchor, pointer: centres[i], centres: centres),
+        i,
+      );
+    }
     expect(
       fanHoveredIndex(
         anchor: anchor,
-        pointer: centres[4] + const Offset(20, 10),
+        pointer: centres[4] + const Offset(15, 10),
         centres: centres,
       ),
       4,

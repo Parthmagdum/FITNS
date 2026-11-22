@@ -1,73 +1,49 @@
-// Geometry for the hold-➕ quick actions, adapted from XPENC
+// Geometry for the hold menu, adapted from XPENC
 // (https://github.com/PATILYASHH/XPENC — MIT License, Copyright (c) 2026
 // Yash Patil). See CREDITS.md.
 
 import 'dart:math' as math;
 import 'dart:ui' show Offset;
 
-/// Pure geometry for the hold-➕ menu (`QuickAddButton`), split out so the
-/// hit-testing can be unit tested without pumping the whole shell.
+/// Pure geometry for the hold-logo menu (`QuickAddButton`), split out so
+/// the hit-testing can be unit tested without pumping the whole shell.
 ///
-/// Both looks fan the bubbles out on two arcs around the ➕ — an inner arc
-/// of up to three and an outer arc of the rest — so each bubble has room
-/// and the thumb a clear target. Screen convention: 0° = right, clockwise,
-/// so -90° is straight up.
+/// The button sits in the bottom-right corner in every theme, so the menu
+/// fans up and to the left on rings around it: the first three items on the
+/// inner ring, the next four on the middle one, the rest (the tabs) on the
+/// outer one — each bubble with room, and the thumb a clear target. Screen
+/// convention: 0° = right, clockwise, so -90° is straight up.
 
-/// [count] bubble centres on two arcs around [anchor], spread over
-/// [sweep] degrees starting at [from].
-List<Offset> _fan(
-  Offset anchor,
-  int count, {
-  required double from,
-  required double sweep,
-  required double innerRadius,
-  required double outerRadius,
-}) {
-  if (count <= 0) return const [];
-  final inner = count <= 3 ? count : (count <= 4 ? 2 : 3);
-  final outer = count - inner;
+/// How many bubbles each ring holds, inner to outer.
+const fanRings = [3, 4, 5];
+
+const _radii = [100.0, 172.0, 244.0];
+
+/// [count] bubble centres on rings around [anchor], from just short of
+/// straight up (-92°) to straight left (-178°), so nothing falls off an
+/// edge. Items past the rings' capacity go on further rings.
+List<Offset> cornerFanCenters(Offset anchor, int count) {
   final centres = <Offset>[];
-  void arc(int k, double radius) {
+  var ring = 0;
+  while (centres.length < count) {
+    final capacity = ring < fanRings.length ? fanRings[ring] : 6;
+    final radius = ring < _radii.length
+        ? _radii[ring]
+        : _radii.last + 72.0 * (ring - _radii.length + 1);
+    final k = math.min(capacity, count - centres.length);
     for (var i = 0; i < k; i++) {
-      final t = k == 1 ? 0.5 : i / (k - 1);
-      final rad = (from + sweep * t) * math.pi / 180;
+      final t = capacity == 1 ? 0.5 : i / (capacity - 1);
+      final rad = (-92 - 86 * t) * math.pi / 180;
       centres.add(anchor + Offset(math.cos(rad), math.sin(rad)) * radius);
     }
+    ring++;
   }
-
-  arc(inner, innerRadius);
-  arc(outer, outerRadius);
   return centres;
 }
 
-/// Classic: the ➕ sits in the middle of the tab bar, so the fan opens
-/// straight up over it, from up-left (-130°) to up-right (-50°) — high
-/// enough that even its ends clear the bar, narrow enough to fit a small
-/// phone.
-List<Offset> classicFanCenters(Offset anchor, int count) => _fan(
-  anchor,
-  count,
-  from: -130,
-  sweep: 80,
-  innerRadius: 112,
-  outerRadius: 190,
-);
-
-/// Glass: the ➕ sits in the bottom-right corner, so the fan opens up and
-/// to the left, from just short of straight up (-92°) to straight left
-/// (-178°), so nothing falls off an edge.
-List<Offset> glassFanCenters(Offset anchor, int count) => _fan(
-  anchor,
-  count,
-  from: -92,
-  sweep: -86,
-  innerRadius: 118,
-  outerRadius: 204,
-);
-
 /// The bubble the thumb is over: the nearest of [centres] within
 /// [hitRadius] of [pointer], or `-1` — which also covers the thumb resting
-/// back on the ➕ (within [cancelRadius] of [anchor]), a release there
+/// back on the button (within [cancelRadius] of [anchor]), a release there
 /// being a cancel.
 int fanHoveredIndex({
   required Offset anchor,

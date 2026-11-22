@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.11 — 2026-11-22
+
+**One button to get around**
+- The tab bar is gone. A **FITNS logo button** now sits in the bottom-right
+  corner in every theme, and everything is in it.
+- **Tap** it for a sheet with the five tabs and all the quick actions.
+- **Hold** it and slide: quick actions fan out on the inner rings, the tabs
+  on the outer one (the tab you're on is filled in). Let go on one to open
+  it, or back on the ✕ to cancel. Swiping between tabs still works.
+- Pages opened from the button **grow out of it**, in a circle that swells
+  from the corner to fill the screen.
+- Buttons that used to sit bottom-right on a page (like Body's Log) moved
+  to the bottom left.
+
+**Cycling**
+- A new **Cycling** page, on Today and in the FITNS button. Tap Start
+  ride, put your phone in your trouser pocket and pedal: FITNS counts every
+  turn of the pedals from the motion of your leg, with the screen off. No
+  GPS and no internet.
+- Each ride shows its distance, time spent pedalling (stops left out),
+  cadence, speed and calories, with totals for today, this week and this
+  month. Swipe a ride away to delete it.
+- Distance assumes 5 m per pedal turn (a middle gear) and calories use your
+  latest weigh-in, so both are estimates. Rides are included in backups.
+- Stop a ride from FITNS or from its notification.
+
 ## 0.1.10 — 2026-11-21
 
 **Hold ➕ for quick actions**

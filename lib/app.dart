@@ -8,6 +8,7 @@ import 'core/notifications/water_bar.dart';
 import 'core/platform/health_connect.dart';
 import 'core/platform/home_widget.dart';
 import 'core/routing/app_router.dart';
+import 'core/routing/launch_reveal.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers.dart';
 import 'features/steps/steps_card.dart';
@@ -144,6 +145,9 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
       darkTheme: ref.watch(glassThemeProvider) ? AppTheme.glass : AppTheme.dark,
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(routerProvider),
+      // Pages opened from the FITNS button grow out of it.
+      builder: (context, child) =>
+          LaunchReveal(key: LaunchReveal.globalKey, child: child!),
     );
   }
 }

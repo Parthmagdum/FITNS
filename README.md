@@ -7,6 +7,10 @@ stays on your phone: the app has no internet permission.
 
 - **Steps**: daily, weekly and monthly totals from the phone's step counter,
   with optional all-day counting and a home-screen widget
+- **Cycling**: start a ride and FITNS counts your pedal turns from your
+  pocket, screen off, then works out distance, time and calories
+- **One button**: the FITNS logo in the corner holds every tab and quick
+  action; tap it, or hold and slide
 - **Workouts**: exercises, sets, reps, weight, effort per set and a rest
   timer that alerts you on a locked phone; rep counting for push-ups, jumps
   and squats
