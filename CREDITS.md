@@ -171,3 +171,9 @@ Adapted from the Liquid Glass theme and the hold-➕ quick actions of
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
+
+## Font — `assets/fonts/`
+
+[Inter](https://github.com/rsms/inter) by The Inter Project Authors, under
+the [SIL Open Font License 1.1](assets/fonts/Inter-OFL.txt). The same
+Latin + currency-symbol subset XPENC bundles, used for all text in FITNS.

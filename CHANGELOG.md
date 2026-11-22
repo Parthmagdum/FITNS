@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.12 — 2026-11-22
+
+**XPENC's font**
+- All text in FITNS is now set in **Inter**, the typeface XPENC uses, in
+  every theme. Headlines are bold and tight, like XPENC's.
+
+**Clearer FITNS button menu**
+- Holding the button now shows two clearly different zones: **Quick add**
+  (the inner rings: orange bubbles on an orange band) and **Go to** (the
+  outer ring: pale bubbles on a pale band, each with its tab's name under
+  it, the tab you're on ringed in orange). A legend above the fan names
+  them, and the name of what's under your thumb starts with "Quick add"
+  or "Go to".
+
+**Fixes**
+- **Add water** from the FITNS button now asks how much: tap one of your
+  quick-add sizes or type an amount. It no longer adds 250 ml straight
+  away.
+- A running workout no longer puts a bar to the left of the FITNS button,
+  over the page. Its clock (or the rest countdown) now sits as a small
+  badge on the button, and **Resume workout** replaces Start workout in
+  the button's menu.
+
 ## 0.1.11 — 2026-11-22
 
 **One button to get around**

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:fitns/features/workouts/active_workout_screen.dart';
 import 'package:fitns/features/cycling/cycling_screen.dart';
 import 'package:fitns/app.dart';
 import 'package:fitns/core/motion/motion_sensors.dart';
@@ -1258,6 +1259,14 @@ void main() {
     expect(find.text('Go to'), findsOneWidget);
     await tester.tap(find.text('Add water'));
     await settle(tester);
+    // It asks how much first: nothing is added yet.
+    expect(find.text('How much did you drink?'), findsOneWidget);
+    expect(
+      await tester.runAsync(() => db.watchWaterSince(DateTime(2000)).first),
+      isEmpty,
+    );
+    await tester.tap(find.widgetWithText(ActionChip, '250 ml'));
+    await settle(tester);
     final water = (await tester.runAsync(
       () => db.watchWaterSince(DateTime(2000)).first,
     ))!;
@@ -1274,10 +1283,11 @@ void main() {
     );
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
     await tester.pump(const Duration(milliseconds: 500));
-    expect(
-      find.text('Slide to an action or page · let go on ✕ to cancel'),
-      findsOne,
-    );
+    expect(find.text('Slide to one · let go on ✕ to cancel'), findsOne);
+    // The legend tells the two zones apart, and each tab says its name.
+    expect(find.text('Quick add'), findsOne);
+    expect(find.text('Go to'), findsOne);
+    expect(find.text('Workouts'), findsWidgets);
     // In steps, as a thumb moves.
     for (var i = 1; i <= 4; i++) {
       await gesture.moveBy(offset / 4);
@@ -1369,6 +1379,51 @@ void main() {
     );
     expect(find.text('12.0 km · 30m'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('water from the FITNS button: a typed amount', (tester) async {
+    final db = await pumpApp(tester);
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await settle(tester);
+    await tester.tap(find.text('Add water'));
+    await settle(tester);
+    await tester.enterText(find.byKey(const Key('water-amount')), '400');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await settle(tester);
+    final water = (await tester.runAsync(
+      () => db.watchWaterSince(DateTime(2000)).first,
+    ))!;
+    expect(water.single.ml, 400);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('a running workout is a clock on the FITNS button, not a bar '
+      'beside it, and Resume leads the quick actions', (tester) async {
+    final db = await pumpApp(tester);
+    expect(find.byKey(const Key('workout-badge')), findsNothing);
+    final id = (await tester.runAsync(() => db.startWorkout()))!;
+    await settle(tester);
+    expect(find.byKey(const Key('workout-badge')), findsOneWidget);
+    // Nothing else along the bottom: the badge sits on the button.
+    final badge = tester.getCenter(find.byKey(const Key('workout-badge')));
+    final button = tester.getCenter(find.byKey(const Key('quick-add')));
+    expect((badge.dx - button.dx).abs(), lessThan(40));
+
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await settle(tester);
+    expect(find.text('Resume workout'), findsOneWidget);
+    expect(find.text('Start workout'), findsNothing);
+    await tester.tap(find.text('Resume workout'));
+    await settle(tester);
+    expect(
+      tester
+          .widget<ActiveWorkoutScreen>(find.byType(ActiveWorkoutScreen))
+          .workoutId,
+      id,
+    );
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

@@ -1,0 +1,4 @@
+- All text now uses Inter, XPENC's font
+- Hold the FITNS button: Quick add and Go to are now clearly separate zones, with tab names
+- Add water asks how much before adding
+- A running workout shows as a clock on the FITNS button instead of a bar beside it

@@ -101,6 +101,10 @@ class AppTheme {
   static const cardRadius = 24.0;
   static const controlRadius = 16.0;
 
+  /// Inter, as in XPENC — a variable font, so one file covers every
+  /// weight. Bundled in assets/fonts (SIL OFL, see Inter-OFL.txt).
+  static const fontFamily = 'Inter';
+
   static ThemeData get light => of(Palette.light);
   static ThemeData get dark => of(Palette.dark);
 
@@ -132,6 +136,8 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: p.bg,
       splashFactory: InkSparkle.splashFactory,
+      // XPENC's typeface, in every theme (bundled: the app is offline).
+      fontFamily: AppTheme.fontFamily,
     );
     final text = base.textTheme.apply(bodyColor: p.text, displayColor: p.text);
     final controlShape = RoundedRectangleBorder(
@@ -142,15 +148,15 @@ class AppTheme {
       extensions: const [AppSurface.solid],
       textTheme: text.copyWith(
         displaySmall: text.displaySmall?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           letterSpacing: -1,
         ),
         headlineLarge: text.headlineLarge?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           letterSpacing: -0.8,
         ),
         headlineMedium: text.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           letterSpacing: -0.5,
         ),
         headlineSmall: text.headlineSmall?.copyWith(

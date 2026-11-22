@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../data/providers.dart';
-import '../../features/workouts/rest_timer.dart';
-import '../dates.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass.dart';
-import '../widgets/app_page.dart';
 import 'quick_add.dart';
 
 /// The five tabs: icon, selected icon, label. In the FITNS button's menu.
@@ -22,9 +17,8 @@ const _tabs = <(IconData, IconData, String)>[
 /// The five tabs, side by side — swipe between them — with the FITNS logo
 /// button in the bottom-right corner in every theme: no tab bar. Tap the
 /// button for a sheet of tabs and quick actions, or hold it and slide to
-/// one; pages open by growing out of it. A "workout in progress" capsule
-/// floats beside it whenever one is running, so it is never more than a
-/// tap away.
+/// one; pages open by growing out of it. A running workout shows as a
+/// clock on the button, and Resume workout leads its quick actions.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.shell});
 
@@ -49,106 +43,24 @@ class AppShell extends StatelessWidget {
       body: Stack(
         children: [
           Positioned.fill(child: shell),
+          // Only the button: a running workout shows as a clock on it, so
+          // nothing else sits along the bottom over the page.
           Positioned(
-            left: 0,
             right: 0,
             bottom: 0,
             child: SafeArea(
               top: false,
-              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Row(
-                children: [
-                  const Expanded(child: _ActiveWorkoutStrip()),
-                  const SizedBox(width: 12),
-                  QuickAddButton(
-                    glass: AppSurface.isGlass(context),
-                    tabs: tabs,
-                    currentTab: shell.currentIndex,
-                  ),
-                ],
+              left: false,
+              minimum: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+              child: QuickAddButton(
+                glass: AppSurface.isGlass(context),
+                tabs: tabs,
+                currentTab: shell.currentIndex,
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The running workout, as a capsule floating beside the FITNS button.
-class _ActiveWorkoutStrip extends ConsumerWidget {
-  const _ActiveWorkoutStrip();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final workout = ref.watch(activeWorkoutProvider).valueOrNull;
-    if (workout == null) return const SizedBox.shrink();
-    final rest = ref.watch(restTimerProvider);
-    final theme = Theme.of(context);
-    final glass = AppSurface.isGlass(context);
-    final strip = Material(
-      color: glass
-          ? Colors.transparent
-          : theme.colorScheme.surfaceContainerHigh,
-      elevation: glass ? 0 : 6,
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/workout/${workout.id}/log'),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
-          child: Row(
-            children: [
-              Icon(Icons.timer_outlined, color: theme.accent, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  workout.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
-                ),
-              ),
-              if (rest != null)
-                TickerBuilder(
-                  builder: (context, now) => Text(
-                    'Rest ${formatClock(rest.remaining(now))}',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.accent,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                )
-              else if (workout.inSetup)
-                Text(
-                  'Setting up',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.muted,
-                  ),
-                )
-              else
-                TickerBuilder(
-                  builder: (context, now) => Text(
-                    formatClock(now.difference(workout.startedAt)),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: theme.accent,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 4),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (!glass) return strip;
-    return LiquidGlass(
-      blur: GlassStyle.barBlur,
-      frost: GlassTone.barFrost,
-      borderRadius: BorderRadius.circular(999),
-      child: strip,
     );
   }
 }

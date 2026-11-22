@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -9,13 +10,16 @@ import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../features/body/body_log_sheet.dart';
+import '../../features/food/add_water_sheet.dart';
 import '../../features/sleep/sleep_card.dart';
+import '../../features/workouts/rest_timer.dart';
 import '../../features/workouts/workout_actions.dart';
 import '../branding/fitns_logo.dart';
 import '../dates.dart';
 import '../theme/app_theme.dart';
 import '../theme/glass.dart';
 import '../units.dart';
+import '../widgets/app_page.dart';
 import 'hold_menu_geometry.dart';
 import 'launch_reveal.dart';
 
@@ -79,13 +83,13 @@ final quickActions = <QuickAction>[
   ),
 ];
 
-/// A glass of the first quick-add size, with an undo.
+/// Asks how much, then adds it, with an undo.
 Future<void> _addWater(BuildContext context, WidgetRef ref) async {
-  final presets = ref.read(waterPresetsProvider);
-  final ml = presets.isEmpty ? 250 : presets.first;
   final units = ref.read(unitsProvider);
   final db = ref.read(dbProvider);
   final messenger = ScaffoldMessenger.of(context);
+  final ml = await showAddWaterSheet(context);
+  if (ml == null) return;
   final id = await db.addWater(ml);
   messenger
     ..hideCurrentSnackBar()
@@ -99,6 +103,21 @@ Future<void> _addWater(BuildContext context, WidgetRef ref) async {
       ),
     );
 }
+
+/// The quick actions right now: with a workout running, the first one
+/// goes back to it instead of starting another.
+List<QuickAction> actionsFor(WorkoutRow? active) => [
+  if (active != null)
+    (
+      label: 'Resume workout',
+      icon: Icons.timer_outlined,
+      opensPage: true,
+      run: (context, ref) async => context.push('/workout/${active.id}/log'),
+    )
+  else
+    quickActions.first,
+  ...quickActions.skip(1),
+];
 
 /// Does [action], opening it out of the button at [origin] if it's a page.
 Future<void> _launch(
@@ -147,7 +166,10 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
   Offset _anchor = Offset.zero;
   List<Offset> _centres = const [];
 
-  List<QuickAction> get _items => [...quickActions, ...widget.tabs];
+  List<QuickAction> get _items => [
+    ...actionsFor(ref.read(activeWorkoutProvider).valueOrNull),
+    ...widget.tabs,
+  ];
 
   Offset _centre() {
     final box = context.findRenderObject()! as RenderBox;
@@ -172,12 +194,14 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
       if (c.dx + dx > size.width - 36) dx = size.width - 36 - c.dx;
     }
     _centres = [for (final c in fan) c + Offset(dx, dy)];
+    final origin = _anchor + Offset(dx, dy);
     _entry = OverlayEntry(
       builder: (_) => Positioned.fill(
         child: _HoldMenu(
           key: _menuKey,
           glass: widget.glass,
           anchor: _anchor,
+          origin: origin,
           centres: _centres,
           items: items,
           firstTab: quickActions.length,
@@ -243,7 +267,67 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
         onLongPressMoveUpdate: _onLongPressMoveUpdate,
         onLongPressEnd: (_) => _end(commit: true),
         onLongPressCancel: () => _end(commit: false),
-        child: _LogoDisc(glass: widget.glass),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _LogoDisc(glass: widget.glass),
+            // A workout running: its clock rides on the button, instead of
+            // a bar beside it.
+            const Positioned(right: -4, top: -14, child: _WorkoutBadge()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The running workout's clock (or rest countdown) on the button; nothing
+/// when no workout runs. Resume it from the button's menu.
+class _WorkoutBadge extends ConsumerWidget {
+  const _WorkoutBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workout = ref.watch(activeWorkoutProvider).valueOrNull;
+    if (workout == null) return const SizedBox.shrink();
+    final rest = ref.watch(restTimerProvider);
+    final theme = Theme.of(context);
+    return IgnorePointer(
+      child: TickerBuilder(
+        builder: (context, now) {
+          final text = rest != null
+              ? formatClock(rest.remaining(now))
+              : workout.inSetup
+              ? 'Set up'
+              : formatClock(now.difference(workout.startedAt));
+          return DecoratedBox(
+            key: const Key('workout-badge'),
+            decoration: BoxDecoration(
+              color: rest != null
+                  ? theme.accent
+                  : theme.colorScheme.inverseSurface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: theme.scaffoldBackgroundColor,
+                width: 2,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: rest != null
+                      ? Colors.white
+                      : theme.colorScheme.onInverseSurface,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -366,7 +450,9 @@ Future<void> showQuickAddSheet(
                   mainAxisExtent: 110,
                 ),
                 children: [
-                  for (final action in quickActions)
+                  for (final action in actionsFor(
+                    ref.read(activeWorkoutProvider).valueOrNull,
+                  ))
                     _SheetTile(action: action, onTap: () => go(action)),
                 ],
               ),
@@ -434,14 +520,19 @@ class _SheetTile extends StatelessWidget {
 
 /// The menu while the button is held: the page dims (and frosts, under
 /// Glass), bubbles spring out of the button ring by ring, the one under the
-/// thumb swells and fills with the accent with its name above the fan, and
-/// the logo turns into ✕. Tabs (the outer ring) are outlined, the current
-/// one filled. Purely visual — the hold gesture drives [hovered].
+/// thumb swells with its name above the fan, and the logo turns into ✕.
+///
+/// Two zones, told apart at a glance: Quick add, the inner rings, on an
+/// orange band with orange bubbles; and Go to, the outer ring, on a pale
+/// band with pale bubbles each showing its tab's name, the current tab
+/// ringed. A legend above the fan names them. Purely visual: the hold
+/// gesture drives [hovered].
 class _HoldMenu extends StatefulWidget {
   const _HoldMenu({
     super.key,
     required this.glass,
     required this.anchor,
+    required this.origin,
     required this.centres,
     required this.items,
     required this.firstTab,
@@ -451,6 +542,9 @@ class _HoldMenu extends StatefulWidget {
 
   final bool glass;
   final Offset anchor;
+
+  /// The centre of the rings: [anchor], unless the fan was nudged on screen.
+  final Offset origin;
   final List<Offset> centres;
   final List<QuickAction> items;
 
@@ -505,6 +599,7 @@ class _HoldMenuState extends State<_HoldMenu>
         builder: (context, _) {
           final open = Curves.easeOut.transform(_open.value);
           final hovered = widget.hovered.value;
+          final theme = Theme.of(context);
           Widget dim = ColoredBox(
             color: Colors.black.withValues(alpha: 0.5 * open),
           );
@@ -518,6 +613,17 @@ class _HoldMenuState extends State<_HoldMenu>
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(child: dim),
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _ZonesPainter(
+                    origin: widget.origin,
+                    open: open,
+                    quickAdd: theme.accent,
+                    goTo: Colors.white,
+                    hasTabs: widget.firstTab < widget.items.length,
+                  ),
+                ),
+              ),
               for (var i = 0; i < widget.centres.length; i++)
                 _bubbleAt(context, i, hovered == i),
               _label(context, hovered, open),
@@ -548,48 +654,74 @@ class _HoldMenuState extends State<_HoldMenu>
     final centre = Offset.lerp(widget.anchor, widget.centres[i], p)!;
     final isTab = i >= widget.firstTab;
     final current = isTab && i - widget.firstTab == widget.currentTab;
-    final filled = hovered || current;
-    final icon = Icon(
-      widget.items[i].icon,
-      size: 24,
-      color: filled ? Colors.white : theme.accent,
+    // Quick add: orange bubbles, white icons. Go to: pale bubbles, dark
+    // icons, the current tab ringed in orange. Under the thumb: white.
+    final Color fill;
+    final Color ink;
+    if (hovered) {
+      fill = Colors.white;
+      ink = theme.accent;
+    } else if (isTab) {
+      fill = _paleTab;
+      ink = const Color(0xFF1C1C1E);
+    } else {
+      fill = theme.accent;
+      ink = Colors.white;
+    }
+    final bubble = DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: fill,
+        border: current || hovered
+            ? Border.all(color: theme.accent, width: current ? 3 : 2)
+            : null,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x55000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(child: Icon(widget.items[i].icon, size: 24, color: ink)),
     );
-    final ring = isTab
-        ? Border.all(color: theme.accent.withValues(alpha: 0.8), width: 2)
-        : null;
-    final Widget bubble = widget.glass
-        ? LiquidGlass(
-            backdrop: false,
-            frost: filled
-                ? theme.accent.withValues(alpha: hovered ? 1 : 0.7)
-                : const Color(0x47FFFFFF),
-            child: DecoratedBox(
-              decoration: BoxDecoration(shape: BoxShape.circle, border: ring),
-              child: Center(child: icon),
-            ),
-          )
-        : Material(
-            shape: CircleBorder(side: ring?.top ?? BorderSide.none),
-            elevation: 6,
-            color: filled
-                ? theme.accent.withValues(alpha: hovered ? 1 : 0.75)
-                : theme.colorScheme.surfaceContainerHigh,
-            child: Center(child: icon),
-          );
     return Positioned(
-      left: centre.dx - _bubble / 2,
+      left: centre.dx - 45,
       top: centre.dy - _bubble / 2,
-      width: _bubble,
-      height: _bubble,
+      width: 90,
       child: Opacity(
         opacity: p.clamp(0.0, 1.0),
         child: Transform.scale(
           scale: 0.35 + 0.65 * p,
+          alignment: Alignment.topCenter,
           child: AnimatedScale(
             scale: hovered ? 1.22 : 1,
+            alignment: Alignment.topCenter,
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOutCubic,
-            child: bubble,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox.square(dimension: _bubble, child: bubble),
+                // Each tab says its name, so pages read apart from actions.
+                if (isTab)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      widget.items[i].label,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        shadows: [Shadow(blurRadius: 6)],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -601,9 +733,10 @@ class _HoldMenuState extends State<_HoldMenu>
   Widget _label(BuildContext context, int hovered, double open) {
     final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
+    final isTab = hovered >= widget.firstTab;
     final text = hovered >= 0
-        ? widget.items[hovered].label
-        : 'Slide to an action or page · let go on ✕ to cancel';
+        ? '${isTab ? 'Go to' : 'Quick add'} · ${widget.items[hovered].label}'
+        : 'Slide to one · let go on ✕ to cancel';
     // Above the whole fan, clear of every bubble.
     final top = widget.centres.fold<double>(
       widget.anchor.dy,
@@ -614,7 +747,7 @@ class _HoldMenuState extends State<_HoldMenu>
         (xs.reduce((a, b) => a < b ? a : b) +
             xs.reduce((a, b) => a > b ? a : b)) /
         2;
-    final at = Offset(mid, top - _bubble * 1.3);
+    final at = Offset(mid, top - _bubble * 1.6);
     const width = 250.0;
     final left = (at.dx - width / 2).clamp(12.0, size.width - width - 12);
     final style = theme.textTheme.labelLarge?.copyWith(
@@ -622,9 +755,41 @@ class _HoldMenuState extends State<_HoldMenu>
       fontSize: hovered >= 0 ? 15 : 12.5,
       color: widget.glass ? null : theme.colorScheme.onInverseSurface,
     );
+    Widget legend(Color dot, String name) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: dot),
+        ),
+        const SizedBox(width: 5),
+        Text(name, style: style?.copyWith(fontSize: 13)),
+      ],
+    );
     final pill = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Text(text, textAlign: TextAlign.center, style: style),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // The legend: which zone is which.
+          if (hovered < 0) ...[
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  legend(theme.accent, 'Quick add'),
+                  const SizedBox(width: 14),
+                  legend(_paleTab, 'Go to'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Text(text, textAlign: TextAlign.center, style: style),
+        ],
+      ),
     );
     return Positioned(
       left: left,
@@ -646,4 +811,63 @@ class _HoldMenuState extends State<_HoldMenu>
       ),
     );
   }
+}
+
+/// The Go to bubbles' colour.
+const _paleTab = Color(0xFFF2F2F7);
+
+/// The two zones behind the fan: an accent band under the Quick add rings,
+/// a pale band under the Go to ring.
+class _ZonesPainter extends CustomPainter {
+  const _ZonesPainter({
+    required this.origin,
+    required this.open,
+    required this.quickAdd,
+    required this.goTo,
+    required this.hasTabs,
+  });
+
+  final Offset origin;
+  final double open;
+  final Color quickAdd;
+  final Color goTo;
+  final bool hasTabs;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    void band(double inner, double outer, Color color, double alpha) {
+      const from = -188 * math.pi / 180;
+      const sweep = 108 * math.pi / 180;
+      final path = Path()
+        ..arcTo(
+          Rect.fromCircle(center: origin, radius: outer),
+          from,
+          sweep,
+          true,
+        )
+        ..arcTo(
+          Rect.fromCircle(center: origin, radius: inner),
+          from + sweep,
+          -sweep,
+          false,
+        )
+        ..close();
+      canvas
+        ..drawPath(path, Paint()..color = color.withValues(alpha: alpha * open))
+        ..drawPath(
+          path,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5
+            ..color = color.withValues(alpha: 0.45 * open),
+        );
+    }
+
+    band(64, 206, quickAdd, 0.22);
+    if (hasTabs) band(212, 296, goTo, 0.12);
+  }
+
+  @override
+  bool shouldRepaint(_ZonesPainter old) =>
+      old.open != open || old.origin != origin || old.quickAdd != quickAdd;
 }
