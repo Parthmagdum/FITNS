@@ -1,0 +1,3 @@
+- Adding a food now shows its photo, big calories, colourful macro tiles and quick serving sizes
+- Holding the FITNS button blurs the page behind so the bubbles stand out
+- Fixed underlined tab names in the button menu

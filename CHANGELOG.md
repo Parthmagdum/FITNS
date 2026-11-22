@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.14 — 2026-11-22
+
+**Adding a food looks the part**
+- Picking a food (roti, rice, dal…) now opens with its **photo**, big, with
+  its name over it. Foods without a photo show their emoji on orange.
+- The calories are big and count up or down as you change the servings.
+- Protein, carbs and fat each get a coloured tile, with a bar for their
+  share of the calories.
+- A bigger servings stepper, with ½, 1, 1½, 2 and 3 a tap away.
+
+**Clearer FITNS button menu**
+- Holding the FITNS button now blurs and darkens the page behind in every
+  theme, not just Glass, so the bubbles stand out.
+- Fixed: the tab names under the Go to bubbles showed a yellow underline.
+- The "Go to" dot in the legend now shows on the white label.
+
 ## 0.1.13 — 2026-11-22
 
 **Bigger titles, like XPENC**

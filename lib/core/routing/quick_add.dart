@@ -593,6 +593,10 @@ class _HoldMenuState extends State<_HoldMenu>
 
   @override
   Widget build(BuildContext context) {
+    return Material(type: MaterialType.transparency, child: _menu(context));
+  }
+
+  Widget _menu(BuildContext context) {
     return IgnorePointer(
       child: AnimatedBuilder(
         animation: Listenable.merge([_open, widget.hovered]),
@@ -600,15 +604,15 @@ class _HoldMenuState extends State<_HoldMenu>
           final open = Curves.easeOut.transform(_open.value);
           final hovered = widget.hovered.value;
           final theme = Theme.of(context);
-          Widget dim = ColoredBox(
-            color: Colors.black.withValues(alpha: 0.5 * open),
+          // The page behind goes soft and dark in every theme, so the
+          // bubbles stand out.
+          final dim = BackdropFilter(
+            key: const Key('hold-menu-blur'),
+            filter: ui.ImageFilter.blur(sigmaX: 10 * open, sigmaY: 10 * open),
+            child: ColoredBox(
+              color: Colors.black.withValues(alpha: 0.45 * open),
+            ),
           );
-          if (widget.glass) {
-            dim = BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 8 * open, sigmaY: 8 * open),
-              child: dim,
-            );
-          }
           return Stack(
             clipBehavior: Clip.none,
             children: [
@@ -761,7 +765,11 @@ class _HoldMenuState extends State<_HoldMenu>
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: dot),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: dot,
+            border: Border.all(color: const Color(0xFF8E8E93), width: 1.5),
+          ),
         ),
         const SizedBox(width: 5),
         Text(name, style: style?.copyWith(fontSize: 13)),

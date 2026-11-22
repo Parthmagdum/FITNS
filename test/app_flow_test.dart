@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:fitns/core/dates.dart';
 import 'package:fitns/features/workouts/active_workout_screen.dart';
 import 'package:fitns/features/cycling/cycling_screen.dart';
 import 'package:fitns/app.dart';
@@ -16,6 +17,7 @@ import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 class FakeStepSensor extends StepSensor {
   const FakeStepSensor(this._status);
@@ -1301,6 +1303,8 @@ void main() {
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Slide to one · let go on ✕ to cancel'), findsOne);
+    // The page behind is blurred in every theme.
+    expect(find.byKey(const Key('hold-menu-blur')), findsOne);
     // The legend tells the two zones apart, and each tab says its name.
     expect(find.text('Quick add'), findsOne);
     expect(find.text('Go to'), findsOne);
@@ -1468,6 +1472,34 @@ void main() {
     await settle(tester);
     expect(find.byKey(const Key('first-run-tips')), findsNothing);
     expect((await tester.runAsync(db.getSettings))!.tipsSeen, isTrue);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('a picked food opens with its photo, calories and macros', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+    final today = DateTime.now();
+    unawaited(
+      GoRouter.of(
+        tester.element(find.byType(PageView)),
+      ).push<void>('/food/add/${dayKey(today)}/lunch'),
+    );
+    await settle(tester);
+    await tester.tap(find.text('Roti / chapati').first);
+    await settle(tester);
+    expect(find.byKey(const Key('food-hero-photo')), findsOneWidget);
+    expect(find.text('1 serving = 1 roti (40 g)'), findsOneWidget);
+    expect(find.text('Protein'), findsOneWidget);
+    // Two servings with a tap on the "2" chip, then added.
+    await tester.tap(find.widgetWithText(ChoiceChip, '2'));
+    await settle(tester);
+    expect(find.text('240 kcal', findRichText: true), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Add to Lunch'));
+    await settle(tester);
+    final logs = (await tester.runAsync(() => db.select(db.foodLogs).get()))!;
+    expect(logs.single.kcal, 240);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

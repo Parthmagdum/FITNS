@@ -6,6 +6,8 @@ import '../../core/dates.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
+import '../../data/food_library.dart' show foodEmoji;
+import '../../data/pictures.dart';
 import '../../data/providers.dart';
 import 'nutrition.dart';
 
@@ -310,59 +312,328 @@ class _ServingSheetState extends ConsumerState<_ServingSheet> {
     if (mounted) Navigator.pop(context, true);
   }
 
+  void _set(int hundredths) =>
+      setState(() => _servings.text = formatServings(hundredths));
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final food = widget.food;
     final h = _hundredths;
-    return _SheetFrame(
-      title: food.name,
-      children: [
-        Row(
-          children: [
-            IconButton.outlined(
-              onPressed: () => _step(-1),
-              icon: const Icon(Icons.remove),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                controller: _servings,
-                keyboardType: _decimal,
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  labelText: 'Servings',
-                  helperText: '1 serving = ${food.servingLabel}',
+    final kcal = h == null ? 0 : scaleServing(food.kcal, h);
+    final protein = h == null ? 0 : scaleServing(food.proteinTenths, h);
+    final carbs = h == null ? 0 : scaleServing(food.carbsTenths, h);
+    final fat = h == null ? 0 : scaleServing(food.fatTenths, h);
+    // Each macro's share of the calories (4, 4 and 9 kcal a gram).
+    final macroKcal = (protein * 4 + carbs * 4 + fat * 9) / 10;
+    double share(int tenths, int perGram) =>
+        macroKcal <= 0 ? 0 : (tenths * perGram / 10 / macroKcal);
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        20 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _FoodHero(name: food.name, serving: food.servingLabel),
+          const SizedBox(height: 16),
+          // The calories, counting up or down as the servings change.
+          Center(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: kcal.toDouble()),
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, _) => Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${value.round()}',
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: theme.accent,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' kcal',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.muted,
+                      ),
+                    ),
+                  ],
                 ),
-                onChanged: (_) => setState(() {}),
               ),
             ),
-            const SizedBox(width: 12),
-            IconButton.outlined(
-              onPressed: () => _step(1),
-              icon: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _MacroTile(
+                label: 'Protein',
+                grams: formatGrams(protein),
+                share: share(protein, 4),
+                color: const Color(0xFF3B82F6),
+              ),
+              const SizedBox(width: 8),
+              _MacroTile(
+                label: 'Carbs',
+                grams: formatGrams(carbs),
+                share: share(carbs, 4),
+                color: const Color(0xFFF59E0B),
+              ),
+              const SizedBox(width: 8),
+              _MacroTile(
+                label: 'Fat',
+                grams: formatGrams(fat),
+                share: share(fat, 9),
+                color: const Color(0xFFEC4899),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // How much: a big stepper, and the usual amounts a tap away.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.track,
+              borderRadius: BorderRadius.circular(999),
             ),
-          ],
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    tooltip: 'Half a serving less',
+                    onPressed: () => _step(-1),
+                    icon: const Icon(Icons.remove),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _servings,
+                      keyboardType: _decimal,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Servings',
+                        floatingLabelAlignment: FloatingLabelAlignment.center,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
+                        isDense: true,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  IconButton.filled(
+                    tooltip: 'Half a serving more',
+                    onPressed: () => _step(1),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '1 serving = ${food.servingLabel}',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            children: [
+              for (final (amount, label) in const [
+                (50, '½'),
+                (100, '1'),
+                (150, '1½'),
+                (200, '2'),
+                (300, '3'),
+              ])
+                ChoiceChip(
+                  label: Text(label),
+                  selected: h == amount,
+                  onSelected: (_) => _set(amount),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _MealPicker(
+            value: _meal,
+            onChanged: (m) => setState(() => _meal = m),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+            ),
+            onPressed: h == null ? null : _log,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add_circle_outline),
+                const SizedBox(width: 8),
+                Text('Add to ${_meal.label}'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The food's photo, big, with its name over it — or, for foods FITNS has
+/// no photo of, its emoji on the accent. Settles in as the sheet opens.
+class _FoodHero extends StatelessWidget {
+  const _FoodHero({required this.name, required this.serving});
+
+  final String name;
+  final String serving;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final photo = foodPhoto(name);
+    final fallback = DecoratedBox(
+      decoration: BoxDecoration(gradient: theme.accentGradient),
+      child: Center(
+        child: Text(foodEmoji(name), style: const TextStyle(fontSize: 72)),
+      ),
+    );
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.scale(scale: 0.94 + 0.06 * t, child: child),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: SizedBox(
+          height: 190,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (photo == null)
+                fallback
+              else
+                Image.asset(
+                  photo,
+                  key: const Key('food-hero-photo'),
+                  fit: BoxFit.cover,
+                  semanticLabel: name,
+                  errorBuilder: (_, _, _) => fallback,
+                ),
+              // A shade at the bottom, so the name reads on any photo.
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0.45, 1],
+                    colors: [Color(0x00000000), Color(0xCC000000)],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      serving,
+                      style: const TextStyle(color: Color(0xDDFFFFFF)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        Text(
-          h == null
-              ? '—'
-              : '${formatKcal(scaleServing(food.kcal, h))} · '
-                    'P ${formatGrams(scaleServing(food.proteinTenths, h))} · '
-                    'C ${formatGrams(scaleServing(food.carbsTenths, h))} · '
-                    'F ${formatGrams(scaleServing(food.fatTenths, h))}',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleSmall,
+      ),
+    );
+  }
+}
+
+/// One macro: its grams, and a bar for its share of the calories.
+class _MacroTile extends StatelessWidget {
+  const _MacroTile({
+    required this.label,
+    required this.grams,
+    required this.share,
+    required this.color,
+  });
+
+  final String label;
+  final String grams;
+  final double share;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Expanded(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(height: 16),
-        _MealPicker(value: _meal, onChanged: (m) => setState(() => _meal = m)),
-        const SizedBox(height: 20),
-        FilledButton(
-          onPressed: h == null ? null : _log,
-          child: Text('Add to ${_meal.label}'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(color: color),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                grams,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(end: share.clamp(0.0, 1.0)),
+                  duration: const Duration(milliseconds: 350),
+                  builder: (context, v, _) => LinearProgressIndicator(
+                    value: v,
+                    minHeight: 5,
+                    color: color,
+                    backgroundColor: color.withValues(alpha: 0.18),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
