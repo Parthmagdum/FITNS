@@ -354,6 +354,9 @@ class _ShortcutList extends ConsumerWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         buildDefaultDragHandles: false,
+        // onReorderItem replaces this on newer Flutter (CI's), but the
+        // local SDK doesn't have it yet.
+        // ignore: deprecated_member_use
         onReorder: (from, to) {
           final next = [...order];
           if (to > from) to--;
