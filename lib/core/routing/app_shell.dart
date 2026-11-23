@@ -12,10 +12,11 @@ import '../theme/app_theme.dart';
 import '../theme/glass.dart';
 import 'coach_marks.dart';
 import 'first_run_tips.dart';
+import 'floating_tab_bar.dart';
 import 'quick_add.dart';
 
 /// The five tabs: icon, selected icon, label. In the FITNS button's menu.
-const _tabs = <(IconData, IconData, String)>[
+const _tabs = <TabSpec>[
   (Icons.today_outlined, Icons.today, 'Today'),
   (Icons.fitness_center_outlined, Icons.fitness_center, 'Workouts'),
   (Icons.restaurant_outlined, Icons.restaurant, 'Food'),
@@ -66,10 +67,15 @@ class AppShell extends ConsumerWidget {
               top: false,
               left: false,
               minimum: const EdgeInsets.fromLTRB(0, 0, 16, 16),
-              child: QuickAddButton(
-                glass: AppSurface.isGlass(context),
-                tabs: tabs,
-                currentTab: shell.currentIndex,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: ref.watch(navExtraInsetProvider),
+                ),
+                child: QuickAddButton(
+                  glass: AppSurface.isGlass(context),
+                  tabs: tabs,
+                  currentTab: shell.currentIndex,
+                ),
               ),
             ),
           ),
@@ -95,49 +101,79 @@ class AppShell extends ConsumerWidget {
 }
 
 extension on AppShell {
-  /// The tabs with a tab bar along the bottom instead of the FITNS button.
-  Widget _withTabBar(BuildContext context, WidgetRef ref) => Scaffold(
-    body: Stack(
-      children: [
-        Positioned.fill(child: shell),
-        const Positioned.fill(child: CoachMarks()),
-        Positioned.fill(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final s = ref.watch(settingsProvider).valueOrNull;
-              if (s == null || !s.setupDone || s.tipsSeen) {
-                return const SizedBox.shrink();
-              }
-              return const FirstRunTips();
-            },
-          ),
-        ),
-      ],
-    ),
-    bottomNavigationBar: GestureDetector(
-      key: const Key('tab-bar'),
-      // A long press anywhere on the bar: the FITNS button back?
-      onLongPress: () => _offerButton(context, ref),
-      // The tabs' tooltips would take the long press.
-      child: TooltipVisibility(
-        visible: false,
-        child: NavigationBar(
-          // A little slimmer than Material's 80.
-          height: 64,
-          selectedIndex: shell.currentIndex,
-          onDestinationSelected: _select,
-          destinations: [
-            for (final (icon, selected, label) in _tabs)
-              NavigationDestination(
-                icon: Icon(icon),
-                selectedIcon: Icon(selected),
-                label: label,
+  /// The tabs with a tab bar along the bottom instead of the FITNS button:
+  /// a capsule floating over the page (XPENC's), or Material's bar.
+  Widget _withTabBar(BuildContext context, WidgetRef ref) {
+    final floating = ref.watch(floatingTabBarProvider);
+    final labels = ref.watch(tabLabelsProvider);
+    final extra = ref.watch(navExtraInsetProvider);
+    final Widget bar = floating
+        ? FloatingTabBar(
+            tabs: _tabs,
+            selected: shell.currentIndex,
+            onSelect: _select,
+            showLabels: labels,
+            extraBottom: extra,
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              NavigationBar(
+                // A little slimmer than Material's 80.
+                height: labels ? 64 : 56,
+                labelBehavior: labels
+                    ? NavigationDestinationLabelBehavior.alwaysShow
+                    : NavigationDestinationLabelBehavior.alwaysHide,
+                selectedIndex: shell.currentIndex,
+                onDestinationSelected: _select,
+                destinations: [
+                  for (final (i, (icon, selected, label)) in _tabs.indexed)
+                    NavigationDestination(
+                      key: Key('tab-$i'),
+                      icon: Icon(icon),
+                      selectedIcon: Icon(selected),
+                      label: label,
+                    ),
+                ],
               ),
-          ],
-        ),
+              if (extra > 0)
+                ColoredBox(
+                  color:
+                      Theme.of(context).navigationBarTheme.backgroundColor ??
+                      Theme.of(context).colorScheme.surfaceContainer,
+                  child: SizedBox(height: extra, width: double.infinity),
+                ),
+            ],
+          );
+    return Scaffold(
+      // The floating bar sits over the page, which scrolls on beneath it.
+      extendBody: floating,
+      body: Stack(
+        children: [
+          Positioned.fill(child: shell),
+          const Positioned.fill(child: CoachMarks()),
+          Positioned.fill(
+            child: Consumer(
+              builder: (context, ref, _) {
+                final s = ref.watch(settingsProvider).valueOrNull;
+                if (s == null || !s.setupDone || s.tipsSeen) {
+                  return const SizedBox.shrink();
+                }
+                return const FirstRunTips();
+              },
+            ),
+          ),
+        ],
       ),
-    ),
-  );
+      bottomNavigationBar: GestureDetector(
+        key: const Key('tab-bar'),
+        // A long press anywhere on the bar: the FITNS button back?
+        onLongPress: () => _offerButton(context, ref),
+        // The tabs' tooltips would take the long press.
+        child: TooltipVisibility(visible: false, child: bar),
+      ),
+    );
+  }
 }
 
 /// Offers the FITNS button back, from a long press on the tab bar.

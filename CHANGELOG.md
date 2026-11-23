@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.25 — 2026-11-23
+
+**Make it yours** — Settings → Navigation → Customize, after XPENC
+- **Tab bar:** a new **floating** bar (the default) — a capsule over the
+  page with a droplet that slides to your tab — or the **classic** one.
+  Labels on or off.
+- **FITNS button:** pick which shortcuts the hold menu fans out, drag them
+  into your order (the first sit closest to your thumb), and choose
+  whether the pages are in it too. A live preview shows the result.
+- **Bottom spacing** for phones whose own buttons cover the bar or button.
+
+**Glass, the way XPENC does it**
+- Glass now sits on a **wallpaper**: Aurora (new default), White, Black,
+  Ocean, Sunset or Nebula — light glass on the bright ones, dark on the
+  dark ones. Pick it under Settings → Appearance.
+- Cards glow softly with the colour behind them; the tab bar is real
+  Liquid Glass; the top bar frosts as the page scrolls under it.
+
 ## 0.1.24 — 2026-11-23
 
 **The tab bar first**

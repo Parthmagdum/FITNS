@@ -8,8 +8,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-/// Glass, modelled on iOS's Liquid Glass, over a pure black page — the way
-/// XPENC draws it. Two materials:
+/// Glass, modelled on iOS's Liquid Glass, over the wallpaper picked in
+/// Settings ([GlassBackdrop]) — the way XPENC draws it. Two materials:
 ///  * **Content** ([GlassPane]): cards. A thin, see-through frost with a
 ///    rim that catches light along its top edge.
 ///  * **Controls** ([LiquidGlass]): what floats above content — the tab
@@ -27,54 +27,346 @@ class GlassStyle {
   static const double barBlur = 9;
 }
 
-/// Every colour a glass surface takes. FITNS's Glass is XPENC's "ink" tone:
-/// dark glass over black, iOS's dark grouped look.
+/// Every colour a glass surface takes, for one kind of background — XPENC's
+/// four tones. Light glass is a whisper of white over a bright backdrop;
+/// dark glass a smoky one over a dark backdrop, with softer rims and deeper
+/// shadows.
 @immutable
 class GlassTone {
-  const GlassTone._();
+  const GlassTone({
+    required this.brightness,
+    required this.frostHigh,
+    required this.frostLow,
+    required this.controlFrost,
+    required this.selected,
+    required this.sheetFrost,
+    required this.floating,
+    required this.solidFrost,
+    required this.fill,
+    required this.separator,
+    required this.rimStrength,
+    required this.shadowOpacity,
+    required this.barrier,
+    required this.track,
+    required this.edge,
+    required this.ambient,
+    this.ambientBlur = 18,
+    Color? barFrost,
+  }) : _barFrost = barFrost;
+
+  final Brightness brightness;
 
   /// Content pane frost, top to bottom.
-  static const frostHigh = Color(0x29FFFFFF);
-  static const frostLow = Color(0x1AFFFFFF);
+  final Color frostHigh;
+  final Color frostLow;
 
   /// Control frost — nearly clear.
-  static const controlFrost = Color(0x29FFFFFF);
+  final Color controlFrost;
 
   /// The selected-tab droplet.
-  static const selected = Color(0x38FFFFFF);
+  final Color selected;
 
   /// Sheets and dialogs hold forms and lists, so they frost denser.
-  static const floating = Color(0xF22C2C2E);
+  final Color sheetFrost;
+  final Color floating;
 
   /// Menus and pickers Material paints with nothing blurred behind them.
-  static const solidFrost = Color(0xF22C2C2E);
+  final Color solidFrost;
 
   /// Inputs, chips and secondary buttons.
-  static const fill = Color(0x29FFFFFF);
-  static const separator = Color(0x33FFFFFF);
+  final Color fill;
+  final Color separator;
 
   /// Multiplier on the white rim's brightness.
-  static const rimStrength = 0.5;
-  static const shadowOpacity = 0.5;
-  static const barrier = Color(0x80000000);
-  static const track = Color(0x3D787880);
+  final double rimStrength;
+  final double shadowOpacity;
+  final Color barrier;
+  final Color track;
 
   /// Hairline edge of inputs and plain cards.
-  static const edge = Color(0x33FFFFFF);
+  final Color edge;
 
-  /// Smoked glass for the tab bar: what scrolls under it fades to a hint of
-  /// its colour, and the tabs stay the brightest thing on it.
-  static const barFrost = Color(0xA62C2C2E);
+  /// Opacity of the coloured glow around cards (the wallpaper's light
+  /// spilling round the glass); 0 for none.
+  final double ambient;
+
+  /// How far that glow may spread (its largest blur sigma).
+  final double ambientBlur;
+
+  /// The tab bar's frost: whole lists slide under it, so where content is
+  /// busy it smokes over what passes beneath. Defaults to [controlFrost].
+  Color get barFrost => _barFrost ?? controlFrost;
+  final Color? _barFrost;
+
+  bool get isDark => brightness == Brightness.dark;
+
+  /// Light glass over a colourful, bright backdrop.
+  static const light = GlassTone(
+    brightness: Brightness.light,
+    frostHigh: Color(0x61FFFFFF),
+    frostLow: Color(0x38FFFFFF),
+    controlFrost: Color(0x1FFFFFFF),
+    selected: Color(0x1F787880),
+    sheetFrost: Color(0xB8F7F8FC),
+    floating: Color(0xF2FFFFFF),
+    solidFrost: Color(0xF5F8F9FC),
+    fill: Color(0x80FFFFFF),
+    separator: Color(0x243C3C43),
+    rimStrength: 1,
+    shadowOpacity: 0.10,
+    barrier: Color(0x29000000),
+    track: Color(0x1F787880),
+    ambient: 0.42,
+    edge: Color(0xB3FFFFFF),
+    barFrost: Color(0x66FFFFFF),
+  );
+
+  /// Light glass over a plain white page — cards need body to show at all.
+  static const paper = GlassTone(
+    brightness: Brightness.light,
+    frostHigh: Color(0xF2FFFFFF),
+    frostLow: Color(0xE0FFFFFF),
+    controlFrost: Color(0x8CFFFFFF),
+    selected: Color(0x1F787880),
+    sheetFrost: Color(0xD9F7F8FC),
+    floating: Color(0xF5FFFFFF),
+    solidFrost: Color(0xF5F8F9FC),
+    fill: Color(0xFFFFFFFF),
+    separator: Color(0x243C3C43),
+    rimStrength: 1,
+    shadowOpacity: 0.08,
+    barrier: Color(0x29000000),
+    track: Color(0x1F787880),
+    ambient: 0.18,
+    edge: Color(0x1F3C3C43),
+    barFrost: Color(0xB3FFFFFF),
+  );
+
+  /// Dark glass over a colourful, dark backdrop: smoky, the way iOS's dark
+  /// glass reads over a vivid wallpaper.
+  static const dark = GlassTone(
+    brightness: Brightness.dark,
+    frostHigh: Color(0x660E1020),
+    frostLow: Color(0x8C0E1020),
+    controlFrost: Color(0x4D12141F),
+    selected: Color(0x1FFFFFFF),
+    sheetFrost: Color(0xBF1C1C1E),
+    floating: Color(0xF22C2C2E),
+    solidFrost: Color(0xF22C2C2E),
+    fill: Color(0x29FFFFFF),
+    separator: Color(0x33FFFFFF),
+    rimStrength: 0.55,
+    shadowOpacity: 0.35,
+    barrier: Color(0x66000000),
+    track: Color(0x3D787880),
+    ambient: 0.5,
+    edge: Color(0x33FFFFFF),
+    barFrost: Color(0x8012141F),
+  );
+
+  /// Dark glass over pure black — iOS's dark grouped look, in glass.
+  static const ink = GlassTone(
+    brightness: Brightness.dark,
+    frostHigh: Color(0x29FFFFFF),
+    frostLow: Color(0x1AFFFFFF),
+    controlFrost: Color(0x29FFFFFF),
+    selected: Color(0x38FFFFFF),
+    sheetFrost: Color(0xD91C1C1E),
+    floating: Color(0xF22C2C2E),
+    solidFrost: Color(0xF22C2C2E),
+    fill: Color(0x29FFFFFF),
+    separator: Color(0x33FFFFFF),
+    rimStrength: 0.5,
+    shadowOpacity: 0.5,
+    barrier: Color(0x80000000),
+    track: Color(0x3D787880),
+    // On black there's no wallpaper light to spill: cards stand on their
+    // own top-lit rim.
+    ambient: 0,
+    ambientBlur: 7,
+    edge: Color(0x33FFFFFF),
+    barFrost: Color(0xA62C2C2E),
+  );
 }
 
-/// Whether the current theme is Glass. Read with [AppSurface.of].
+// The five places light pools on a wallpaper, as (centre, radius as a
+// fraction of the screen's longer side).
+const _poolSpots = <(Alignment, double)>[
+  (Alignment(-1.0, -0.95), 0.62),
+  (Alignment(1.1, -0.45), 0.55),
+  (Alignment(-0.9, 0.35), 0.50),
+  (Alignment(1.0, 0.85), 0.58),
+  (Alignment(-0.2, 1.15), 0.45),
+];
+
+/// What the Glass theme sits on — picked under Settings → Appearance. Plain
+/// pages (white, black) or soft pools of colour, the way iOS wallpapers
+/// glow behind its glass. XPENC's six, value for value.
+///
+/// The name is what gets stored, so **never rename a value**. Add new ones
+/// at the end.
+enum GlassBackdrop {
+  aurora(
+    label: 'Aurora',
+    tone: GlassTone.light,
+    base: Color(0xFFEFF2F8),
+    pools: [
+      Color(0xFFA9C4FF),
+      Color(0xFFE6C8FF),
+      Color(0xFFBDEBE0),
+      Color(0xFFFFD6BF),
+      Color(0xFFC9D6FF),
+    ],
+  ),
+  white(label: 'White', tone: GlassTone.paper, base: Color(0xFFF2F2F7)),
+  black(label: 'Black', tone: GlassTone.ink, base: Color(0xFF000000)),
+  ocean(
+    label: 'Ocean',
+    tone: GlassTone.dark,
+    base: Color(0xFF03101F),
+    pools: [
+      Color(0xFF0D5BA8),
+      Color(0xFF0E8AA6),
+      Color(0xFF2A3FB0),
+      Color(0xFF0A7A72),
+      Color(0xFF1B4C9E),
+    ],
+  ),
+  sunset(
+    label: 'Sunset',
+    tone: GlassTone.light,
+    base: Color(0xFFFFEDE3),
+    pools: [
+      Color(0xFFFFB08A),
+      Color(0xFFFF8FBA),
+      Color(0xFFC6A0FF),
+      Color(0xFFFFD07A),
+      Color(0xFFFF9E9E),
+    ],
+  ),
+  nebula(
+    label: 'Nebula',
+    tone: GlassTone.dark,
+    base: Color(0xFF07040F),
+    pools: [
+      Color(0xFF5B2BBF),
+      Color(0xFFB0307E),
+      Color(0xFF2A4FD6),
+      Color(0xFF0F7F8A),
+      Color(0xFF7A2BB0),
+    ],
+  );
+
+  const GlassBackdrop({
+    required this.label,
+    required this.tone,
+    required this.base,
+    this.pools = const [],
+  });
+
+  final String label;
+  final GlassTone tone;
+  final Color base;
+
+  /// Colours pooled at [_poolSpots]; empty for a plain page.
+  final List<Color> pools;
+
+  static const fallback = GlassBackdrop.aurora;
+
+  bool get isDark => tone.isDark;
+
+  static GlassBackdrop byName(String? name) =>
+      values.asNameMap()[name] ?? fallback;
+
+  /// The wallpaper's colour of light around [point] (screen coordinates):
+  /// its pools blended by nearness, pushed a little more saturated so a
+  /// glow reads as coloured light. Plain pages give a soft cool white.
+  Color ambientAt(Offset point, Size screen) {
+    if (pools.isEmpty) {
+      return isDark ? const Color(0xFFFFFFFF) : const Color(0xFF8FA8FF);
+    }
+    final rect = Offset.zero & screen;
+    final side = screen.longestSide;
+    var r = 0.0, g = 0.0, b = 0.0, w = 0.0;
+    for (var i = 0; i < pools.length && i < _poolSpots.length; i++) {
+      final (align, radius) = _poolSpots[i];
+      final d = (point - align.withinRect(rect)).distance / (side * radius);
+      var weight = (1 - d).clamp(0.0, 1.0);
+      weight *= weight;
+      final c = pools[i];
+      r += c.r * weight;
+      g += c.g * weight;
+      b += c.b * weight;
+      w += weight;
+    }
+    if (w < 0.0001) return pools.first;
+    final hsl = HSLColor.fromColor(
+      Color.from(alpha: 1, red: r / w, green: g / w, blue: b / w),
+    );
+    return hsl
+        .withSaturation((hsl.saturation * 1.25).clamp(0.0, 1.0))
+        .withLightness(
+          isDark
+              ? (hsl.lightness * 1.25).clamp(0.2, 0.65)
+              : hsl.lightness.clamp(0.5, 0.78),
+        )
+        .toColor();
+  }
+
+  /// Paints this wallpaper for a screen of [screen] size into [canvas],
+  /// whose origin is the screen's top-left.
+  void paint(Canvas canvas, Size screen) {
+    final rect = Offset.zero & screen;
+    canvas.drawRect(rect, Paint()..color = base);
+    final side = screen.longestSide;
+    for (var i = 0; i < pools.length && i < _poolSpots.length; i++) {
+      final (align, r) = _poolSpots[i];
+      final color = pools[i];
+      final centre = align.withinRect(rect);
+      final radius = side * r;
+      canvas.drawCircle(
+        centre,
+        radius,
+        Paint()
+          ..shader = ui.Gradient.radial(
+            centre,
+            radius,
+            [color, color.withValues(alpha: 0.55), color.withValues(alpha: 0)],
+            const [0, 0.5, 1],
+          ),
+      );
+    }
+    if (pools.isEmpty) return;
+    // Dark wallpapers sit a step back, so text printed straight on them
+    // (section headers, big titles) stays readable over the colour.
+    if (isDark) canvas.drawRect(rect, Paint()..color = const Color(0x40000000));
+    // A veil at the top keeps the status bar and large titles crisp.
+    final veil = isDark ? const Color(0x59000000) : const Color(0x8CFFFFFF);
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = ui.Gradient.linear(rect.topCenter, rect.center, [
+          veil,
+          veil.withValues(alpha: 0),
+        ]),
+    );
+  }
+}
+
+/// Whether the current theme is Glass, and what it sits on. Read with
+/// [AppSurface.of].
 @immutable
 class AppSurface extends ThemeExtension<AppSurface> {
-  const AppSurface({required this.glass});
+  const AppSurface({required this.glass, this.backdrop});
 
   static const solid = AppSurface(glass: false);
 
   final bool glass;
+
+  /// The Glass wallpaper, painted behind every page. `null` outside Glass.
+  final GlassBackdrop? backdrop;
+
+  GlassTone get tone => (backdrop ?? GlassBackdrop.fallback).tone;
 
   static AppSurface of(BuildContext context) =>
       Theme.of(context).extension<AppSurface>() ?? solid;
@@ -82,11 +374,134 @@ class AppSurface extends ThemeExtension<AppSurface> {
   static bool isGlass(BuildContext context) => of(context).glass;
 
   @override
-  AppSurface copyWith({bool? glass}) => AppSurface(glass: glass ?? this.glass);
+  AppSurface copyWith({bool? glass, GlassBackdrop? backdrop}) => AppSurface(
+    glass: glass ?? this.glass,
+    backdrop: backdrop ?? this.backdrop,
+  );
 
   @override
   AppSurface lerp(AppSurface? other, double t) =>
       t < 0.5 ? this : (other ?? this);
+}
+
+/// Paints the Glass wallpaper behind [child], in *screen* coordinates — so a
+/// page nested inside another shows exactly the slice of wallpaper around
+/// it, with no seam where they meet.
+class GlassWallpaper extends SingleChildRenderObjectWidget {
+  const GlassWallpaper({required this.backdrop, super.child, super.key});
+
+  final GlassBackdrop backdrop;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      RenderGlassWallpaper(MediaQuery.sizeOf(context), backdrop);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    RenderGlassWallpaper renderObject,
+  ) {
+    renderObject
+      ..screen = MediaQuery.sizeOf(context)
+      ..backdrop = backdrop;
+  }
+}
+
+class RenderGlassWallpaper extends RenderProxyBox {
+  RenderGlassWallpaper(this._screen, this._backdrop);
+
+  Size _screen;
+  set screen(Size value) {
+    if (value == _screen) return;
+    _screen = value;
+    markNeedsPaint();
+  }
+
+  GlassBackdrop _backdrop;
+  set backdrop(GlassBackdrop value) {
+    if (value == _backdrop) return;
+    _backdrop = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final canvas = context.canvas;
+    final rect = offset & size;
+    final origin = localToGlobal(Offset.zero);
+    if (_backdrop.pools.isEmpty || _screen.isEmpty || !origin.isFinite) {
+      // A plain page: one flat fill, nothing worth caching.
+      canvas.drawRect(rect, Paint()..color = _backdrop.base);
+    } else {
+      final image = _WallpaperCache.imageFor(_backdrop, _screen);
+      // The slice of the screen-sized wallpaper this box covers.
+      final src = Rect.fromLTWH(
+        origin.dx * image.width / _screen.width,
+        origin.dy * image.height / _screen.height,
+        size.width * image.width / _screen.width,
+        size.height * image.height / _screen.height,
+      );
+      canvas.drawImageRect(
+        image,
+        src,
+        rect,
+        Paint()..filterQuality = FilterQuality.low,
+      );
+    }
+    super.paint(context, offset);
+  }
+}
+
+/// The wallpaper, rasterised once per background and screen size, at
+/// logical resolution: soft gradients scale up invisibly.
+class _WallpaperCache {
+  static GlassBackdrop? _backdrop;
+  static Size? _screen;
+  static ui.Image? _image;
+
+  static ui.Image imageFor(GlassBackdrop backdrop, Size screen) {
+    final cached = _image;
+    if (cached != null && _backdrop == backdrop && _screen == screen) {
+      return cached;
+    }
+    final recorder = ui.PictureRecorder();
+    backdrop.paint(Canvas(recorder), screen);
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(
+      screen.width.ceil().clamp(1, 4096),
+      screen.height.ceil().clamp(1, 4096),
+    );
+    picture.dispose();
+    cached?.dispose();
+    _backdrop = backdrop;
+    _screen = screen;
+    return _image = image;
+  }
+}
+
+/// A small picture of [backdrop], for picking one.
+class GlassBackdropSwatch extends StatelessWidget {
+  const GlassBackdropSwatch(this.backdrop, {super.key});
+
+  final GlassBackdrop backdrop;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _SwatchPainter(backdrop),
+    child: const SizedBox.expand(),
+  );
+}
+
+class _SwatchPainter extends CustomPainter {
+  _SwatchPainter(this.backdrop);
+
+  final GlassBackdrop backdrop;
+
+  @override
+  void paint(Canvas canvas, Size size) => backdrop.paint(canvas, size);
+
+  @override
+  bool shouldRepaint(_SwatchPainter old) => old.backdrop != backdrop;
 }
 
 /// Loads and holds the lens shader. [program] stays `null` where the
@@ -111,42 +526,139 @@ class LiquidGlassShader {
   }
 }
 
-/// A content pane — a card. A thin, see-through frost in iOS's
-/// continuous-corner squircle, lit from above by a light-catching rim.
+/// A content pane — a card. A thin, see-through frost over the wallpaper in
+/// iOS's continuous-corner squircle, a light-catching rim, and *ambient
+/// light*: a soft glow around it, tinted by the wallpaper colour where the
+/// card sits, as if the backdrop's light spilled around the glass.
 ///
-/// No backdrop blur: behind a card is only the black page, so a blur pass
-/// would cost GPU time for no visible difference.
+/// No backdrop blur: behind a card is only the wallpaper, already a soft
+/// wash of colour, so a blur pass would cost GPU time for nothing.
 class GlassPane extends StatelessWidget {
-  const GlassPane({required this.child, required this.borderRadius, super.key});
+  const GlassPane({
+    required this.child,
+    required this.borderRadius,
+    this.shadow = true,
+    super.key,
+  });
 
   final Widget child;
   final BorderRadius borderRadius;
 
+  /// The ambient glow outside the pane.
+  final bool shadow;
+
   @override
   Widget build(BuildContext context) {
-    return ClipRSuperellipse(
+    final surface = AppSurface.of(context);
+    final tone = surface.tone;
+    final pane = ClipRSuperellipse(
       borderRadius: borderRadius,
       child: CustomPaint(
         foregroundPainter: GlassRimPainter(
           borderRadius,
-          strength: 0.85 * GlassTone.rimStrength,
+          strength: 0.85 * tone.rimStrength,
           continuous: true,
           topLit: true,
         ),
         child: DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               // Lit from above, like the rim: the slab is brightest where
               // the light enters it.
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [GlassTone.frostHigh, GlassTone.frostLow],
+              colors: [tone.frostHigh, tone.frostLow],
             ),
           ),
           child: child,
         ),
       ),
     );
+    if (!shadow || tone.ambient <= 0) return pane;
+    return _AmbientLight(
+      backdrop: surface.backdrop ?? GlassBackdrop.fallback,
+      radius: borderRadius,
+      screen: MediaQuery.sizeOf(context),
+      child: pane,
+    );
+  }
+}
+
+/// Paints a pane's ambient glow — outside it, mostly — with the glow's
+/// colour sampled from the wallpaper at the pane's place on screen.
+class _AmbientLight extends SingleChildRenderObjectWidget {
+  const _AmbientLight({
+    required this.backdrop,
+    required this.radius,
+    required this.screen,
+    super.child,
+  });
+
+  final GlassBackdrop backdrop;
+  final BorderRadius radius;
+  final Size screen;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderAmbientLight(backdrop, radius, screen);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderAmbientLight r) => r
+    ..backdrop = backdrop
+    ..radius = radius
+    ..screen = screen;
+}
+
+class _RenderAmbientLight extends RenderProxyBox {
+  _RenderAmbientLight(this._backdrop, this._radius, this._screen);
+
+  GlassBackdrop _backdrop;
+  set backdrop(GlassBackdrop v) {
+    if (v == _backdrop) return;
+    _backdrop = v;
+    markNeedsPaint();
+  }
+
+  BorderRadius _radius;
+  set radius(BorderRadius v) {
+    if (v == _radius) return;
+    _radius = v;
+    markNeedsPaint();
+  }
+
+  Size _screen;
+  set screen(Size v) {
+    if (v == _screen) return;
+    _screen = v;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final rect = offset & size;
+    // Where the pane is on screen; not finite while it's scaled to nothing
+    // (a pane growing in from a point), and then there's no glow to draw.
+    final centre = localToGlobal(size.center(Offset.zero));
+    if (!rect.isEmpty && centre.isFinite) {
+      // A plain blurred rrect, drawn analytically (nearly free), where a
+      // blurred squircle would cost a full blur pass per card per frame —
+      // and inside a soft glow the two shapes look the same.
+      final shape = _radius.toRRect(rect);
+      final tone = _backdrop.tone;
+      final glow = _backdrop.ambientAt(centre, _screen);
+      final side = size.shortestSide;
+      final spread = tone.ambientBlur;
+      context.canvas.drawRRect(
+        shape.inflate((side * 0.03).clamp(1.0, spread / 4.5)),
+        Paint()
+          ..color = glow.withValues(alpha: tone.ambient * 0.7)
+          ..maskFilter = MaskFilter.blur(
+            BlurStyle.normal,
+            (side * 0.14).clamp(math.min(7.0, spread), spread),
+          ),
+      );
+    }
+    super.paint(context, offset);
   }
 }
 
@@ -192,6 +704,7 @@ class LiquidGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tone = AppSurface.of(context).tone;
     Widget body = DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -200,7 +713,7 @@ class LiquidGlass extends StatelessWidget {
           // Thickness: light pools at the top of the slab, a shade at its
           // foot.
           colors: [
-            Colors.white.withValues(alpha: 0.2 * GlassTone.rimStrength),
+            Colors.white.withValues(alpha: 0.2 * tone.rimStrength),
             Colors.white.withValues(alpha: 0),
             Colors.black.withValues(alpha: 0.03),
           ],
@@ -210,14 +723,14 @@ class LiquidGlass extends StatelessWidget {
       child: child,
     );
     body = DecoratedBox(
-      decoration: BoxDecoration(color: frost ?? GlassTone.controlFrost),
+      decoration: BoxDecoration(color: frost ?? tone.controlFrost),
       child: body,
     );
     final continuous = borderRadius != null;
     Widget glass = CustomPaint(
       foregroundPainter: GlassRimPainter(
         borderRadius,
-        strength: GlassTone.rimStrength,
+        strength: tone.rimStrength,
         continuous: continuous,
       ),
       child: body,
@@ -230,6 +743,7 @@ class LiquidGlass extends StatelessWidget {
             refraction: refraction,
             band: band,
             light: light,
+            dark: tone.isDark,
             dpr: MediaQuery.devicePixelRatioOf(context),
             screen: MediaQuery.sizeOf(context),
             child: glass,
@@ -239,10 +753,7 @@ class LiquidGlass extends StatelessWidget {
         : ClipRRect(clipper: _GlassClipper(borderRadius), child: lens);
     if (!shadow) return glass;
     return CustomPaint(
-      painter: GlassShadowPainter(
-        borderRadius,
-        opacity: GlassTone.shadowOpacity,
-      ),
+      painter: GlassShadowPainter(borderRadius, opacity: tone.shadowOpacity),
       child: glass,
     );
   }
@@ -274,10 +785,14 @@ class _LensFilter extends SingleChildRenderObjectWidget {
     required this.refraction,
     required this.band,
     required this.light,
+    required this.dark,
     required this.dpr,
     required this.screen,
     super.child,
   });
+
+  /// Dark glass: the light it takes adds rather than tints.
+  final bool dark;
 
   /// `null` = a capsule, resolved from the laid-out size.
   final double? radius;
@@ -295,6 +810,7 @@ class _LensFilter extends SingleChildRenderObjectWidget {
     ..refraction = refraction
     ..band = band
     ..light = light
+    ..dark = dark
     ..dpr = dpr
     ..screen = screen;
 
@@ -305,6 +821,7 @@ class _LensFilter extends SingleChildRenderObjectWidget {
     ..refraction = refraction
     ..band = band
     ..light = light
+    ..dark = dark
     ..dpr = dpr
     ..screen = screen;
 }
@@ -325,6 +842,13 @@ class _RenderLensFilter extends RenderProxyBox {
   set band(double v) => _set(_band, v, (x) => _band = x);
   set dpr(double v) => _set(_dpr, v, (x) => _dpr = x);
   set light(double v) => _set(_light, v, (x) => _light = x);
+
+  bool _dark = true;
+  set dark(bool v) {
+    if (_dark == v) return;
+    _dark = v;
+    markNeedsPaint();
+  }
 
   set screen(Size v) {
     if (_screen == v) return;
@@ -394,8 +918,7 @@ class _RenderLensFilter extends RenderProxyBox {
       ..setFloat(11, _screen.width * _dpr)
       ..setFloat(12, _screen.height * _dpr)
       ..setFloat(13, _light)
-      // Dark glass: the light it takes adds.
-      ..setFloat(14, 1);
+      ..setFloat(14, _dark ? 1 : 0);
     _lensLayer.layer ??= BackdropFilterLayer();
     _lensLayer.layer!.filter = ui.ImageFilter.shader(shader);
     void lensPass(PaintingContext context, Offset offset) =>

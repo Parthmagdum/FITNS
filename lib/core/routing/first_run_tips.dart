@@ -15,7 +15,9 @@ import 'quick_add.dart';
 /// the right, and 16 (or the system bar, if taller) from the bottom.
 Offset fitnsButtonCentre(BuildContext context) {
   final size = MediaQuery.sizeOf(context);
-  final bottom = math.max(MediaQuery.paddingOf(context).bottom, 16.0);
+  final bottom =
+      math.max(MediaQuery.paddingOf(context).bottom, 16.0) +
+      ProviderScope.containerOf(context).read(navExtraInsetProvider);
   const r = QuickAddButton.size / 2;
   return Offset(size.width - 16 - r, size.height - bottom - r);
 }
@@ -210,8 +212,14 @@ class _FirstRunTipsState extends ConsumerState<FirstRunTips>
   List<Widget> _tabDemo(BuildContext context, double t) {
     final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
-    // The second tab, Workouts, just under the bottom edge.
-    final target = Offset(size.width * 0.3, size.height - 6);
+    // The second tab, Workouts: in the floating bar, which the page runs
+    // on beneath (its top is where the page's bottom padding starts), or
+    // just under the bottom edge, in Material's bar below the page.
+    final floating = ref.watch(floatingTabBarProvider);
+    final under = MediaQuery.paddingOf(context).bottom;
+    final target = floating
+        ? Offset(16 + (size.width - 32) * 0.3, size.height - under + 30)
+        : Offset(size.width * 0.3, size.height - 6);
     final tap = t > 0.35 && t < 0.5;
     return [
       for (var k = 0; k < 2; k++) _ring(target, (t + k / 2) % 1, theme.accent),
@@ -219,7 +227,7 @@ class _FirstRunTipsState extends ConsumerState<FirstRunTips>
       Positioned(
         left: 0,
         right: 0,
-        bottom: 70,
+        bottom: floating ? under + 64 : 70,
         child: IgnorePointer(
           child: Icon(
             Icons.keyboard_double_arrow_down_rounded,

@@ -1,0 +1,2 @@
+- Customize navigation: floating or classic tab bar, labels, hold menu shortcuts and order, bottom spacing
+- Glass like XPENC: six wallpapers (Aurora, White, Black, Ocean, Sunset, Nebula), glowing cards, a liquid glass tab bar

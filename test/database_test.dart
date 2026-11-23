@@ -38,6 +38,18 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 19) {
+      for (final column in [
+        'tab_bar_style',
+        'tab_labels',
+        'nav_extra_inset',
+        'hold_shortcuts',
+        'hold_tabs',
+        'glass_backdrop',
+      ]) {
+        await db.customStatement('ALTER TABLE settings DROP COLUMN $column');
+      }
+    }
     if (schema < 18) {
       await db.customStatement('ALTER TABLE settings DROP COLUMN nav_style');
     }

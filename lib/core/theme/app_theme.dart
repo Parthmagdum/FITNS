@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'glass.dart';
 
-export 'glass.dart' show AppSurface;
+export 'glass.dart' show AppSurface, GlassBackdrop;
 
 /// Every colour the theme varies. The monochrome pair is XPENC's Classic
 /// palette value for value, so the two TRAKVRS apps read as siblings; only
@@ -75,20 +75,37 @@ class Palette {
     onPrimary: Color(0xFF0A0A0B),
   );
 
-  /// Glass: XPENC's Liquid Glass over pure black, iOS's dark label colours,
-  /// FITNS orange. Cards and sheets take their colours from [GlassTone].
+  /// Glass on a dark background (Black, Ocean, Nebula): XPENC's Liquid
+  /// Glass, iOS's dark label colours, FITNS orange. Cards and sheets take
+  /// their colours from the backdrop's [GlassTone].
   static const glass = Palette(
     brightness: Brightness.dark,
     bg: Color(0xFF000000),
     surface: Color(0xFF000000),
     surfaceHigh: Color(0xFF1C1C1E),
-    track: GlassTone.track,
-    border: GlassTone.separator,
+    track: Color(0x3D787880),
+    border: Color(0x33FFFFFF),
     text: Color(0xFFF5F5F7),
     textMuted: Color(0xFF9C9CA3),
     accent: Color(0xFFFF7A2F),
     primary: Color(0xFFF5F5F7),
     onPrimary: Color(0xFF0A0A0B),
+  );
+
+  /// Glass on a bright background (Aurora, White, Sunset): iOS's light
+  /// label colours, FITNS orange.
+  static const glassLight = Palette(
+    brightness: Brightness.light,
+    bg: Color(0xFFEFF2F8),
+    surface: Color(0xFFEFF2F8),
+    surfaceHigh: Color(0xFFFFFFFF),
+    track: Color(0x1F787880),
+    border: Color(0x243C3C43),
+    text: Color(0xFF0A0A0F),
+    textMuted: Color(0xFF65656D),
+    accent: Color(0xFFEA580C),
+    primary: Color(0xFF0A0A0F),
+    onPrimary: Color(0xFFFFFFFF),
   );
 }
 
@@ -108,8 +125,12 @@ class AppTheme {
   static ThemeData get light => of(Palette.light);
   static ThemeData get dark => of(Palette.dark);
 
-  /// The Liquid Glass look, after XPENC's: always dark.
-  static ThemeData get glass => _liquidGlass(of(Palette.glass), Palette.glass);
+  /// The Liquid Glass look, after XPENC's, over [backdrop] — light glass
+  /// on a bright one, dark on a dark one.
+  static ThemeData glass([GlassBackdrop backdrop = GlassBackdrop.fallback]) {
+    final p = backdrop.isDark ? Palette.glass : Palette.glassLight;
+    return _liquidGlass(of(p), p, backdrop);
+  }
 
   static ThemeData of(Palette p) {
     final isDark = p.brightness == Brightness.dark;
@@ -324,44 +345,55 @@ class AppTheme {
 /// Glass's overrides, modelled on iOS (and XPENC's Glass): frosted cards
 /// with a hairline edge, capsule buttons, dense frosted sheets and menus,
 /// glass back buttons, iOS page transitions with swipe-back, no ripple.
-ThemeData _liquidGlass(ThemeData t, Palette p) {
+ThemeData _liquidGlass(ThemeData t, Palette p, GlassBackdrop backdrop) {
+  final tone = backdrop.tone;
   const stadium = StadiumBorder();
   final scheme = t.colorScheme.copyWith(
     // Material paints menus, pickers and dropdowns with these, over content
     // and with nothing blurred behind — so they stay near-opaque.
-    surfaceContainerLowest: GlassTone.solidFrost,
-    surfaceContainerLow: GlassTone.solidFrost,
-    surfaceContainer: GlassTone.solidFrost,
-    surfaceContainerHigh: GlassTone.solidFrost,
-    outline: GlassTone.separator,
-    outlineVariant: GlassTone.separator,
+    surfaceContainerLowest: tone.solidFrost,
+    surfaceContainerLow: tone.solidFrost,
+    surfaceContainer: tone.solidFrost,
+    surfaceContainerHigh: tone.solidFrost,
+    outline: tone.separator,
+    outlineVariant: tone.separator,
   );
   return t.copyWith(
     colorScheme: scheme,
-    extensions: const [AppSurface(glass: true)],
-    canvasColor: GlassTone.solidFrost,
+    extensions: [AppSurface(glass: true, backdrop: backdrop)],
+    // The wallpaper shows through every page (see [PageBackdrop]).
+    scaffoldBackgroundColor: Colors.transparent,
+    canvasColor: tone.solidFrost,
     splashFactory: NoSplash.splashFactory,
-    highlightColor: const Color(0x1FFFFFFF),
+    highlightColor: tone.isDark
+        ? const Color(0x1FFFFFFF)
+        : const Color(0x14000000),
+    // Clear over the wallpaper; frosted once the page scrolls beneath.
+    appBarTheme: t.appBarTheme.copyWith(
+      backgroundColor: WidgetStateColor.resolveWith(
+        (states) => states.contains(WidgetState.scrolledUnder)
+            ? tone.floating
+            : Colors.transparent,
+      ),
+    ),
     cardTheme: t.cardTheme.copyWith(
-      color: GlassTone.frostHigh,
+      color: tone.frostHigh,
       elevation: 0,
       shape: RoundedSuperellipseBorder(
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        side: const BorderSide(color: GlassTone.edge, width: 0.5),
+        side: BorderSide(color: tone.edge, width: 0.5),
       ),
     ),
-    dividerTheme: const DividerThemeData(
-      color: GlassTone.separator,
+    dividerTheme: DividerThemeData(
+      color: tone.separator,
       thickness: 0.5,
       space: 1,
     ),
     chipTheme: t.chipTheme.copyWith(
-      backgroundColor: GlassTone.fill,
+      backgroundColor: tone.fill,
       side: BorderSide.none,
     ),
-    inputDecorationTheme: t.inputDecorationTheme.copyWith(
-      fillColor: GlassTone.fill,
-    ),
+    inputDecorationTheme: t.inputDecorationTheme.copyWith(fillColor: tone.fill),
     filledButtonTheme: FilledButtonThemeData(
       style: t.filledButtonTheme.style?.copyWith(
         shape: const WidgetStatePropertyAll(stadium),
@@ -370,44 +402,46 @@ ThemeData _liquidGlass(ThemeData t, Palette p) {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: t.outlinedButtonTheme.style?.copyWith(
         shape: const WidgetStatePropertyAll(stadium),
-        side: const WidgetStatePropertyAll(BorderSide(color: GlassTone.edge)),
-        backgroundColor: const WidgetStatePropertyAll(GlassTone.fill),
+        side: WidgetStatePropertyAll(BorderSide(color: tone.edge)),
+        backgroundColor: WidgetStatePropertyAll(tone.fill),
       ),
     ),
     floatingActionButtonTheme: t.floatingActionButtonTheme.copyWith(
       shape: stadium,
     ),
     bottomSheetTheme: t.bottomSheetTheme.copyWith(
-      backgroundColor: GlassTone.floating,
-      modalBackgroundColor: GlassTone.floating,
-      modalBarrierColor: GlassTone.barrier,
+      backgroundColor: tone.floating,
+      modalBackgroundColor: tone.floating,
+      modalBarrierColor: tone.barrier,
     ),
     dialogTheme: t.dialogTheme.copyWith(
-      backgroundColor: GlassTone.floating,
-      barrierColor: GlassTone.barrier,
+      backgroundColor: tone.floating,
+      barrierColor: tone.barrier,
     ),
-    popupMenuTheme: const PopupMenuThemeData(color: GlassTone.solidFrost),
-    datePickerTheme: const DatePickerThemeData(
-      backgroundColor: GlassTone.solidFrost,
+    popupMenuTheme: PopupMenuThemeData(color: tone.solidFrost),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: tone.solidFrost,
       surfaceTintColor: Colors.transparent,
     ),
-    timePickerTheme: const TimePickerThemeData(
-      backgroundColor: GlassTone.solidFrost,
-    ),
+    timePickerTheme: TimePickerThemeData(backgroundColor: tone.solidFrost),
     snackBarTheme: t.snackBarTheme.copyWith(
-      backgroundColor: GlassTone.floating,
+      backgroundColor: tone.floating,
       contentTextStyle: TextStyle(color: p.text),
       shape: stadium,
     ),
     progressIndicatorTheme: t.progressIndicatorTheme.copyWith(
-      linearTrackColor: GlassTone.track,
-      circularTrackColor: GlassTone.track,
+      linearTrackColor: tone.track,
+      circularTrackColor: tone.track,
     ),
     // iOS's slide, with swipe-back, on every platform.
+    // iOS's slide, with swipe-back, on every platform — each page on its
+    // own slice of the wallpaper, so a page sliding in stays opaque.
     pageTransitionsTheme: PageTransitionsTheme(
       builders: {
         for (final platform in TargetPlatform.values)
-          platform: const CupertinoPageTransitionsBuilder(),
+          platform: const _BackdropTransitionsBuilder(
+            CupertinoPageTransitionsBuilder(),
+          ),
       },
     ),
     actionIconTheme: ActionIconThemeData(
@@ -415,6 +449,59 @@ ThemeData _liquidGlass(ThemeData t, Palette p) {
           const GlassNavGlyph(Icons.arrow_back_ios_new_rounded),
       closeButtonIconBuilder: (_) => const GlassNavGlyph(Icons.close_rounded),
     ),
+  );
+}
+
+/// Paints the Glass wallpaper behind a page — the stand-in for
+/// `scaffoldBackgroundColor`, which Glass leaves clear.
+class PageBackdrop extends StatelessWidget {
+  const PageBackdrop({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final backdrop = AppSurface.of(context).backdrop;
+    if (backdrop == null) return child;
+    // The RepaintBoundary keeps content changes from repainting the
+    // wallpaper.
+    return GlassWallpaper(
+      backdrop: backdrop,
+      child: RepaintBoundary(child: child),
+    );
+  }
+}
+
+/// [inner]'s transition, around a page that carries its own backdrop — so
+/// clear Glass scaffolds stay opaque as whole routes.
+class _BackdropTransitionsBuilder extends PageTransitionsBuilder {
+  const _BackdropTransitionsBuilder(this.inner);
+
+  final PageTransitionsBuilder inner;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      inner.delegatedTransition;
+
+  @override
+  Duration get transitionDuration => inner.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration => inner.reverseTransitionDuration;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => inner.buildTransitions(
+    route,
+    context,
+    animation,
+    secondaryAnimation,
+    PageBackdrop(child: child),
   );
 }
 

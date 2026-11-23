@@ -15,6 +15,7 @@ import '../../features/plan/plan_screen.dart';
 import '../../features/progress/progress_screen.dart';
 import '../../features/programs/program_editor_screen.dart';
 import '../../features/routines/routine_editor_screen.dart';
+import '../../features/settings/navigation_settings_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/setup/setup_screen.dart';
 import '../../features/steps/steps_screen.dart';
@@ -116,6 +117,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/settings/goals', builder: (_, _) => const GoalsScreen()),
+      GoRoute(
+        path: '/settings/navigation',
+        builder: (_, _) => const NavigationSettingsScreen(),
+      ),
       GoRoute(path: '/steps', builder: (_, _) => const StepsScreen()),
       GoRoute(path: '/cycling', builder: (_, _) => const CyclingScreen()),
       GoRoute(path: '/water', builder: (_, _) => const WaterScreen()),

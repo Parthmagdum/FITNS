@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme/glass.dart';
+
 /// Pages opened from the corner logo button grow out of it: the whole app
 /// is shown through a circle that swells from the button until it covers
 /// the screen, over a dimmed backdrop, while the page settles from a
@@ -52,7 +54,9 @@ class _LaunchRevealState extends State<LaunchReveal>
   Widget build(BuildContext context) {
     final backdrop = Color.alphaBlend(
       Colors.black.withValues(alpha: 0.55),
-      Theme.of(context).scaffoldBackgroundColor,
+      // Under Glass the page is clear: its wallpaper's colour instead.
+      AppSurface.of(context).backdrop?.base ??
+          Theme.of(context).scaffoldBackgroundColor,
     );
     return AnimatedBuilder(
       animation: _t,

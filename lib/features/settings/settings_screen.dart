@@ -8,6 +8,8 @@ import '../../core/branding/app_info.dart';
 import '../../core/notifications/rest_alerts.dart';
 import '../../core/platform/health_connect.dart';
 import '../../core/steps/step_sensor.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/glass.dart';
 import '../../core/units.dart';
 import '../../core/widgets/app_page.dart';
 import '../../data/database.dart';
@@ -286,17 +288,20 @@ class SettingsScreen extends ConsumerWidget {
           onSelectionChanged: (s) =>
               save(SettingsCompanion(themeMode: Value(s.first))),
         ),
-        if (ref.watch(glassThemeProvider))
+        if (ref.watch(glassThemeProvider)) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
             child: Text(
-              'Liquid Glass: frosted cards and a glass FITNS button on '
-              'black, the same look as XPENC.',
+              'Liquid Glass, the same look as XPENC: frosted cards that '
+              'glow with the colours behind them, and a glass tab bar. '
+              'Pick what it sits on:',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
+          const _GlassBackdropPicker(),
+        ],
         const SectionLabel('Navigation'),
         // The FITNS button (tap, or hold and slide), or a plain tab bar.
         SegmentedButton<bool>(
@@ -316,6 +321,21 @@ class SettingsScreen extends ConsumerWidget {
           ],
           selected: {ref.watch(tabBarNavProvider)},
           onSelectionChanged: (s) => setTabBarNav(ref, s.first),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            key: const Key('customize-nav'),
+            leading: const Icon(Icons.tune),
+            title: const Text('Customize'),
+            subtitle: Text(
+              ref.watch(tabBarNavProvider)
+                  ? 'Floating or classic bar, labels, spacing'
+                  : 'Hold menu shortcuts and their order, spacing',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/navigation'),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
@@ -413,6 +433,80 @@ class _RestAlertTile extends ConsumerWidget {
       trailing: fix == null
           ? null
           : TextButton(onPressed: fix, child: const Text('Fix')),
+    );
+  }
+}
+
+/// Glass's backgrounds, as little pictures of themselves (XPENC's Theme →
+/// Background).
+class _GlassBackdropPicker extends ConsumerWidget {
+  const _GlassBackdropPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final current = ref.watch(glassBackdropProvider);
+    return SizedBox(
+      height: 92,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          for (final b in GlassBackdrop.values)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GestureDetector(
+                key: Key('glass-bg-${b.name}'),
+                onTap: () => ref
+                    .read(dbProvider)
+                    .updateSettings(
+                      SettingsCompanion(glassBackdrop: Value(b.name)),
+                    ),
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 60,
+                      height: 60,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: b == current
+                              ? theme.accent
+                              : theme.colorScheme.outlineVariant,
+                          width: b == current ? 2.5 : 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            GlassBackdropSwatch(b),
+                            if (b == current)
+                              Icon(
+                                Icons.check_rounded,
+                                color: b.isDark ? Colors.white : Colors.black87,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      b.label,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: b == current
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

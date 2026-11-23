@@ -22,6 +22,7 @@ import '../core/steps/step_stats.dart' show stepCalories;
 import '../core/training/burn.dart';
 import '../core/training/burn_target.dart';
 import '../core/training/programs.dart';
+import '../core/theme/glass.dart' show GlassBackdrop;
 import '../core/training/swaps.dart';
 import '../core/units.dart';
 import 'backup.dart';
@@ -74,14 +75,89 @@ Future<void> setTabBarNav(WidgetRef ref, bool bar) => ref
     .read(dbProvider)
     .updateSettings(SettingsCompanion(navStyle: Value(bar ? 'bar' : 'button')));
 
-/// The Liquid Glass look (XPENC's), which is always dark.
+/// The tab bar floats over the page as a capsule (XPENC's), rather than
+/// Material's edge-to-edge bar.
+final floatingTabBarProvider = Provider<bool>(
+  (ref) =>
+      (ref.watch(settingsProvider.select((s) => s.valueOrNull?.tabBarStyle)) ??
+          'floating') ==
+      'floating',
+);
+
+/// Words under the tab bar's icons.
+final tabLabelsProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(settingsProvider.select((s) => s.valueOrNull?.tabLabels)) ??
+      true,
+);
+
+/// Extra room under the tab bar and the FITNS button.
+final navExtraInsetProvider = Provider<double>(
+  (ref) =>
+      (ref.watch(
+                settingsProvider.select((s) => s.valueOrNull?.navExtraInset),
+              ) ??
+              0)
+          .toDouble(),
+);
+
+/// The hold menu's shortcuts, by id, in order.
+final holdShortcutsProvider = Provider<List<String>>((ref) {
+  final raw = ref.watch(
+    settingsProvider.select((s) => s.valueOrNull?.holdShortcuts),
+  );
+  return parseHoldShortcuts(raw);
+});
+
+/// Every shortcut the hold menu can hold, by id, in their usual order —
+/// the same order as `quickActions`.
+const quickActionIds = [
+  'workout',
+  'food',
+  'water',
+  'weight',
+  'sleep',
+  'steps',
+  'cycling',
+];
+
+/// [raw] as stored (see `Settings.holdShortcuts`): known ids only, each
+/// once; `null` means all of them.
+List<String> parseHoldShortcuts(String? raw) {
+  if (raw == null) return quickActionIds;
+  final ids = <String>[];
+  for (final id in raw.split(',')) {
+    if (quickActionIds.contains(id) && !ids.contains(id)) ids.add(id);
+  }
+  return ids;
+}
+
+/// Whether the hold menu also offers the pages.
+final holdTabsProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(settingsProvider.select((s) => s.valueOrNull?.holdTabs)) ??
+      true,
+);
+
+/// The Liquid Glass look (XPENC's).
 final glassThemeProvider = Provider<bool>(
   (ref) => ref.watch(appearanceProvider) == 'glass',
 );
 
+/// What Glass sits on.
+final glassBackdropProvider = Provider<GlassBackdrop>(
+  (ref) => GlassBackdrop.byName(
+    ref.watch(settingsProvider.select((s) => s.valueOrNull?.glassBackdrop)),
+  ),
+);
+
 final themeModeProvider = Provider<ThemeMode>((ref) {
   final name = ref.watch(appearanceProvider);
-  if (name == 'glass') return ThemeMode.dark;
+  if (name == 'glass') {
+    return ref.watch(glassBackdropProvider).isDark
+        ? ThemeMode.dark
+        : ThemeMode.light;
+  }
   return ThemeMode.values.asNameMap()[name] ?? ThemeMode.light;
 });
 

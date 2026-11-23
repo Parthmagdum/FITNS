@@ -122,6 +122,18 @@ List<QuickAction> actionsFor(WorkoutRow? active) => [
   ...quickActions.skip(1),
 ];
 
+/// The hold menu's shortcuts: those picked in Settings ([ids], from
+/// `quickActionIds`), in that order — with a workout running, Start
+/// workout goes back to it.
+List<QuickAction> holdActionsFor(WorkoutRow? active, List<String> ids) {
+  final all = actionsFor(active);
+  return [
+    for (final id in ids)
+      if (quickActionIds.indexOf(id) case final i when i >= 0 && i < all.length)
+        all[i],
+  ];
+}
+
 /// Does [action], opening it out of the button at [origin] if it's a page.
 Future<void> _launch(
   BuildContext context,
@@ -175,9 +187,15 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
   /// What [_hovered] holds while the thumb is on [_barTarget].
   static const _onBarSwitch = -2;
 
+  /// The shortcuts picked for the hold menu (Settings → Navigation).
+  List<QuickAction> get _actions => holdActionsFor(
+    ref.read(activeWorkoutProvider).valueOrNull,
+    ref.read(holdShortcutsProvider),
+  );
+
   List<QuickAction> get _items => [
-    ...actionsFor(ref.read(activeWorkoutProvider).valueOrNull),
-    ...widget.tabs,
+    ..._actions,
+    if (ref.read(holdTabsProvider)) ...widget.tabs,
   ];
 
   Offset _centre() {
@@ -220,7 +238,7 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
           origin: origin,
           centres: _centres,
           items: items,
-          firstTab: quickActions.length,
+          firstTab: _actions.length,
           currentTab: widget.currentTab,
           hovered: _hovered,
           barTarget: _barTarget,
@@ -898,8 +916,10 @@ class _HoldMenuState extends State<_HoldMenu>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   legend(theme.accent, 'Quick add'),
-                  const SizedBox(width: 14),
-                  legend(_paleTab, 'Go to'),
+                  if (widget.firstTab < widget.items.length) ...[
+                    const SizedBox(width: 14),
+                    legend(_paleTab, 'Go to'),
+                  ],
                 ],
               ),
             ),

@@ -342,6 +342,30 @@ class Settings extends Table {
   /// `button` (the FITNS button in the corner, tap or hold). Schema v18.
   TextColumn get navStyle => text().withDefault(const Constant('bar'))();
 
+  /// The tab bar's look: `floating` (a capsule floating over the page,
+  /// glass under Glass — XPENC's) or `classic` (Material's, edge to edge).
+  /// Schema v19, like the rest of this group.
+  TextColumn get tabBarStyle =>
+      text().withDefault(const Constant('floating'))();
+
+  /// Words under the tab bar's icons.
+  BoolColumn get tabLabels => boolean().withDefault(const Constant(true))();
+
+  /// Extra room under the tab bar and the FITNS button, in logical pixels,
+  /// for phones whose own buttons sit over them.
+  IntColumn get navExtraInset => integer().withDefault(const Constant(0))();
+
+  /// The shortcuts in the FITNS button's hold menu, in order — ids from
+  /// `quickActionIds`, comma-separated. `null` = all of them.
+  TextColumn get holdShortcuts => text().nullable()();
+
+  /// Whether the hold menu also offers the pages (Go to).
+  BoolColumn get holdTabs => boolean().withDefault(const Constant(true))();
+
+  /// What Glass sits on: a [GlassBackdrop] name.
+  TextColumn get glassBackdrop =>
+      text().withDefault(const Constant('aurora'))();
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.

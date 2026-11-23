@@ -529,6 +529,83 @@ class $SettingsTable extends Settings
     requiredDuringInsert: false,
     defaultValue: const Constant('bar'),
   );
+  static const VerificationMeta _tabBarStyleMeta = const VerificationMeta(
+    'tabBarStyle',
+  );
+  @override
+  late final GeneratedColumn<String> tabBarStyle = GeneratedColumn<String>(
+    'tab_bar_style',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('floating'),
+  );
+  static const VerificationMeta _tabLabelsMeta = const VerificationMeta(
+    'tabLabels',
+  );
+  @override
+  late final GeneratedColumn<bool> tabLabels = GeneratedColumn<bool>(
+    'tab_labels',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("tab_labels" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _navExtraInsetMeta = const VerificationMeta(
+    'navExtraInset',
+  );
+  @override
+  late final GeneratedColumn<int> navExtraInset = GeneratedColumn<int>(
+    'nav_extra_inset',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _holdShortcutsMeta = const VerificationMeta(
+    'holdShortcuts',
+  );
+  @override
+  late final GeneratedColumn<String> holdShortcuts = GeneratedColumn<String>(
+    'hold_shortcuts',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _holdTabsMeta = const VerificationMeta(
+    'holdTabs',
+  );
+  @override
+  late final GeneratedColumn<bool> holdTabs = GeneratedColumn<bool>(
+    'hold_tabs',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hold_tabs" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _glassBackdropMeta = const VerificationMeta(
+    'glassBackdrop',
+  );
+  @override
+  late final GeneratedColumn<String> glassBackdrop = GeneratedColumn<String>(
+    'glass_backdrop',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('aurora'),
+  );
   static const VerificationMeta _musicTracksMeta = const VerificationMeta(
     'musicTracks',
   );
@@ -586,6 +663,12 @@ class $SettingsTable extends Settings
     swipeHintDone,
     holdHintDone,
     navStyle,
+    tabBarStyle,
+    tabLabels,
+    navExtraInset,
+    holdShortcuts,
+    holdTabs,
+    glassBackdrop,
     musicTracks,
   ];
   @override
@@ -921,6 +1004,54 @@ class $SettingsTable extends Settings
         navStyle.isAcceptableOrUnknown(data['nav_style']!, _navStyleMeta),
       );
     }
+    if (data.containsKey('tab_bar_style')) {
+      context.handle(
+        _tabBarStyleMeta,
+        tabBarStyle.isAcceptableOrUnknown(
+          data['tab_bar_style']!,
+          _tabBarStyleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tab_labels')) {
+      context.handle(
+        _tabLabelsMeta,
+        tabLabels.isAcceptableOrUnknown(data['tab_labels']!, _tabLabelsMeta),
+      );
+    }
+    if (data.containsKey('nav_extra_inset')) {
+      context.handle(
+        _navExtraInsetMeta,
+        navExtraInset.isAcceptableOrUnknown(
+          data['nav_extra_inset']!,
+          _navExtraInsetMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hold_shortcuts')) {
+      context.handle(
+        _holdShortcutsMeta,
+        holdShortcuts.isAcceptableOrUnknown(
+          data['hold_shortcuts']!,
+          _holdShortcutsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hold_tabs')) {
+      context.handle(
+        _holdTabsMeta,
+        holdTabs.isAcceptableOrUnknown(data['hold_tabs']!, _holdTabsMeta),
+      );
+    }
+    if (data.containsKey('glass_backdrop')) {
+      context.handle(
+        _glassBackdropMeta,
+        glassBackdrop.isAcceptableOrUnknown(
+          data['glass_backdrop']!,
+          _glassBackdropMeta,
+        ),
+      );
+    }
     if (data.containsKey('music_tracks')) {
       context.handle(
         _musicTracksMeta,
@@ -1125,6 +1256,30 @@ class $SettingsTable extends Settings
         DriftSqlType.string,
         data['${effectivePrefix}nav_style'],
       )!,
+      tabBarStyle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tab_bar_style'],
+      )!,
+      tabLabels: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}tab_labels'],
+      )!,
+      navExtraInset: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}nav_extra_inset'],
+      )!,
+      holdShortcuts: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hold_shortcuts'],
+      ),
+      holdTabs: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hold_tabs'],
+      )!,
+      glassBackdrop: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}glass_backdrop'],
+      )!,
       musicTracks: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}music_tracks'],
@@ -1285,6 +1440,28 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// `button` (the FITNS button in the corner, tap or hold). Schema v18.
   final String navStyle;
 
+  /// The tab bar's look: `floating` (a capsule floating over the page,
+  /// glass under Glass — XPENC's) or `classic` (Material's, edge to edge).
+  /// Schema v19, like the rest of this group.
+  final String tabBarStyle;
+
+  /// Words under the tab bar's icons.
+  final bool tabLabels;
+
+  /// Extra room under the tab bar and the FITNS button, in logical pixels,
+  /// for phones whose own buttons sit over them.
+  final int navExtraInset;
+
+  /// The shortcuts in the FITNS button's hold menu, in order — ids from
+  /// `quickActionIds`, comma-separated. `null` = all of them.
+  final String? holdShortcuts;
+
+  /// Whether the hold menu also offers the pages (Go to).
+  final bool holdTabs;
+
+  /// What Glass sits on: a [GlassBackdrop] name.
+  final String glassBackdrop;
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.
@@ -1334,6 +1511,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     required this.swipeHintDone,
     required this.holdHintDone,
     required this.navStyle,
+    required this.tabBarStyle,
+    required this.tabLabels,
+    required this.navExtraInset,
+    this.holdShortcuts,
+    required this.holdTabs,
+    required this.glassBackdrop,
     this.musicTracks,
   });
   @override
@@ -1433,6 +1616,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     map['swipe_hint_done'] = Variable<bool>(swipeHintDone);
     map['hold_hint_done'] = Variable<bool>(holdHintDone);
     map['nav_style'] = Variable<String>(navStyle);
+    map['tab_bar_style'] = Variable<String>(tabBarStyle);
+    map['tab_labels'] = Variable<bool>(tabLabels);
+    map['nav_extra_inset'] = Variable<int>(navExtraInset);
+    if (!nullToAbsent || holdShortcuts != null) {
+      map['hold_shortcuts'] = Variable<String>(holdShortcuts);
+    }
+    map['hold_tabs'] = Variable<bool>(holdTabs);
+    map['glass_backdrop'] = Variable<String>(glassBackdrop);
     if (!nullToAbsent || musicTracks != null) {
       map['music_tracks'] = Variable<String>(musicTracks);
     }
@@ -1523,6 +1714,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       swipeHintDone: Value(swipeHintDone),
       holdHintDone: Value(holdHintDone),
       navStyle: Value(navStyle),
+      tabBarStyle: Value(tabBarStyle),
+      tabLabels: Value(tabLabels),
+      navExtraInset: Value(navExtraInset),
+      holdShortcuts: holdShortcuts == null && nullToAbsent
+          ? const Value.absent()
+          : Value(holdShortcuts),
+      holdTabs: Value(holdTabs),
+      glassBackdrop: Value(glassBackdrop),
       musicTracks: musicTracks == null && nullToAbsent
           ? const Value.absent()
           : Value(musicTracks),
@@ -1607,6 +1806,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       swipeHintDone: serializer.fromJson<bool>(json['swipeHintDone']),
       holdHintDone: serializer.fromJson<bool>(json['holdHintDone']),
       navStyle: serializer.fromJson<String>(json['navStyle']),
+      tabBarStyle: serializer.fromJson<String>(json['tabBarStyle']),
+      tabLabels: serializer.fromJson<bool>(json['tabLabels']),
+      navExtraInset: serializer.fromJson<int>(json['navExtraInset']),
+      holdShortcuts: serializer.fromJson<String?>(json['holdShortcuts']),
+      holdTabs: serializer.fromJson<bool>(json['holdTabs']),
+      glassBackdrop: serializer.fromJson<String>(json['glassBackdrop']),
       musicTracks: serializer.fromJson<String?>(json['musicTracks']),
     );
   }
@@ -1668,6 +1873,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'swipeHintDone': serializer.toJson<bool>(swipeHintDone),
       'holdHintDone': serializer.toJson<bool>(holdHintDone),
       'navStyle': serializer.toJson<String>(navStyle),
+      'tabBarStyle': serializer.toJson<String>(tabBarStyle),
+      'tabLabels': serializer.toJson<bool>(tabLabels),
+      'navExtraInset': serializer.toJson<int>(navExtraInset),
+      'holdShortcuts': serializer.toJson<String?>(holdShortcuts),
+      'holdTabs': serializer.toJson<bool>(holdTabs),
+      'glassBackdrop': serializer.toJson<String>(glassBackdrop),
       'musicTracks': serializer.toJson<String?>(musicTracks),
     };
   }
@@ -1717,6 +1928,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     bool? swipeHintDone,
     bool? holdHintDone,
     String? navStyle,
+    String? tabBarStyle,
+    bool? tabLabels,
+    int? navExtraInset,
+    Value<String?> holdShortcuts = const Value.absent(),
+    bool? holdTabs,
+    String? glassBackdrop,
     Value<String?> musicTracks = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
@@ -1785,6 +2002,14 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     swipeHintDone: swipeHintDone ?? this.swipeHintDone,
     holdHintDone: holdHintDone ?? this.holdHintDone,
     navStyle: navStyle ?? this.navStyle,
+    tabBarStyle: tabBarStyle ?? this.tabBarStyle,
+    tabLabels: tabLabels ?? this.tabLabels,
+    navExtraInset: navExtraInset ?? this.navExtraInset,
+    holdShortcuts: holdShortcuts.present
+        ? holdShortcuts.value
+        : this.holdShortcuts,
+    holdTabs: holdTabs ?? this.holdTabs,
+    glassBackdrop: glassBackdrop ?? this.glassBackdrop,
     musicTracks: musicTracks.present ? musicTracks.value : this.musicTracks,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
@@ -1899,6 +2124,20 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ? data.holdHintDone.value
           : this.holdHintDone,
       navStyle: data.navStyle.present ? data.navStyle.value : this.navStyle,
+      tabBarStyle: data.tabBarStyle.present
+          ? data.tabBarStyle.value
+          : this.tabBarStyle,
+      tabLabels: data.tabLabels.present ? data.tabLabels.value : this.tabLabels,
+      navExtraInset: data.navExtraInset.present
+          ? data.navExtraInset.value
+          : this.navExtraInset,
+      holdShortcuts: data.holdShortcuts.present
+          ? data.holdShortcuts.value
+          : this.holdShortcuts,
+      holdTabs: data.holdTabs.present ? data.holdTabs.value : this.holdTabs,
+      glassBackdrop: data.glassBackdrop.present
+          ? data.glassBackdrop.value
+          : this.glassBackdrop,
       musicTracks: data.musicTracks.present
           ? data.musicTracks.value
           : this.musicTracks,
@@ -1952,6 +2191,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('swipeHintDone: $swipeHintDone, ')
           ..write('holdHintDone: $holdHintDone, ')
           ..write('navStyle: $navStyle, ')
+          ..write('tabBarStyle: $tabBarStyle, ')
+          ..write('tabLabels: $tabLabels, ')
+          ..write('navExtraInset: $navExtraInset, ')
+          ..write('holdShortcuts: $holdShortcuts, ')
+          ..write('holdTabs: $holdTabs, ')
+          ..write('glassBackdrop: $glassBackdrop, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -2003,6 +2248,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     swipeHintDone,
     holdHintDone,
     navStyle,
+    tabBarStyle,
+    tabLabels,
+    navExtraInset,
+    holdShortcuts,
+    holdTabs,
+    glassBackdrop,
     musicTracks,
   ]);
   @override
@@ -2053,6 +2304,12 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.swipeHintDone == this.swipeHintDone &&
           other.holdHintDone == this.holdHintDone &&
           other.navStyle == this.navStyle &&
+          other.tabBarStyle == this.tabBarStyle &&
+          other.tabLabels == this.tabLabels &&
+          other.navExtraInset == this.navExtraInset &&
+          other.holdShortcuts == this.holdShortcuts &&
+          other.holdTabs == this.holdTabs &&
+          other.glassBackdrop == this.glassBackdrop &&
           other.musicTracks == this.musicTracks);
 }
 
@@ -2101,6 +2358,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<bool> swipeHintDone;
   final Value<bool> holdHintDone;
   final Value<String> navStyle;
+  final Value<String> tabBarStyle;
+  final Value<bool> tabLabels;
+  final Value<int> navExtraInset;
+  final Value<String?> holdShortcuts;
+  final Value<bool> holdTabs;
+  final Value<String> glassBackdrop;
   final Value<String?> musicTracks;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -2147,6 +2410,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.swipeHintDone = const Value.absent(),
     this.holdHintDone = const Value.absent(),
     this.navStyle = const Value.absent(),
+    this.tabBarStyle = const Value.absent(),
+    this.tabLabels = const Value.absent(),
+    this.navExtraInset = const Value.absent(),
+    this.holdShortcuts = const Value.absent(),
+    this.holdTabs = const Value.absent(),
+    this.glassBackdrop = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -2194,6 +2463,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.swipeHintDone = const Value.absent(),
     this.holdHintDone = const Value.absent(),
     this.navStyle = const Value.absent(),
+    this.tabBarStyle = const Value.absent(),
+    this.tabLabels = const Value.absent(),
+    this.navExtraInset = const Value.absent(),
+    this.holdShortcuts = const Value.absent(),
+    this.holdTabs = const Value.absent(),
+    this.glassBackdrop = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
@@ -2241,6 +2516,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<bool>? swipeHintDone,
     Expression<bool>? holdHintDone,
     Expression<String>? navStyle,
+    Expression<String>? tabBarStyle,
+    Expression<bool>? tabLabels,
+    Expression<int>? navExtraInset,
+    Expression<String>? holdShortcuts,
+    Expression<bool>? holdTabs,
+    Expression<String>? glassBackdrop,
     Expression<String>? musicTracks,
   }) {
     return RawValuesInsertable({
@@ -2298,6 +2579,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (swipeHintDone != null) 'swipe_hint_done': swipeHintDone,
       if (holdHintDone != null) 'hold_hint_done': holdHintDone,
       if (navStyle != null) 'nav_style': navStyle,
+      if (tabBarStyle != null) 'tab_bar_style': tabBarStyle,
+      if (tabLabels != null) 'tab_labels': tabLabels,
+      if (navExtraInset != null) 'nav_extra_inset': navExtraInset,
+      if (holdShortcuts != null) 'hold_shortcuts': holdShortcuts,
+      if (holdTabs != null) 'hold_tabs': holdTabs,
+      if (glassBackdrop != null) 'glass_backdrop': glassBackdrop,
       if (musicTracks != null) 'music_tracks': musicTracks,
     });
   }
@@ -2347,6 +2634,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<bool>? swipeHintDone,
     Value<bool>? holdHintDone,
     Value<String>? navStyle,
+    Value<String>? tabBarStyle,
+    Value<bool>? tabLabels,
+    Value<int>? navExtraInset,
+    Value<String?>? holdShortcuts,
+    Value<bool>? holdTabs,
+    Value<String>? glassBackdrop,
     Value<String?>? musicTracks,
   }) {
     return SettingsCompanion(
@@ -2399,6 +2692,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       swipeHintDone: swipeHintDone ?? this.swipeHintDone,
       holdHintDone: holdHintDone ?? this.holdHintDone,
       navStyle: navStyle ?? this.navStyle,
+      tabBarStyle: tabBarStyle ?? this.tabBarStyle,
+      tabLabels: tabLabels ?? this.tabLabels,
+      navExtraInset: navExtraInset ?? this.navExtraInset,
+      holdShortcuts: holdShortcuts ?? this.holdShortcuts,
+      holdTabs: holdTabs ?? this.holdTabs,
+      glassBackdrop: glassBackdrop ?? this.glassBackdrop,
       musicTracks: musicTracks ?? this.musicTracks,
     );
   }
@@ -2560,6 +2859,24 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (navStyle.present) {
       map['nav_style'] = Variable<String>(navStyle.value);
     }
+    if (tabBarStyle.present) {
+      map['tab_bar_style'] = Variable<String>(tabBarStyle.value);
+    }
+    if (tabLabels.present) {
+      map['tab_labels'] = Variable<bool>(tabLabels.value);
+    }
+    if (navExtraInset.present) {
+      map['nav_extra_inset'] = Variable<int>(navExtraInset.value);
+    }
+    if (holdShortcuts.present) {
+      map['hold_shortcuts'] = Variable<String>(holdShortcuts.value);
+    }
+    if (holdTabs.present) {
+      map['hold_tabs'] = Variable<bool>(holdTabs.value);
+    }
+    if (glassBackdrop.present) {
+      map['glass_backdrop'] = Variable<String>(glassBackdrop.value);
+    }
     if (musicTracks.present) {
       map['music_tracks'] = Variable<String>(musicTracks.value);
     }
@@ -2613,6 +2930,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('swipeHintDone: $swipeHintDone, ')
           ..write('holdHintDone: $holdHintDone, ')
           ..write('navStyle: $navStyle, ')
+          ..write('tabBarStyle: $tabBarStyle, ')
+          ..write('tabLabels: $tabLabels, ')
+          ..write('navExtraInset: $navExtraInset, ')
+          ..write('holdShortcuts: $holdShortcuts, ')
+          ..write('holdTabs: $holdTabs, ')
+          ..write('glassBackdrop: $glassBackdrop, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -11197,6 +11520,12 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<bool> swipeHintDone,
       Value<bool> holdHintDone,
       Value<String> navStyle,
+      Value<String> tabBarStyle,
+      Value<bool> tabLabels,
+      Value<int> navExtraInset,
+      Value<String?> holdShortcuts,
+      Value<bool> holdTabs,
+      Value<String> glassBackdrop,
       Value<String?> musicTracks,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
@@ -11245,6 +11574,12 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<bool> swipeHintDone,
       Value<bool> holdHintDone,
       Value<String> navStyle,
+      Value<String> tabBarStyle,
+      Value<bool> tabLabels,
+      Value<int> navExtraInset,
+      Value<String?> holdShortcuts,
+      Value<bool> holdTabs,
+      Value<String> glassBackdrop,
       Value<String?> musicTracks,
     });
 
@@ -11479,6 +11814,36 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<String> get navStyle => $composableBuilder(
     column: $table.navStyle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tabBarStyle => $composableBuilder(
+    column: $table.tabBarStyle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get tabLabels => $composableBuilder(
+    column: $table.tabLabels,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get navExtraInset => $composableBuilder(
+    column: $table.navExtraInset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get holdShortcuts => $composableBuilder(
+    column: $table.holdShortcuts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get holdTabs => $composableBuilder(
+    column: $table.holdTabs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get glassBackdrop => $composableBuilder(
+    column: $table.glassBackdrop,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11717,6 +12082,36 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get tabBarStyle => $composableBuilder(
+    column: $table.tabBarStyle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get tabLabels => $composableBuilder(
+    column: $table.tabLabels,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get navExtraInset => $composableBuilder(
+    column: $table.navExtraInset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get holdShortcuts => $composableBuilder(
+    column: $table.holdShortcuts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get holdTabs => $composableBuilder(
+    column: $table.holdTabs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get glassBackdrop => $composableBuilder(
+    column: $table.glassBackdrop,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => ColumnOrderings(column),
@@ -11933,6 +12328,32 @@ class $$SettingsTableAnnotationComposer
   GeneratedColumn<String> get navStyle =>
       $composableBuilder(column: $table.navStyle, builder: (column) => column);
 
+  GeneratedColumn<String> get tabBarStyle => $composableBuilder(
+    column: $table.tabBarStyle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get tabLabels =>
+      $composableBuilder(column: $table.tabLabels, builder: (column) => column);
+
+  GeneratedColumn<int> get navExtraInset => $composableBuilder(
+    column: $table.navExtraInset,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get holdShortcuts => $composableBuilder(
+    column: $table.holdShortcuts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get holdTabs =>
+      $composableBuilder(column: $table.holdTabs, builder: (column) => column);
+
+  GeneratedColumn<String> get glassBackdrop => $composableBuilder(
+    column: $table.glassBackdrop,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => column,
@@ -12014,6 +12435,12 @@ class $$SettingsTableTableManager
                 Value<bool> swipeHintDone = const Value.absent(),
                 Value<bool> holdHintDone = const Value.absent(),
                 Value<String> navStyle = const Value.absent(),
+                Value<String> tabBarStyle = const Value.absent(),
+                Value<bool> tabLabels = const Value.absent(),
+                Value<int> navExtraInset = const Value.absent(),
+                Value<String?> holdShortcuts = const Value.absent(),
+                Value<bool> holdTabs = const Value.absent(),
+                Value<String> glassBackdrop = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -12060,6 +12487,12 @@ class $$SettingsTableTableManager
                 swipeHintDone: swipeHintDone,
                 holdHintDone: holdHintDone,
                 navStyle: navStyle,
+                tabBarStyle: tabBarStyle,
+                tabLabels: tabLabels,
+                navExtraInset: navExtraInset,
+                holdShortcuts: holdShortcuts,
+                holdTabs: holdTabs,
+                glassBackdrop: glassBackdrop,
                 musicTracks: musicTracks,
               ),
           createCompanionCallback:
@@ -12108,6 +12541,12 @@ class $$SettingsTableTableManager
                 Value<bool> swipeHintDone = const Value.absent(),
                 Value<bool> holdHintDone = const Value.absent(),
                 Value<String> navStyle = const Value.absent(),
+                Value<String> tabBarStyle = const Value.absent(),
+                Value<bool> tabLabels = const Value.absent(),
+                Value<int> navExtraInset = const Value.absent(),
+                Value<String?> holdShortcuts = const Value.absent(),
+                Value<bool> holdTabs = const Value.absent(),
+                Value<String> glassBackdrop = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -12154,6 +12593,12 @@ class $$SettingsTableTableManager
                 swipeHintDone: swipeHintDone,
                 holdHintDone: holdHintDone,
                 navStyle: navStyle,
+                tabBarStyle: tabBarStyle,
+                tabLabels: tabLabels,
+                navExtraInset: navExtraInset,
+                holdShortcuts: holdShortcuts,
+                holdTabs: holdTabs,
+                glassBackdrop: glassBackdrop,
                 musicTracks: musicTracks,
               ),
           withReferenceMapper: (p0) => p0

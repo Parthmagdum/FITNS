@@ -10,6 +10,8 @@ import 'package:fitns/app.dart';
 import 'package:fitns/core/motion/motion_sensors.dart';
 import 'package:fitns/core/motion/rep_detectors.dart';
 import 'package:fitns/core/platform/document_files.dart';
+import 'package:fitns/core/routing/floating_tab_bar.dart';
+import 'package:fitns/core/theme/glass.dart';
 import 'package:fitns/core/steps/step_sensor.dart';
 import 'package:fitns/data/database.dart';
 import 'package:fitns/data/providers.dart';
@@ -122,7 +124,10 @@ Future<void> goToTab(WidgetTester tester, String tab) async {
   // With the tab bar on (a new install), the bar.
   if (find.byKey(const Key('quick-add')).evaluate().isEmpty) {
     await tester.tap(
-      find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)),
+      find.descendant(
+        of: find.byKey(const Key('tab-bar')),
+        matching: find.text(tab),
+      ),
     );
     await settle(tester);
     return;
@@ -199,7 +204,7 @@ void main() {
     await tester.tap(find.text('Done'));
     await settle(tester);
     // A new install has the tab bar.
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('tab-bar')), findsOneWidget);
     expect(find.byKey(const Key('quick-add')), findsNothing);
     // Then, once, the tips: swipe first, then the tabs, then where the
     // FITNS button and more are — animated, three steps.
@@ -240,7 +245,7 @@ void main() {
   ) async {
     await pumpApp(tester);
     // No tab bar any more.
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byKey(const Key('tab-bar')), findsNothing);
     int selected() => tester
         .widget<PageView>(find.byType(PageView))
         .controller!
@@ -1368,7 +1373,7 @@ void main() {
       seed: (db) =>
           db.updateSettings(const SettingsCompanion(themeMode: Value('glass'))),
     );
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byKey(const Key('tab-bar')), findsNothing);
     final button = tester.getCenter(find.byKey(const Key('quick-add')));
     expect(button.dx, greaterThan(300));
     expect(button.dy, greaterThan(700));
@@ -1736,7 +1741,7 @@ void main() {
     // The switch, bottom left, level with the button.
     await holdAndSlide(tester, const Offset(-235, 0));
     expect((await tester.runAsync(db.getSettings))!.navStyle, 'bar');
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('tab-bar')), findsOneWidget);
     expect(find.byKey(const Key('quick-add')), findsNothing);
     // The bar works.
     await tester.tap(find.text('Food').last);
@@ -1752,7 +1757,7 @@ void main() {
     await settle(tester);
     expect((await tester.runAsync(db.getSettings))!.navStyle, 'button');
     expect(find.byKey(const Key('quick-add')), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byKey(const Key('tab-bar')), findsNothing);
 
     // And in Settings, both ways — once the "Tab bar on" note has gone.
     await tester.pump(const Duration(seconds: 6));
@@ -1761,7 +1766,7 @@ void main() {
     await scrollToMiddle(tester, find.byKey(const Key('nav-style')));
     await tester.tap(find.text('Tab bar'));
     await settle(tester);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('tab-bar')), findsOneWidget);
     await scrollToMiddle(tester, find.byKey(const Key('nav-style')));
     await tester.tap(find.text('FITNS button'));
     await settle(tester);
@@ -1786,6 +1791,131 @@ void main() {
     await tester.tap(find.byKey(const Key('glance-water')));
     await settle(tester);
     expect(find.text('Water reminders'), findsWidgets);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('the hold menu holds only the shortcuts picked, in order', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      seed: (db) => db.updateSettings(
+        const SettingsCompanion(
+          holdShortcuts: Value('water,food'),
+          holdTabs: Value(false),
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('quick-add'))),
+    );
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Quick add'), findsOne);
+    // No pages, so no "Go to".
+    expect(find.text('Go to'), findsNothing);
+    // Straight up, the innermost bubble: the first pick, Add water.
+    for (var i = 1; i <= 4; i++) {
+      await gesture.moveBy(const Offset(-4, -100) / 4);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await settle(tester);
+    expect(find.text('Add water'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('Settings → Navigation → Customize: hold menu shortcuts, the '
+      'tab bar\'s style and labels', (tester) async {
+    final db = await pumpApp(tester);
+    await goToTab(tester, 'Settings');
+    await scrollToMiddle(tester, find.byKey(const Key('customize-nav')));
+    await tester.tap(find.byKey(const Key('customize-nav')));
+    await settle(tester);
+    // The FITNS button: untick Add water, and the pages.
+    await tester.tap(find.byKey(const Key('hold-water')));
+    await settle(tester);
+    expect(
+      (await tester.runAsync(db.getSettings))!.holdShortcuts,
+      'workout,food,weight,sleep,steps,cycling',
+    );
+    await scrollToMiddle(tester, find.byKey(const Key('hold-tabs')));
+    await tester.tap(find.byKey(const Key('hold-tabs')));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.holdTabs, isFalse);
+
+    // The tab bar: classic, then no labels.
+    await tester.drag(find.byType(ListView).last, const Offset(0, 2000));
+    await settle(tester);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('nav-mode')),
+        matching: find.text('Tab bar'),
+      ),
+    );
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.navStyle, 'bar');
+    await tester.tap(find.text('Classic'));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.tabBarStyle, 'classic');
+    await tester.tap(find.byKey(const Key('tab-labels')));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.tabLabels, isFalse);
+
+    // Back on the tabs: Material's bar, icons only.
+    await tester.pageBack();
+    await settle(tester);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).labelBehavior,
+      NavigationDestinationLabelBehavior.alwaysHide,
+    );
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('the floating tab bar: a capsule over the page, labels on, '
+      'tabs that switch', (tester) async {
+    await pumpApp(
+      tester,
+      seed: (db) =>
+          db.updateSettings(const SettingsCompanion(navStyle: Value('bar'))),
+    );
+    expect(find.byType(FloatingTabBar), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    await tester.tap(find.byKey(const Key('tab-2')));
+    await settle(tester);
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).controller!.page!.round(),
+      2,
+    );
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('Glass sits on a wallpaper, Aurora first; picking Ocean makes '
+      'it dark glass', (tester) async {
+    final db = await pumpApp(
+      tester,
+      seed: (db) => db.updateSettings(
+        const SettingsCompanion(
+          themeMode: Value('glass'),
+          navStyle: Value('bar'),
+        ),
+      ),
+    );
+    BuildContext page() => tester.element(find.byType(FloatingTabBar));
+    expect(AppSurface.of(page()).backdrop, GlassBackdrop.aurora);
+    expect(Theme.of(page()).brightness, Brightness.light);
+    expect(find.byType(GlassWallpaper), findsWidgets);
+    await goToTab(tester, 'Settings');
+    await scrollToMiddle(tester, find.byKey(const Key('glass-bg-ocean')));
+    await tester.tap(find.byKey(const Key('glass-bg-ocean')));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.glassBackdrop, 'ocean');
+    expect(AppSurface.of(page()).backdrop, GlassBackdrop.ocean);
+    expect(Theme.of(page()).brightness, Brightness.dark);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
