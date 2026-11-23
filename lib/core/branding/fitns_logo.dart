@@ -1,9 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-/// The FITNS mark: a forward-leaning "F" whose top bar reaches up and
-/// ahead, with a dot above it — an F that is also a figure in stride. The
-/// same shapes as the launcher icon (tool/make_icons.py writes that), drawn
-/// in [color].
+/// The FITNS mark, "Lift-off": a slanted F whose top bar turns into an arrow
+/// climbing up and away. The same shapes as the launcher icon (written by
+/// tool/make_icons.py), drawn in [color].
 class FitnsLogo extends StatelessWidget {
   const FitnsLogo({
     super.key,
@@ -26,36 +25,47 @@ class _LogoPainter extends CustomPainter {
 
   // In the launcher icon's 108-unit viewport — keep in step with
   // tool/make_icons.py.
-  static const _stroke = 9.9;
-  static const _strokes = [
-    (Offset(46.8, 80.1), Offset(55.0, 41.4)),
-    (Offset(55.0, 41.4), Offset(73.9, 37.1)),
-    (Offset(51.0, 60.4), Offset(66.2, 57.8)),
+  static const _shapes = [
+    [
+      Offset(32.02, 79.28),
+      Offset(40.57, 79.28),
+      Offset(51.03, 41.94),
+      Offset(42.47, 41.94),
+    ],
+    [
+      Offset(42.47, 41.94),
+      Offset(64.44, 35.72),
+      Offset(64.03, 42.72),
+      Offset(49.5, 47.39),
+    ],
+    [Offset(63.29, 28.72), Offset(75.98, 33.39), Offset(64.16, 45.05)],
+    [
+      Offset(46.67, 57.5),
+      Offset(59.21, 54.39),
+      Offset(58.81, 61.39),
+      Offset(44.71, 64.5),
+    ],
   ];
-  static const _dot = Offset(59.0, 26.5);
-  static const _dotRadius = 5.5;
 
-  /// The mark's bounds (strokes' round ends included), to fit it in [size].
-  static const _bounds = Rect.fromLTRB(41.8, 21.0, 78.9, 85.1);
+  /// The mark's bounds, to fit it in the given size.
+  static const _bounds = Rect.fromLTRB(32.02, 28.72, 75.98, 79.28);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final scale = size.height / _bounds.height * 0.96;
+    final scale =
+        size.shortestSide /
+        (_bounds.width > _bounds.height ? _bounds.width : _bounds.height) *
+        0.94;
     canvas
       ..save()
       ..translate(size.width / 2, size.height / 2)
       ..scale(scale)
       ..translate(-_bounds.center.dx, -_bounds.center.dy);
-    final line = Paint()
-      ..color = color
-      ..strokeWidth = _stroke
-      ..strokeCap = StrokeCap.round;
-    for (final (a, b) in _strokes) {
-      canvas.drawLine(a, b, line);
+    final fill = Paint()..color = color;
+    for (final shape in _shapes) {
+      canvas.drawPath(Path()..addPolygon(shape, true), fill);
     }
-    canvas
-      ..drawCircle(_dot, _dotRadius, Paint()..color = color)
-      ..restore();
+    canvas.restore();
   }
 
   @override

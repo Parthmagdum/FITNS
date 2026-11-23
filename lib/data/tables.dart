@@ -712,3 +712,41 @@ class BikeRides extends Table {
   IntColumn get distanceMeters => integer()();
   IntColumn get kcal => integer()();
 }
+
+/// Kinds of activity logged by hand, with their typical effort in METs
+/// (Compendium of Physical Activities) to estimate calories.
+enum ActivityKind {
+  running('Running', 9.8),
+  walking('Brisk walk', 4.3),
+  cycling('Cycling', 7.5),
+  swimming('Swimming', 7.0),
+  skipping('Skipping rope', 11.0),
+  hiit('HIIT / circuit', 8.0),
+  sports('Sports (football, cricket…)', 7.0),
+  badminton('Badminton / tennis', 5.5),
+  dancing('Dancing / Zumba', 5.5),
+  hiking('Hiking / trekking', 6.0),
+  yoga('Yoga / stretching', 2.5),
+  other('Other', 5.0);
+
+  const ActivityKind(this.label, this.met);
+  final String label;
+
+  /// Typical effort, for the estimate the user can overwrite.
+  final double met;
+}
+
+/// An activity logged by hand — a run, a swim, a game — with the calories
+/// it burned (estimated, or as the user's watch said). Counts toward the
+/// day's burn. Schema v17.
+@DataClassName('ActivityRow')
+@TableIndex(name: 'activities_time', columns: {#startedAt})
+class Activities extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get startedAt => dateTime()();
+  TextColumn get kind => textEnum<ActivityKind>()();
+  IntColumn get minutes => integer()();
+  IntColumn get kcal => integer()();
+  IntColumn get distanceMeters => integer().nullable()();
+  TextColumn get note => text().nullable()();
+}

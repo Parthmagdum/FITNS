@@ -918,6 +918,7 @@ void main() {
     final db = await pumpApp(tester);
     await goToTab(tester, 'Workouts');
     await settle(tester);
+    await scrollToMiddle(tester, find.text('Edit places'));
     await tester.tap(find.text('Edit places'));
     await settle(tester);
     await tester.tap(find.text('New place'));
@@ -1056,6 +1057,7 @@ void main() {
     await goToTab(tester, 'Workouts');
     await settle(tester);
 
+    await scrollToMiddle(tester, find.text('Edit places'));
     await tester.tap(find.text('Edit places'));
     await settle(tester);
     await tester.tap(find.text('New place'));
@@ -1635,6 +1637,74 @@ void main() {
     await scrollToMiddle(tester, find.text('How your target is worked out'));
     expect(find.text('Burn through activity'), findsOneWidget);
     expect(find.text('300 kcal'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('a 60-minute run from a watch, logged by hand, counts toward '
+      'the burn; the burn sections fold away', (tester) async {
+    final db = await pumpApp(tester);
+    await goToTab(tester, 'Workouts');
+    await tester.tap(find.byKey(const Key('log-activity')));
+    await settle(tester);
+    expect(find.text('Log an activity'), findsOneWidget);
+    // Running is picked; 60 minutes; the watch said 537 kcal.
+    await tester.ensureVisible(find.widgetWithText(ActionChip, '60 min'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(ActionChip, '60 min'));
+    await settle(tester);
+    // The estimate for 70 kg first: 9.8 MET x 70 kg x 1 h.
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('activity-kcal')))
+          .controller!
+          .text,
+      '686',
+    );
+    await tester.enterText(find.byKey(const Key('activity-kcal')), '537');
+    // The sheet's button (the page behind has one too).
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Log activity').last,
+    );
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Log activity').last);
+    await settle(tester);
+    final logged = (await tester.runAsync(
+      () => db.select(db.activities).get(),
+    ))!;
+    expect(logged.single.kind, ActivityKind.running);
+    expect(logged.single.minutes, 60);
+    expect(logged.single.kcal, 537);
+
+    // In the burn: "Running · 60 min · 537 kcal", and the total.
+    expect(
+      find.textContaining('Running  60 min', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.text('537 kcal'), findsOneWidget);
+    expect(find.text('537'), findsWidgets);
+
+    // Folded away, and back.
+    await tester.tap(find.byTooltip('Hide').first);
+    await settle(tester);
+    expect(
+      find.textContaining('Running  60 min', findRichText: true),
+      findsNothing,
+    );
+    await tester.tap(find.byTooltip('Show').first);
+    await settle(tester);
+    expect(
+      find.textContaining('Running  60 min', findRichText: true),
+      findsOneWidget,
+    );
+
+    // Removed by mistake? Gone from the burn.
+    await tester.tap(find.byTooltip('Remove Running'));
+    await settle(tester);
+    expect(
+      await tester.runAsync(() => db.select(db.activities).get()),
+      isEmpty,
+    );
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

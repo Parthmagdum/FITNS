@@ -114,6 +114,7 @@ int setVolumeGrams(WorkoutSetRow s) => (s.weightGrams ?? 0) * (s.reps ?? 0);
     CycleStarts,
     ProgressPhotos,
     BikeRides,
+    Activities,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -123,7 +124,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -220,6 +221,7 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(settings, settings.swipeHintDone);
         await m.addColumn(settings, settings.holdHintDone);
       }
+      if (from < 17) await m.createTable(activities);
       if (from < 11) {
         for (final column in <GeneratedColumn>[
           settings.waterIntervalMinutes,
@@ -1833,6 +1835,27 @@ class AppDatabase extends _$AppDatabase {
       (select(waterLogs)
             ..where((w) => w.loggedAt.isBiggerOrEqualValue(startOfDay(from)))
             ..orderBy([(w) => OrderingTerm.asc(w.loggedAt)]))
+          .watch();
+
+  // ── Activities logged by hand ─────────────────────────────────────────────
+
+  Future<int> addActivity(ActivitiesCompanion activity) =>
+      into(activities).insert(activity);
+
+  Future<void> deleteActivity(int id) =>
+      (delete(activities)..where((a) => a.id.equals(id))).go();
+
+  /// Activities started on [day], oldest first.
+  Stream<List<ActivityRow>> watchActivitiesOn(DateTime day) =>
+      (select(activities)
+            ..where(
+              (a) =>
+                  a.startedAt.isBiggerOrEqualValue(startOfDay(day)) &
+                  a.startedAt.isSmallerThanValue(
+                    startOfDay(day).add(const Duration(days: 1)),
+                  ),
+            )
+            ..orderBy([(a) => OrderingTerm.asc(a.startedAt)]))
           .watch();
 
   // ── Cycling ────────────────────────────────────────────────────────────────

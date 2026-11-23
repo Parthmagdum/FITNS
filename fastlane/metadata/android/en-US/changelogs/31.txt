@@ -1,0 +1,3 @@
+- New logo: Lift-off, an F whose top bar becomes an arrow
+- Log a run, swim or game done without FITNS, with your watch's calories; it counts toward today's burn
+- The burn sections on Workouts fold away

@@ -1,7 +1,8 @@
 # FITNS logo options
 
-Four concepts for a new FITNS logo. **Not in use**: the app keeps its
-current logo (tool/make_icons.py) until one is picked.
+Four concepts for a new FITNS logo. **Number 4, Lift-off, was picked** and
+is the FITNS logo from 0.1.22 (drawn by tool/make_icons.py); the others are
+kept here for reference.
 
 | | Concept | Idea |
 |---|---|---|

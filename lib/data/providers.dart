@@ -594,7 +594,12 @@ final bikeRidesProvider = StreamProvider<List<BikeRideRow>>((ref) {
 // ── Calories burned ─────────────────────────────────────────────────────────
 
 /// What activity burned today, by source, in kcal.
-typedef TodayBurn = ({int workouts, int steps, int cycling});
+typedef TodayBurn = ({int workouts, int steps, int cycling, int activities});
+
+/// Activities logged by hand today.
+final todayActivitiesProvider = StreamProvider<List<ActivityRow>>(
+  (ref) => ref.watch(dbProvider).watchActivitiesOn(ref.watch(todayProvider)),
+);
 
 /// Today's finished workouts, steps and bike rides, burned.
 final todayBurnProvider = FutureProvider.autoDispose<TodayBurn>((ref) async {
@@ -602,6 +607,7 @@ final todayBurnProvider = FutureProvider.autoDispose<TodayBurn>((ref) async {
   final history = ref.watch(workoutHistoryProvider).valueOrNull ?? const [];
   final steps = ref.watch(todayStepsProvider).valueOrNull ?? 0;
   final rides = ref.watch(bikeRidesProvider).valueOrNull ?? const [];
+  final logged = ref.watch(todayActivitiesProvider).valueOrNull ?? const [];
   final weights = ref.watch(weightHistoryProvider);
   final db = ref.read(dbProvider);
   var workouts = 0;
@@ -627,6 +633,7 @@ final todayBurnProvider = FutureProvider.autoDispose<TodayBurn>((ref) async {
     cycling: rides
         .where((r) => isSameDay(r.startedAt, today))
         .fold(0, (sum, r) => sum + r.kcal),
+    activities: logged.fold(0, (sum, a) => sum + a.kcal),
   );
 });
 

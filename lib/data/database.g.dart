@@ -10464,6 +10464,461 @@ class BikeRidesCompanion extends UpdateCompanion<BikeRideRow> {
   }
 }
 
+class $ActivitiesTable extends Activities
+    with TableInfo<$ActivitiesTable, ActivityRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ActivityKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<ActivityKind>($ActivitiesTable.$converterkind);
+  static const VerificationMeta _minutesMeta = const VerificationMeta(
+    'minutes',
+  );
+  @override
+  late final GeneratedColumn<int> minutes = GeneratedColumn<int>(
+    'minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kcalMeta = const VerificationMeta('kcal');
+  @override
+  late final GeneratedColumn<int> kcal = GeneratedColumn<int>(
+    'kcal',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _distanceMetersMeta = const VerificationMeta(
+    'distanceMeters',
+  );
+  @override
+  late final GeneratedColumn<int> distanceMeters = GeneratedColumn<int>(
+    'distance_meters',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    startedAt,
+    kind,
+    minutes,
+    kcal,
+    distanceMeters,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActivityRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('minutes')) {
+      context.handle(
+        _minutesMeta,
+        minutes.isAcceptableOrUnknown(data['minutes']!, _minutesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_minutesMeta);
+    }
+    if (data.containsKey('kcal')) {
+      context.handle(
+        _kcalMeta,
+        kcal.isAcceptableOrUnknown(data['kcal']!, _kcalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kcalMeta);
+    }
+    if (data.containsKey('distance_meters')) {
+      context.handle(
+        _distanceMetersMeta,
+        distanceMeters.isAcceptableOrUnknown(
+          data['distance_meters']!,
+          _distanceMetersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivityRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivityRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      kind: $ActivitiesTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      minutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minutes'],
+      )!,
+      kcal: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kcal'],
+      )!,
+      distanceMeters: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distance_meters'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $ActivitiesTable createAlias(String alias) {
+    return $ActivitiesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ActivityKind, String, String> $converterkind =
+      const EnumNameConverter<ActivityKind>(ActivityKind.values);
+}
+
+class ActivityRow extends DataClass implements Insertable<ActivityRow> {
+  final int id;
+  final DateTime startedAt;
+  final ActivityKind kind;
+  final int minutes;
+  final int kcal;
+  final int? distanceMeters;
+  final String? note;
+  const ActivityRow({
+    required this.id,
+    required this.startedAt,
+    required this.kind,
+    required this.minutes,
+    required this.kcal,
+    this.distanceMeters,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    {
+      map['kind'] = Variable<String>(
+        $ActivitiesTable.$converterkind.toSql(kind),
+      );
+    }
+    map['minutes'] = Variable<int>(minutes);
+    map['kcal'] = Variable<int>(kcal);
+    if (!nullToAbsent || distanceMeters != null) {
+      map['distance_meters'] = Variable<int>(distanceMeters);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  ActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return ActivitiesCompanion(
+      id: Value(id),
+      startedAt: Value(startedAt),
+      kind: Value(kind),
+      minutes: Value(minutes),
+      kcal: Value(kcal),
+      distanceMeters: distanceMeters == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceMeters),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory ActivityRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivityRow(
+      id: serializer.fromJson<int>(json['id']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      kind: $ActivitiesTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      minutes: serializer.fromJson<int>(json['minutes']),
+      kcal: serializer.fromJson<int>(json['kcal']),
+      distanceMeters: serializer.fromJson<int?>(json['distanceMeters']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'kind': serializer.toJson<String>(
+        $ActivitiesTable.$converterkind.toJson(kind),
+      ),
+      'minutes': serializer.toJson<int>(minutes),
+      'kcal': serializer.toJson<int>(kcal),
+      'distanceMeters': serializer.toJson<int?>(distanceMeters),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  ActivityRow copyWith({
+    int? id,
+    DateTime? startedAt,
+    ActivityKind? kind,
+    int? minutes,
+    int? kcal,
+    Value<int?> distanceMeters = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => ActivityRow(
+    id: id ?? this.id,
+    startedAt: startedAt ?? this.startedAt,
+    kind: kind ?? this.kind,
+    minutes: minutes ?? this.minutes,
+    kcal: kcal ?? this.kcal,
+    distanceMeters: distanceMeters.present
+        ? distanceMeters.value
+        : this.distanceMeters,
+    note: note.present ? note.value : this.note,
+  );
+  ActivityRow copyWithCompanion(ActivitiesCompanion data) {
+    return ActivityRow(
+      id: data.id.present ? data.id.value : this.id,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      minutes: data.minutes.present ? data.minutes.value : this.minutes,
+      kcal: data.kcal.present ? data.kcal.value : this.kcal,
+      distanceMeters: data.distanceMeters.present
+          ? data.distanceMeters.value
+          : this.distanceMeters,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityRow(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('kind: $kind, ')
+          ..write('minutes: $minutes, ')
+          ..write('kcal: $kcal, ')
+          ..write('distanceMeters: $distanceMeters, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, startedAt, kind, minutes, kcal, distanceMeters, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivityRow &&
+          other.id == this.id &&
+          other.startedAt == this.startedAt &&
+          other.kind == this.kind &&
+          other.minutes == this.minutes &&
+          other.kcal == this.kcal &&
+          other.distanceMeters == this.distanceMeters &&
+          other.note == this.note);
+}
+
+class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
+  final Value<int> id;
+  final Value<DateTime> startedAt;
+  final Value<ActivityKind> kind;
+  final Value<int> minutes;
+  final Value<int> kcal;
+  final Value<int?> distanceMeters;
+  final Value<String?> note;
+  const ActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.minutes = const Value.absent(),
+    this.kcal = const Value.absent(),
+    this.distanceMeters = const Value.absent(),
+    this.note = const Value.absent(),
+  });
+  ActivitiesCompanion.insert({
+    this.id = const Value.absent(),
+    required DateTime startedAt,
+    required ActivityKind kind,
+    required int minutes,
+    required int kcal,
+    this.distanceMeters = const Value.absent(),
+    this.note = const Value.absent(),
+  }) : startedAt = Value(startedAt),
+       kind = Value(kind),
+       minutes = Value(minutes),
+       kcal = Value(kcal);
+  static Insertable<ActivityRow> custom({
+    Expression<int>? id,
+    Expression<DateTime>? startedAt,
+    Expression<String>? kind,
+    Expression<int>? minutes,
+    Expression<int>? kcal,
+    Expression<int>? distanceMeters,
+    Expression<String>? note,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (startedAt != null) 'started_at': startedAt,
+      if (kind != null) 'kind': kind,
+      if (minutes != null) 'minutes': minutes,
+      if (kcal != null) 'kcal': kcal,
+      if (distanceMeters != null) 'distance_meters': distanceMeters,
+      if (note != null) 'note': note,
+    });
+  }
+
+  ActivitiesCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? startedAt,
+    Value<ActivityKind>? kind,
+    Value<int>? minutes,
+    Value<int>? kcal,
+    Value<int?>? distanceMeters,
+    Value<String?>? note,
+  }) {
+    return ActivitiesCompanion(
+      id: id ?? this.id,
+      startedAt: startedAt ?? this.startedAt,
+      kind: kind ?? this.kind,
+      minutes: minutes ?? this.minutes,
+      kcal: kcal ?? this.kcal,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+      note: note ?? this.note,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $ActivitiesTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (minutes.present) {
+      map['minutes'] = Variable<int>(minutes.value);
+    }
+    if (kcal.present) {
+      map['kcal'] = Variable<int>(kcal.value);
+    }
+    if (distanceMeters.present) {
+      map['distance_meters'] = Variable<int>(distanceMeters.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('kind: $kind, ')
+          ..write('minutes: $minutes, ')
+          ..write('kcal: $kcal, ')
+          ..write('distanceMeters: $distanceMeters, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10492,6 +10947,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CycleStartsTable cycleStarts = $CycleStartsTable(this);
   late final $ProgressPhotosTable progressPhotos = $ProgressPhotosTable(this);
   late final $BikeRidesTable bikeRides = $BikeRidesTable(this);
+  late final $ActivitiesTable activities = $ActivitiesTable(this);
   late final Index routineExercisesRoutine = Index(
     'routine_exercises_routine',
     'CREATE INDEX routine_exercises_routine ON routine_exercises (routine_id)',
@@ -10540,6 +10996,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'bike_rides_time',
     'CREATE INDEX bike_rides_time ON bike_rides (started_at)',
   );
+  late final Index activitiesTime = Index(
+    'activities_time',
+    'CREATE INDEX activities_time ON activities (started_at)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10566,6 +11026,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cycleStarts,
     progressPhotos,
     bikeRides,
+    activities,
     routineExercisesRoutine,
     workoutsEndedStarted,
     workoutExercisesWorkout,
@@ -10578,6 +11039,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     programDaysProgram,
     sleepLogsWoke,
     bikeRidesTime,
+    activitiesTime,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -18148,6 +18610,241 @@ typedef $$BikeRidesTableProcessedTableManager =
       BikeRideRow,
       PrefetchHooks Function()
     >;
+typedef $$ActivitiesTableCreateCompanionBuilder =
+    ActivitiesCompanion Function({
+      Value<int> id,
+      required DateTime startedAt,
+      required ActivityKind kind,
+      required int minutes,
+      required int kcal,
+      Value<int?> distanceMeters,
+      Value<String?> note,
+    });
+typedef $$ActivitiesTableUpdateCompanionBuilder =
+    ActivitiesCompanion Function({
+      Value<int> id,
+      Value<DateTime> startedAt,
+      Value<ActivityKind> kind,
+      Value<int> minutes,
+      Value<int> kcal,
+      Value<int?> distanceMeters,
+      Value<String?> note,
+    });
+
+class $$ActivitiesTableFilterComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ActivityKind, ActivityKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get minutes => $composableBuilder(
+    column: $table.minutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ActivitiesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minutes => $composableBuilder(
+    column: $table.minutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get kcal => $composableBuilder(
+    column: $table.kcal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ActivitiesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActivitiesTable> {
+  $$ActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ActivityKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get minutes =>
+      $composableBuilder(column: $table.minutes, builder: (column) => column);
+
+  GeneratedColumn<int> get kcal =>
+      $composableBuilder(column: $table.kcal, builder: (column) => column);
+
+  GeneratedColumn<int> get distanceMeters => $composableBuilder(
+    column: $table.distanceMeters,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$ActivitiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActivitiesTable,
+          ActivityRow,
+          $$ActivitiesTableFilterComposer,
+          $$ActivitiesTableOrderingComposer,
+          $$ActivitiesTableAnnotationComposer,
+          $$ActivitiesTableCreateCompanionBuilder,
+          $$ActivitiesTableUpdateCompanionBuilder,
+          (
+            ActivityRow,
+            BaseReferences<_$AppDatabase, $ActivitiesTable, ActivityRow>,
+          ),
+          ActivityRow,
+          PrefetchHooks Function()
+        > {
+  $$ActivitiesTableTableManager(_$AppDatabase db, $ActivitiesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivitiesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<ActivityKind> kind = const Value.absent(),
+                Value<int> minutes = const Value.absent(),
+                Value<int> kcal = const Value.absent(),
+                Value<int?> distanceMeters = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+              }) => ActivitiesCompanion(
+                id: id,
+                startedAt: startedAt,
+                kind: kind,
+                minutes: minutes,
+                kcal: kcal,
+                distanceMeters: distanceMeters,
+                note: note,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required DateTime startedAt,
+                required ActivityKind kind,
+                required int minutes,
+                required int kcal,
+                Value<int?> distanceMeters = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+              }) => ActivitiesCompanion.insert(
+                id: id,
+                startedAt: startedAt,
+                kind: kind,
+                minutes: minutes,
+                kcal: kcal,
+                distanceMeters: distanceMeters,
+                note: note,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ActivitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActivitiesTable,
+      ActivityRow,
+      $$ActivitiesTableFilterComposer,
+      $$ActivitiesTableOrderingComposer,
+      $$ActivitiesTableAnnotationComposer,
+      $$ActivitiesTableCreateCompanionBuilder,
+      $$ActivitiesTableUpdateCompanionBuilder,
+      (
+        ActivityRow,
+        BaseReferences<_$AppDatabase, $ActivitiesTable, ActivityRow>,
+      ),
+      ActivityRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -18194,4 +18891,6 @@ class $AppDatabaseManager {
       $$ProgressPhotosTableTableManager(_db, _db.progressPhotos);
   $$BikeRidesTableTableManager get bikeRides =>
       $$BikeRidesTableTableManager(_db, _db.bikeRides);
+  $$ActivitiesTableTableManager get activities =>
+      $$ActivitiesTableTableManager(_db, _db.activities);
 }

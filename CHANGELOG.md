@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.22 — 2026-11-23
+
+**The Lift-off logo**
+- FITNS's logo is now **Lift-off**: a slanted F whose top bar turns into an
+  arrow, climbing up and away. On the app icon (themed icons too), the
+  store icon and banner, the splash screen, the FITNS button, the tips and
+  the workout widget.
+
+**Log a run, a swim, a game**
+- Did something without FITNS, like a 60-minute run on your watch? Tap
+  **Log activity** in the burn section on Workouts: pick what it was
+  (running, brisk walk, cycling, swimming, skipping rope, HIIT, sports,
+  badminton or tennis, dancing, hiking, yoga, other), how long, and the
+  calories. FITNS fills in an estimate for your weight; type over it with
+  what your watch says. Distance is optional.
+- It counts toward today's burn straight away, is listed under "Where it
+  came from" (remove it with its ✕, with an undo), and is in backups.
+
+**Fold the burn away**
+- "Where it came from", "How your target is worked out" and "Burn the
+  rest" each fold away with the arrow by their title. They start open.
+
 ## 0.1.21 — 2026-11-23
 
 **Your burn, up front**

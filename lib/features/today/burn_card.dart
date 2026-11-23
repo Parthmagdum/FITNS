@@ -7,7 +7,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/training/burn.dart' show maxCountedWorkout;
 import '../../core/training/burn_target.dart';
 import '../../core/widgets/app_page.dart';
+import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../activities/activity_sheet.dart';
 
 final _n = NumberFormat('#,##0');
 
@@ -17,7 +19,7 @@ final _n = NumberFormat('#,##0');
   final parts = ref.watch(todayBurnProvider).valueOrNull;
   final burned = parts == null
       ? 0
-      : parts.workouts + parts.steps + parts.cycling;
+      : parts.workouts + parts.steps + parts.cycling + parts.activities;
   return (
     burned: burned,
     target: ref.watch(burnTargetProvider)?.targetKcal,
@@ -121,6 +123,8 @@ class BurnSection extends ConsumerWidget {
     final goal = t?.targetKcal ?? 0;
     final left = goal - b.burned;
     final parts = b.parts;
+    final activities =
+        ref.watch(todayActivitiesProvider).valueOrNull ?? const <ActivityRow>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -194,28 +198,48 @@ class BurnSection extends ConsumerWidget {
                     : '${_n.format(left)} kcal more to ${t.goalText}.',
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.92)),
               ),
-              if (t == null) ...[
-                const SizedBox(height: 8),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: theme.accent,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  // Done something without FITNS? Log it here.
+                  Expanded(
+                    child: FilledButton.icon(
+                      key: const Key('log-activity'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: theme.accent,
+                      ),
+                      onPressed: () => showLogActivitySheet(context),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Log activity'),
+                    ),
                   ),
-                  onPressed: () => context.push('/plan'),
-                  child: const Text('Set up my plan'),
-                ),
-              ],
+                  if (t == null) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white),
+                        ),
+                        onPressed: () => context.push('/plan'),
+                        child: const Text('Set up my plan'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         // Where today's burn came from.
-        SectionCard(
+        _Fold(
+          id: 'sources',
+          title: 'Where it came from',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Where it came from', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
               _Row(
                 Icons.fitness_center,
                 'Workouts',
@@ -224,21 +248,33 @@ class BurnSection extends ConsumerWidget {
               ),
               _Row(Icons.directions_walk, 'Steps', parts?.steps ?? 0),
               _Row(Icons.directions_bike, 'Cycling', parts?.cycling ?? 0),
+              // Each activity logged by hand, removable.
+              for (final a in activities)
+                _Row(
+                  activityIcon(a.kind),
+                  a.kind.label,
+                  a.kcal,
+                  note: '${a.minutes} min',
+                  onDelete: () => _deleteActivity(context, ref, a),
+                ),
+              const SizedBox(height: 4),
+              TextButton.icon(
+                onPressed: () => showLogActivitySheet(context),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Log a run, swim, game…'),
+              ),
             ],
           ),
         ),
         if (t != null) ...[
           const SizedBox(height: 12),
           // The sum, in this person's numbers.
-          SectionCard(
+          _Fold(
+            id: 'sum',
+            title: 'How your target is worked out',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'How your target is worked out',
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
                 _Sum(
                   t.intakeIsPlan
                       ? 'Food today (your calorie goal)'
@@ -278,15 +314,13 @@ class BurnSection extends ConsumerWidget {
         if (t != null && left > 0) ...[
           const SizedBox(height: 12),
           // What the rest would take, for this body.
-          SectionCard(
+          _Fold(
+            id: 'ways',
+            title:
+                'Burn the ${_n.format(left)} kcal left with any one of these',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Burn the ${_n.format(left)} kcal left with any one of these',
-                  style: theme.textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
                 _Way(
                   Icons.nordic_walking,
                   'Brisk walk',
@@ -318,6 +352,27 @@ class BurnSection extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _deleteActivity(
+    BuildContext context,
+    WidgetRef ref,
+    ActivityRow a,
+  ) async {
+    final db = ref.read(dbProvider);
+    await db.deleteActivity(a.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('${a.kind.label} removed'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => db.addActivity(a.toCompanion(false)),
+          ),
+        ),
+      );
   }
 
   /// Minutes of lifting (MET 5) — past the length a workout counts for,
@@ -360,12 +415,13 @@ class _Big extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row(this.icon, this.label, this.kcal, {this.note});
+  const _Row(this.icon, this.label, this.kcal, {this.note, this.onDelete});
 
   final IconData icon;
   final String label;
   final int kcal;
   final String? note;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -395,6 +451,71 @@ class _Row extends StatelessWidget {
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
+          ),
+          if (onDelete != null)
+            IconButton(
+              tooltip: 'Remove $label',
+              visualDensity: VisualDensity.compact,
+              iconSize: 18,
+              onPressed: onDelete,
+              icon: const Icon(Icons.close_rounded),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Whether each section of the burn is open — open to begin with, and as
+/// left for the rest of the session.
+final _foldOpen = StateProvider.family<bool, String>((ref, id) => true);
+
+/// A card whose body can be folded away under its title.
+class _Fold extends ConsumerWidget {
+  const _Fold({required this.id, required this.title, required this.child});
+
+  final String id;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final open = ref.watch(_foldOpen(id));
+    return SectionCard(
+      padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => ref.read(_foldOpen(id).notifier).state = !open,
+            child: Row(
+              children: [
+                Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
+                IconButton(
+                  tooltip: open ? 'Hide' : 'Show',
+                  onPressed: () =>
+                      ref.read(_foldOpen(id).notifier).state = !open,
+                  icon: AnimatedRotation(
+                    turns: open ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(Icons.expand_more_rounded),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: open
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 12, bottom: 8),
+                    child: child,
+                  )
+                : const SizedBox(width: double.infinity),
           ),
         ],
       ),
