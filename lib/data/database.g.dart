@@ -527,7 +527,7 @@ class $SettingsTable extends Settings
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('button'),
+    defaultValue: const Constant('bar'),
   );
   static const VerificationMeta _musicTracksMeta = const VerificationMeta(
     'musicTracks',
@@ -1281,8 +1281,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   final bool swipeHintDone;
   final bool holdHintDone;
 
-  /// How to get around: `button` (the FITNS button in the corner, tap or
-  /// hold) or `bar` (a tab bar along the bottom). Schema v18.
+  /// How to get around: `bar` (a tab bar along the bottom, the default) or
+  /// `button` (the FITNS button in the corner, tap or hold). Schema v18.
   final String navStyle;
 
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.

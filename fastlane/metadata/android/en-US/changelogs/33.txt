@@ -1,0 +1,3 @@
+- The tab bar is now the default; switch to the FITNS button in Settings
+- New first-run tips: swipe, tap a tab, then where to find the FITNS button and more
+- Slimmer tab bar; the hold menu's Tab bar switch no longer overlaps Settings

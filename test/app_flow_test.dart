@@ -116,9 +116,17 @@ Future<void> scrollToMiddle(
   await settle(tester);
 }
 
-/// Opens [tab] the way a user does with no tab bar: a tap on the FITNS
-/// button, then the tab in its sheet.
+/// Opens [tab] the way a user does: a tap on the tab bar, or with the FITNS
+/// button, a tap on it and then the tab in its sheet.
 Future<void> goToTab(WidgetTester tester, String tab) async {
+  // With the tab bar on (a new install), the bar.
+  if (find.byKey(const Key('quick-add')).evaluate().isEmpty) {
+    await tester.tap(
+      find.descendant(of: find.byType(NavigationBar), matching: find.text(tab)),
+    );
+    await settle(tester);
+    return;
+  }
   await tester.tap(find.byKey(const Key('quick-add')));
   await settle(tester);
   await tester.tap(find.text(tab).last);
@@ -155,6 +163,9 @@ void main() {
             tipsSeen: Value(true),
             swipeHintDone: Value(true),
             holdHintDone: Value(true),
+            // Most of these drive the FITNS button; the tab bar (the
+            // default) has its own tests.
+            navStyle: Value('button'),
           ),
         ),
       );
@@ -187,14 +198,19 @@ void main() {
     expect(find.text('Bedtime reminder'), findsOneWidget);
     await tester.tap(find.text('Done'));
     await settle(tester);
-    // Then, once, the tips: swipe, tap, hold — animated, three steps.
+    // A new install has the tab bar.
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('quick-add')), findsNothing);
+    // Then, once, the tips: swipe first, then the tabs, then where the
+    // FITNS button and more are — animated, three steps.
     expect(find.text('Swipe between pages'), findsOneWidget);
     await tester.tap(find.text('Next'));
     await settle(tester);
-    expect(find.text('Tap the FITNS button'), findsOneWidget);
+    expect(find.text('Or tap a tab'), findsOneWidget);
     await tester.tap(find.text('Next'));
     await settle(tester);
-    expect(find.text('Hold it and slide'), findsOneWidget);
+    expect(find.text('Want one button instead?'), findsOneWidget);
+    expect(find.textContaining('Settings → Navigation'), findsOneWidget);
     await tester.tap(find.text('Got it'));
     await settle(tester);
     expect(find.byKey(const Key('first-run-tips')), findsNothing);
@@ -204,6 +220,9 @@ void main() {
 
     // It opens again from Settings, and Skip all leaves it.
     await goToTab(tester, 'Settings');
+    await settle(tester);
+    // The page's first-time peek (swipe hint) plays out first.
+    await tester.pump(const Duration(seconds: 4));
     await settle(tester);
     await scrollToMiddle(tester, find.text('Setup guide'));
     await tester.tap(find.text('Setup guide'));

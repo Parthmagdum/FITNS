@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.24 — 2026-11-23
+
+**The tab bar first**
+- New installs start with the **tab bar** along the bottom. The FITNS
+  button is one switch away in **Settings → Navigation**. If you already
+  picked one, nothing changes.
+- The first-run tips follow along: **swipe between pages** first, then
+  **tap a tab**, then where to find the FITNS button (tap for every page,
+  hold and slide for shortcuts) and that there's more to explore in
+  Settings. With the FITNS button on, the tips still show it off.
+- The tab bar is a little slimmer.
+
+**Fixes**
+- Holding the FITNS button: the "Tab bar" switch no longer runs into the
+  Settings bubble — it's smaller and sits lower.
+- Choosing a tab while the page was doing its first-time "peek" could pull
+  you back to the page you were on.
+
 ## 0.1.23 — 2026-11-23
 
 **Prefer a tab bar? Have one.**

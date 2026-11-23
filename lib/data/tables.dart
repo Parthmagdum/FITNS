@@ -338,9 +338,9 @@ class Settings extends Table {
       boolean().withDefault(const Constant(false))();
   BoolColumn get holdHintDone => boolean().withDefault(const Constant(false))();
 
-  /// How to get around: `button` (the FITNS button in the corner, tap or
-  /// hold) or `bar` (a tab bar along the bottom). Schema v18.
-  TextColumn get navStyle => text().withDefault(const Constant('button'))();
+  /// How to get around: `bar` (a tab bar along the bottom, the default) or
+  /// `button` (the FITNS button in the corner, tap or hold). Schema v18.
+  TextColumn get navStyle => text().withDefault(const Constant('bar'))();
 
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.

@@ -122,6 +122,8 @@ extension on AppShell {
       child: TooltipVisibility(
         visible: false,
         child: NavigationBar(
+          // A little slimmer than Material's 80.
+          height: 64,
           selectedIndex: shell.currentIndex,
           onDestinationSelected: _select,
           destinations: [
@@ -220,8 +222,11 @@ class _SwipeTabsState extends ConsumerState<SwipeTabs> {
   /// Slides the page a little toward the next and back, twice — a peek at
   /// what a swipe would show. A touch stops it.
   Future<void> _peek() async {
+    final tab = widget.shell.currentIndex;
+    // Another tab chosen meanwhile: stop, rather than pull back to this one.
+    bool moved() => widget.shell.currentIndex != tab;
     for (var i = 0; i < 2; i++) {
-      if (!mounted || !_pages.hasClients || _swiped) return;
+      if (!mounted || !_pages.hasClients || _swiped || moved()) return;
       final position = _pages.position;
       final home = position.pixels;
       final toward = widget.shell.currentIndex < widget.children.length - 1
@@ -232,7 +237,7 @@ class _SwipeTabsState extends ConsumerState<SwipeTabs> {
         duration: const Duration(milliseconds: 420),
         curve: Curves.easeOutCubic,
       );
-      if (!mounted || !_pages.hasClients) return;
+      if (!mounted || !_pages.hasClients || moved()) return;
       await _pages.animateTo(
         home,
         duration: const Duration(milliseconds: 520),

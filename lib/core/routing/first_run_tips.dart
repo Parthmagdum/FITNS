@@ -63,19 +63,32 @@ class _FirstRunTipsState extends ConsumerState<FirstRunTips>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Where the FITNS button is — or, with the tab bar on, where it would
+    // be, for the step that shows it off.
     final button = fitnsButtonCentre(context);
-    final (title, body) = switch (_step) {
-      0 => (
+    final bar = ref.watch(tabBarNavProvider);
+    final (title, body) = switch ((_step, bar)) {
+      (0, _) => (
         'Swipe between pages',
-        'There is no tab bar. Swipe left or right anywhere to move between '
-            'Today, Workouts, Food, Body and Settings.',
+        'Swipe left or right anywhere to move between Today, Workouts, '
+            'Food, Body and Settings.',
       ),
-      1 => (
+      (1, true) => (
+        'Or tap a tab',
+        'The bar along the bottom takes you straight to any page.',
+      ),
+      (_, true) => (
+        'Want one button instead?',
+        'In Settings → Navigation, pick the FITNS button: tap it for every '
+            'page and Quick add, or hold it and slide for shortcuts. There '
+            'is lots more to explore in Settings, too.',
+      ),
+      (1, false) => (
         'Tap the FITNS button',
         'The button in the corner opens every page and Quick add: start a '
             'workout, log food or water, and more.',
       ),
-      _ => (
+      (_, false) => (
         'Hold it and slide',
         'Hold the button, slide to a bubble and let go. Orange bubbles are '
             'Quick add; pale ones Go to a page.',
@@ -97,14 +110,15 @@ class _FirstRunTipsState extends ConsumerState<FirstRunTips>
                   onTap: _next,
                   child: CustomPaint(
                     painter: _Scrim(
-                      hole: _step == 0 ? null : button,
+                      hole: _step == 0 || (bar && _step == 1) ? null : button,
                       color: Colors.black.withValues(alpha: 0.72),
                     ),
                   ),
                 ),
               ),
               if (_step == 0) ..._swipeDemo(context, t),
-              if (_step == 1) ..._tapDemo(context, t, button),
+              if (_step == 1 && bar) ..._tabDemo(context, t),
+              if (_step == 1 && !bar) ..._tapDemo(context, t, button),
               if (_step == 2) ..._holdDemo(context, t, button),
               Positioned(
                 left: 20,
@@ -187,6 +201,32 @@ class _FirstRunTipsState extends ConsumerState<FirstRunTips>
         Offset(size.width * (0.72 - 0.44 * p), midY + 70),
         opacity: fade,
         pressed: t > 0.12 && t < 0.68,
+      ),
+    ];
+  }
+
+  /// A finger tapping a tab in the bar below, rings pulsing where it
+  /// lands. (The bar is outside these tips, so it stays bright.)
+  List<Widget> _tabDemo(BuildContext context, double t) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    // The second tab, Workouts, just under the bottom edge.
+    final target = Offset(size.width * 0.3, size.height - 6);
+    final tap = t > 0.35 && t < 0.5;
+    return [
+      for (var k = 0; k < 2; k++) _ring(target, (t + k / 2) % 1, theme.accent),
+      _hand(target + const Offset(4, -58), pressed: tap),
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 70,
+        child: IgnorePointer(
+          child: Icon(
+            Icons.keyboard_double_arrow_down_rounded,
+            size: 40,
+            color: Colors.white.withValues(alpha: 0.4 + 0.6 * (1 - t)),
+          ),
+        ),
       ),
     ];
   }

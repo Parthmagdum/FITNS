@@ -204,10 +204,12 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
     }
     _centres = [for (final c in fan) c + Offset(dx, dy)];
     final origin = _anchor + Offset(dx, dy);
+    // Small, and a little below the button's middle: clear of the last
+    // bubble's label above it.
     _barTarget = Rect.fromCenter(
-      center: Offset(16 + 62, _anchor.dy),
-      width: 124,
-      height: 48,
+      center: Offset(16 + 48, _anchor.dy + 12),
+      width: 96,
+      height: 34,
     );
     _entry = OverlayEntry(
       builder: (_) => Positioned.fill(
@@ -810,20 +812,27 @@ class _HoldMenuState extends State<_HoldMenu>
               borderRadius: BorderRadius.circular(999),
               border: Border.all(color: Colors.white, width: hovered ? 2 : 0),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.call_to_action_outlined, size: 20, color: ink),
-                const SizedBox(width: 6),
-                Text(
-                  'Tab bar',
-                  style: TextStyle(
-                    color: ink,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.call_to_action_outlined, size: 16, color: ink),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Tab bar',
+                      style: TextStyle(
+                        color: ink,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

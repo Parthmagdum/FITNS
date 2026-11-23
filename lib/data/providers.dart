@@ -64,7 +64,8 @@ final appearanceProvider = Provider<String>(
 /// A tab bar along the bottom instead of the FITNS button.
 final tabBarNavProvider = Provider<bool>(
   (ref) =>
-      ref.watch(settingsProvider.select((s) => s.valueOrNull?.navStyle)) ==
+      (ref.watch(settingsProvider.select((s) => s.valueOrNull?.navStyle)) ??
+          'bar') ==
       'bar',
 );
 
