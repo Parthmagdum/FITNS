@@ -335,6 +335,12 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
     streakWeeks: weekStreak([
       for (final h in history ?? const <WorkoutSummary>[]) h.workout.startedAt,
     ], today),
+    proteinTenths: logs.fold(0, (sum, l) => sum + l.proteinTenths),
+    carbsTenths: logs.fold(0, (sum, l) => sum + l.carbsTenths),
+    fatTenths: logs.fold(0, (sum, l) => sum + l.fatTenths),
+    proteinGoalG: settings.proteinGoalG,
+    carbsGoalG: settings.carbsGoalG,
+    fatGoalG: settings.fatGoalG,
   );
 });
 

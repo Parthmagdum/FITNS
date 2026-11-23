@@ -13,7 +13,7 @@ FITNS is a fitness tracker that keeps everything on your phone. It has no intern
 <b>Move</b>
 <ul>
 <li>Step counting with daily, weekly and monthly totals</li>
-<li>Optional all-day counting and a home-screen widget</li>
+<li>Optional all-day counting</li>
 <li>Bike rides: FITNS counts your pedal turns from your pocket, screen off, and works out distance, time and calories</li>
 </ul>
 
@@ -30,6 +30,7 @@ FITNS is a fitness tracker that keeps everything on your phone. It has no intern
 <li>Water, sleep and optional cycle tracking</li>
 <li>Streaks, monthly summaries, muscle balance, personal records and badges</li>
 <li>Reminders for workouts, water and weigh-ins</li>
+<li>Home-screen widgets for steps, water, calories, today and your streak, with quick-add buttons</li>
 </ul>
 
 <b>Yours</b>

@@ -1,0 +1,6 @@
+Five home-screen widgets:
+- Steps ring that counts on with FITNS closed
+- Water with +250 / +500 buttons right on the home screen
+- Calories left with protein, carbs and fat
+- Today: steps, calories, water and one-tap Workout, Food and Water buttons
+- Streak, restyled

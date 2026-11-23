@@ -54,4 +54,37 @@ void main() {
     expect(d.streak, '\u{1F525} 3-week streak');
     expect(streakLine(0), isEmpty);
   });
+
+  test('calories, macros and goals for the calories widget', () {
+    final d = widgetData(
+      day: day,
+      steps: 0,
+      stepGoal: 8000,
+      kcalEaten: 960,
+      kcalGoal: 2200,
+      nextWorkout: null,
+      proteinTenths: 624,
+      carbsTenths: 1100,
+      fatTenths: 283,
+      proteinGoalG: 140,
+    );
+    expect(d.kcalEaten, 960);
+    expect(d.kcalGoal, 2200);
+    expect((d.proteinG, d.carbsG, d.fatG), (62, 110, 28));
+    expect((d.proteinGoalG, d.carbsGoalG, d.fatGoalG), (140, 0, 0));
+  });
+
+  test('a widget tap opens the right page', () {
+    final noon = DateTime(2026, 11, 23, 13);
+    expect(widgetPageRoute('steps', noon), (path: '/steps', go: false));
+    expect(widgetPageRoute('water', noon), (path: '/water', go: false));
+    expect(widgetPageRoute('workout', noon), (path: '/workouts', go: true));
+    expect(widgetPageRoute('today', noon), (path: '/today', go: true));
+    // Food for the meal of the hour.
+    expect(widgetPageRoute('logFood', noon), (
+      path: '/food/add/2026-11-23/lunch',
+      go: false,
+    ));
+    expect(widgetPageRoute('nonsense', noon), isNull);
+  });
 }

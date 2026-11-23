@@ -79,6 +79,8 @@ class StepCounterService : Service(), SensorEventListener {
         val stamped = boot + timestamp / 1_000_000
         val at = if (stamped in (now - DAY_MS)..(now + 60_000)) stamped else now
         val reading = Reading(StepFilter.filtered(this, raw, boot), at, boot)
+        // The home-screen widgets count on without FITNS open.
+        FitnsWidget.onStepReading(this, reading.counter, reading.at)
 
         val previous = latest
         latest = reading

@@ -76,6 +76,7 @@ object WaterBar {
             apply()
         }
         refresh(context)
+        FitnsWidget.refreshAll(context)
     }
 
     /** Shows or redraws the tracker if it's on, removes it if not. */
@@ -98,6 +99,7 @@ object WaterBar {
             File(context.filesDir, LOG).appendText("$ml,${System.currentTimeMillis()}\n")
         }
         refresh(context)
+        FitnsWidget.refreshAll(context)
         onLogged?.invoke()
     }
 
@@ -112,6 +114,13 @@ object WaterBar {
             if (parts.size == 2) parts else null
         }
     }
+
+    /** Water today and the goal, in ml — drinks still waiting for Dart included. */
+    fun today(context: Context): Pair<Int, Int> =
+        drunkToday(context) to prefs(context).getInt("goalMl", 0)
+
+    /** The quick-add sizes Dart last gave, in ml. */
+    fun presetSizes(context: Context): List<Int> = presets(context)
 
     /** The first quick-add size, for the reminder's button. Null before Dart has said. */
     fun firstPreset(context: Context): Int? = presets(context).firstOrNull()
@@ -289,7 +298,10 @@ class WaterReceiver : BroadcastReceiver() {
                 Reminders.snoozeWater(context, WaterBar.SNOOZE_MINUTES)
                 WaterBar.refresh(context)
             }
-            WaterBar.ACTION_REFRESH -> WaterBar.refresh(context)
+            WaterBar.ACTION_REFRESH -> {
+                WaterBar.refresh(context)
+                FitnsWidget.refreshAll(context)
+            }
         }
     }
 }

@@ -118,7 +118,7 @@
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"
             tools:replace="android:screenOrientation"/>
-        <!-- The home-screen widget. -->
+        <!-- Widget: Today (FitnsWidget.kt draws all five). -->
         <receiver
             android:name=".FitnsWidget"
             android:label="@string/widget_label"
@@ -141,6 +141,42 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/streak_widget_info"/>
+        </receiver>
+        <!-- Widget: Steps, live from the step counter. -->
+        <receiver
+            android:name=".StepsWidget"
+            android:label="@string/steps_widget_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/steps_widget_info"/>
+        </receiver>
+        <!-- Widget: Water, with buttons to add a glass. -->
+        <receiver
+            android:name=".WaterWidget"
+            android:label="@string/water_widget_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/water_widget_info"/>
+        </receiver>
+        <!-- Widget: Calories left, protein, carbs and fat. -->
+        <receiver
+            android:name=".CaloriesWidget"
+            android:label="@string/calories_widget_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/calories_widget_info"/>
         </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

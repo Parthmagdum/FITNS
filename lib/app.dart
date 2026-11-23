@@ -54,12 +54,20 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
     }
   }
 
-  /// A notification's Edit button (or a tap on the tracker) opens a page.
+  /// A home-screen widget or a notification asked for a page.
   void _openPage(String page) {
-    if (!mounted || page != 'water') return;
+    if (!mounted) return;
+    final route = widgetPageRoute(page, DateTime.now());
+    if (route == null) return;
     final router = ref.read(routerProvider);
-    if (router.routerDelegate.currentConfiguration.uri.path == '/water') return;
-    router.push('/water');
+    if (route.go) {
+      router.go(route.path);
+      return;
+    }
+    if (router.routerDelegate.currentConfiguration.uri.path == route.path) {
+      return;
+    }
+    router.push(route.path);
   }
 
   @override

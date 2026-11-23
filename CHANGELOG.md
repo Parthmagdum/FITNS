@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.16 — 2026-11-23
+
+**Five home-screen widgets** ([#9](https://github.com/Parthmagdum/FITNS/issues/9))
+- **Steps:** a ring filling toward your daily goal. With all-day step
+  counting on, it keeps counting while FITNS is closed.
+- **Water:** today's water against your goal, with **+250 ml** and
+  **+500 ml** buttons (your own quick-add sizes) that log a drink straight
+  from the home screen.
+- **Calories:** a ring of calories left, with protein, carbs and fat bars
+  against your goals. Tap it to log food for the meal of the hour.
+- **Today:** steps, calories and water side by side, with one-tap
+  buttons: start your next workout, log food, add a glass of water.
+- **Streak:** your weeks in a row with a workout, bigger and bolder.
+- All of them follow your phone's light or dark mode, and each part opens
+  the right page in FITNS when tapped.
+
+**Fixes**
+- Widgets no longer get stuck on "Open FITNS" or yesterday's numbers: a new
+  day starts from zero at midnight, and they update between app opens.
+
 ## 0.1.15 — 2026-11-23
 
 **Cycling that actually tracks**

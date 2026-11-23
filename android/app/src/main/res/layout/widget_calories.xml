@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/kcal_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ProgressBar
+            android:id="@+id/kcal_ring"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="62"
+            android:progressDrawable="@drawable/widget_ring_accent"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/kcal_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="1,240"
+                android:textColor="@color/widget_text"
+                android:textSize="20sp"/>
+
+            <TextView
+                android:id="@+id/kcal_caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="kcal left"
+                android:textColor="@color/widget_muted"
+                android:textSize="11sp"/>
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/kcal_eaten"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="🍽 960 of 2,200 kcal"
+            android:textColor="@color/widget_muted"
+            android:textSize="11sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/protein_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Protein · 62 g"
+                android:textColor="@color/widget_text"
+                android:textSize="11sp"/>
+
+            <ProgressBar
+                android:id="@+id/protein_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:layout_marginTop="3dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="50"
+                android:progressDrawable="@drawable/widget_bar_protein"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/carbs_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Carbs · 110 g"
+                android:textColor="@color/widget_text"
+                android:textSize="11sp"/>
+
+            <ProgressBar
+                android:id="@+id/carbs_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:layout_marginTop="3dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="50"
+                android:progressDrawable="@drawable/widget_bar_carbs"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/fat_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fat · 28 g"
+                android:textColor="@color/widget_text"
+                android:textSize="11sp"/>
+
+            <ProgressBar
+                android:id="@+id/fat_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="5dp"
+                android:layout_marginTop="3dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="50"
+                android:progressDrawable="@drawable/widget_bar_fat"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

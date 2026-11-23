@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="widget_background">#1C1C1E</color>
+    <color name="widget_surface">#2C2C2E</color>
     <color name="widget_text">#F2F2F7</color>
     <color name="widget_muted">#98989F</color>
+    <color name="widget_track">#3A3A3C</color>
+    <color name="widget_accent">#FF7A2F</color>
+    <color name="widget_water">#409CFF</color>
 </resources>
