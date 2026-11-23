@@ -407,7 +407,8 @@ class FitnsWidget : AppWidgetProvider() {
                         v.setTextViewText(R.id.kc_caption, "kcal eaten")
                     }
                 }
-                v.setOnClickPendingIntent(R.id.kc_root, open(context, "logFood", 330))
+                // The Food tab: today's meals, where logging starts from.
+                v.setOnClickPendingIntent(R.id.kc_root, open(context, "food", 330))
                 return v
             }
             val medium = fill(views(context, R.layout.widget_calories_m))

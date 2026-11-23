@@ -1554,4 +1554,35 @@ void main() {
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
+
+  testWidgets('a meal combo adds every food of it in one tap', (tester) async {
+    final db = await pumpApp(tester);
+    unawaited(
+      GoRouter.of(
+        tester.element(find.byType(PageView)),
+      ).push<void>('/food/add/${dayKey(DateTime.now())}/lunch'),
+    );
+    await settle(tester);
+    expect(find.text('Lunch combos'), findsOneWidget);
+    expect(find.text('Dal chawal'), findsOneWidget);
+    // Its details first, then the + on the card.
+    await tester.tap(find.text('Dal chawal'));
+    await settle(tester);
+    expect(find.text('Add all to Lunch'), findsOneWidget);
+    expect(find.text('Rice, white, cooked'), findsWidgets);
+    await tester.tapAt(const Offset(180, 40));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Add Dal chawal'));
+    await settle(tester);
+    final logs = (await tester.runAsync(() => db.select(db.foodLogs).get()))!;
+    expect(logs.map((l) => l.name).toSet(), {
+      'Dal tadka',
+      'Rice, white, cooked',
+      'Green salad',
+    });
+    expect(logs.every((l) => l.meal == Meal.lunch), isTrue);
+    expect(find.text('Added Dal chawal'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 }

@@ -1949,6 +1949,40 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Food logged from the start of [from]'s day onwards, oldest first — to
+  /// find the meals eaten again and again.
+  Future<List<FoodLogRow>> foodLogsSince(DateTime from) =>
+      (select(foodLogs)
+            ..where((l) => l.day.isBiggerOrEqualValue(dayKey(from)))
+            ..orderBy([(l) => OrderingTerm.asc(l.loggedAt)]))
+          .get();
+
+  /// Logs [items] again — the same foods and amounts — in [meal] on [day].
+  Future<void> relogFoods(
+    List<FoodLogRow> items, {
+    required DateTime day,
+    required Meal meal,
+    DateTime? at,
+  }) => transaction(() async {
+    for (final l in items) {
+      await into(foodLogs).insert(
+        FoodLogsCompanion.insert(
+          day: dayKey(day),
+          meal: meal,
+          loggedAt: at ?? DateTime.now(),
+          foodId: Value(l.foodId),
+          name: l.name,
+          servingLabel: Value(l.servingLabel),
+          servingsHundredths: Value(l.servingsHundredths),
+          kcal: l.kcal,
+          proteinTenths: Value(l.proteinTenths),
+          carbsTenths: Value(l.carbsTenths),
+          fatTenths: Value(l.fatTenths),
+        ),
+      );
+    }
+  });
+
   /// Calories (and macros, if known) without a saved food.
   Future<int> quickAddFood({
     required DateTime day,

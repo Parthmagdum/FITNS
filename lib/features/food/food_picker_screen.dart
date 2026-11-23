@@ -11,6 +11,7 @@ import '../../data/pictures.dart';
 import '../../data/providers.dart';
 import '../exercises/exercise_icons.dart' show IconTile;
 import 'food_sheets.dart';
+import 'meal_combos_section.dart';
 import 'nutrition.dart';
 
 /// Adds something to one meal: a saved food, a new one, or a quick add.
@@ -212,6 +213,13 @@ class _FoodPickerScreenState extends ConsumerState<FoodPickerScreen> {
             onTap: _quickAdd,
           ),
           const Divider(),
+          // Whole meals first: what's usually eaten, added in one tap.
+          if (query.isEmpty)
+            MealCombosSection(
+              day: widget.day,
+              meal: widget.meal,
+              onAdded: _added,
+            ),
           if (query.isEmpty) ...[
             const SectionLabel('Popular'),
             SizedBox(

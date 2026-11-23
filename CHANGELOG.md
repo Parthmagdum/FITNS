@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.19 — 2026-11-23
+
+**Meal combos: a whole meal in one tap**
+- Adding food to breakfast, lunch, dinner or snacks now starts with
+  **combos** for that meal: everyday meals like poha & chai, idli sambar,
+  dal chawal, a veg thali, roti-sabzi-dal, khichdi & kadhi, chai &
+  biscuits, a fruit bowl, a protein shake and more.
+- Each card shows its foods' photos, what's in it, the calories and
+  protein, and a veg / egg / non-veg mark. Tap **+** to add every food of
+  it at once, or tap the card to see the amounts first.
+- **Your usual:** eat the same foods in a meal on two or more days and
+  FITNS offers it back as "Your usual breakfast" (or lunch, dinner,
+  snacks), with the amounts you had last time.
+- Each food is added on its own, so you can still change or remove one.
+
+**Fixes**
+- Tapping the calories widget opens the Food tab instead of jumping
+  straight into adding food.
+
 ## 0.1.18 — 2026-11-23
 
 **Learn the app where you use it**

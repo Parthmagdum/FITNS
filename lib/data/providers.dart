@@ -22,6 +22,7 @@ import '../core/training/swaps.dart';
 import '../core/units.dart';
 import 'backup.dart';
 import 'database.dart';
+import 'meal_combos.dart';
 
 final dbProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -440,6 +441,18 @@ final foodDayProvider = StateProvider<DateTime>(
 final foodLogsProvider = StreamProvider.family<List<FoodLogRow>, DateTime>(
   (ref, day) => ref.watch(dbProvider).watchFoodLogs(day),
 );
+
+/// The meals eaten again and again in [meal] over the last month.
+final usualCombosProvider = FutureProvider.autoDispose
+    .family<List<UsualCombo>, Meal>((ref, meal) async {
+      // Logging food changes what's usual: watch the day's logs.
+      final today = ref.watch(todayProvider);
+      ref.watch(foodLogsProvider(today));
+      final logs = await ref
+          .read(dbProvider)
+          .foodLogsSince(today.subtract(const Duration(days: 30)));
+      return usualCombos(logs, meal);
+    });
 
 final foodsProvider = StreamProvider<List<FoodRow>>(
   (ref) => ref.watch(dbProvider).watchFoods(),

@@ -1,0 +1,4 @@
+Meal combos: add a whole breakfast, lunch, dinner or snack in one tap
+- Everyday combos like poha & chai, dal chawal, veg thali, khichdi & kadhi
+- "Your usual": meals you eat again and again, offered back
+- The calories widget now opens the Food tab
