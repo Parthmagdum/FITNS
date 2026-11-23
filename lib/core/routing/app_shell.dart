@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,11 @@ const _tabs = <(IconData, IconData, String)>[
 /// button for a sheet of tabs and quick actions, or hold it and slide to
 /// one; pages open by growing out of it. A running workout shows as a
 /// clock on the button, and Resume workout leads its quick actions.
-class AppShell extends StatelessWidget {
+///
+/// Or, for those who'd rather (Settings, or slide to "Tab bar" while holding
+/// the button): a plain tab bar along the bottom, and no button. A long
+/// press on the bar offers the button back.
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
@@ -37,7 +42,8 @@ class AppShell extends StatelessWidget {
       shell.goBranch(i, initialLocation: i == shell.currentIndex);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(tabBarNavProvider)) return _withTabBar(context, ref);
     final tabs = <QuickAction>[
       for (final (i, (_, selected, label)) in _tabs.indexed)
         (
@@ -86,6 +92,92 @@ class AppShell extends StatelessWidget {
       ),
     );
   }
+}
+
+extension on AppShell {
+  /// The tabs with a tab bar along the bottom instead of the FITNS button.
+  Widget _withTabBar(BuildContext context, WidgetRef ref) => Scaffold(
+    body: Stack(
+      children: [
+        Positioned.fill(child: shell),
+        const Positioned.fill(child: CoachMarks()),
+        Positioned.fill(
+          child: Consumer(
+            builder: (context, ref, _) {
+              final s = ref.watch(settingsProvider).valueOrNull;
+              if (s == null || !s.setupDone || s.tipsSeen) {
+                return const SizedBox.shrink();
+              }
+              return const FirstRunTips();
+            },
+          ),
+        ),
+      ],
+    ),
+    bottomNavigationBar: GestureDetector(
+      key: const Key('tab-bar'),
+      // A long press anywhere on the bar: the FITNS button back?
+      onLongPress: () => _offerButton(context, ref),
+      // The tabs' tooltips would take the long press.
+      child: TooltipVisibility(
+        visible: false,
+        child: NavigationBar(
+          selectedIndex: shell.currentIndex,
+          onDestinationSelected: _select,
+          destinations: [
+            for (final (icon, selected, label) in _tabs)
+              NavigationDestination(
+                icon: Icon(icon),
+                selectedIcon: Icon(selected),
+                label: label,
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Offers the FITNS button back, from a long press on the tab bar.
+Future<void> _offerButton(BuildContext context, WidgetRef ref) {
+  HapticFeedback.mediumImpact();
+  return showModalBottomSheet<void>(
+    context: context,
+    builder: (sheet) {
+      final theme = Theme.of(sheet);
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Use the FITNS button?', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 6),
+              Text(
+                'The button in the corner replaces the tab bar: tap it for '
+                'every page and Quick add, or hold it and slide for '
+                'shortcuts.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(sheet);
+                  setTabBarNav(ref, false);
+                },
+                child: const Text('Switch to the FITNS button'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(sheet),
+                child: const Text('Keep the tab bar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 /// The tabs side by side: swipe left or right to move to the next one, as

@@ -297,6 +297,40 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+        const SectionLabel('Navigation'),
+        // The FITNS button (tap, or hold and slide), or a plain tab bar.
+        SegmentedButton<bool>(
+          key: const Key('nav-style'),
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(
+              value: false,
+              icon: Icon(Icons.radio_button_checked),
+              label: Text('FITNS button'),
+            ),
+            ButtonSegment(
+              value: true,
+              icon: Icon(Icons.call_to_action_outlined),
+              label: Text('Tab bar'),
+            ),
+          ],
+          selected: {ref.watch(tabBarNavProvider)},
+          onSelectionChanged: (s) => setTabBarNav(ref, s.first),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+          child: Text(
+            ref.watch(tabBarNavProvider)
+                ? 'Tabs along the bottom. Long-press the bar to switch back '
+                      'to the FITNS button.'
+                : 'One button in the corner: tap it for every page, or hold '
+                      'and slide for shortcuts. Slide to "Tab bar" while '
+                      'holding to switch.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
         const SizedBox(height: 12),
         Card(
           child: SwitchListTile(

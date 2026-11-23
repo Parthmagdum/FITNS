@@ -20,8 +20,8 @@ class AppInfo {
   static const siblingUrl = 'https://xpenc.in';
 
   // ── Version ────────────────────────────────────────────────────────────────
-  static const version = '0.1.22';
-  static const buildNumber = 31;
+  static const version = '0.1.23';
+  static const buildNumber = 32;
 
   /// `1.0.0 (build 1)` — the string a bug report should quote.
   static const versionLabel = '$version (build $buildNumber)';

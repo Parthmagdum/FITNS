@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -59,6 +60,18 @@ final appearanceProvider = Provider<String>(
       ref.watch(settingsProvider.select((s) => s.valueOrNull?.themeMode)) ??
       'light',
 );
+
+/// A tab bar along the bottom instead of the FITNS button.
+final tabBarNavProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(settingsProvider.select((s) => s.valueOrNull?.navStyle)) ==
+      'bar',
+);
+
+/// Switches between the FITNS button and the tab bar.
+Future<void> setTabBarNav(WidgetRef ref, bool bar) => ref
+    .read(dbProvider)
+    .updateSettings(SettingsCompanion(navStyle: Value(bar ? 'bar' : 'button')));
 
 /// The Liquid Glass look (XPENC's), which is always dark.
 final glassThemeProvider = Provider<bool>(

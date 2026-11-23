@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.23 — 2026-11-23
+
+**Prefer a tab bar? Have one.**
+- Hold the FITNS button and a **Tab bar** switch appears at the bottom
+  left: slide to it and let go, and a normal tab bar (Today, Workouts,
+  Food, Body, Settings) replaces the button.
+- To get the button back, **long-press the tab bar**, or pick it in
+  **Settings → Navigation** (FITNS button or Tab bar).
+
+**Today at a glance**
+- Today now opens with six tiles, so nothing needs scrolling for: steps,
+  food (calories left), water, last night's sleep, your weight, and this
+  week's workouts. Each opens its page.
+
+**Smaller things**
+- The FITNS button's fan sits a little higher on the left, clear of the
+  new Tab bar switch.
+- Messages at the bottom of the screen now float above the FITNS button
+  instead of covering it.
+
 ## 0.1.22 — 2026-11-23
 
 **The Lift-off logo**

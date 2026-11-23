@@ -517,6 +517,18 @@ class $SettingsTable extends Settings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _navStyleMeta = const VerificationMeta(
+    'navStyle',
+  );
+  @override
+  late final GeneratedColumn<String> navStyle = GeneratedColumn<String>(
+    'nav_style',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('button'),
+  );
   static const VerificationMeta _musicTracksMeta = const VerificationMeta(
     'musicTracks',
   );
@@ -573,6 +585,7 @@ class $SettingsTable extends Settings
     tipsSeen,
     swipeHintDone,
     holdHintDone,
+    navStyle,
     musicTracks,
   ];
   @override
@@ -902,6 +915,12 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('nav_style')) {
+      context.handle(
+        _navStyleMeta,
+        navStyle.isAcceptableOrUnknown(data['nav_style']!, _navStyleMeta),
+      );
+    }
     if (data.containsKey('music_tracks')) {
       context.handle(
         _musicTracksMeta,
@@ -1102,6 +1121,10 @@ class $SettingsTable extends Settings
         DriftSqlType.bool,
         data['${effectivePrefix}hold_hint_done'],
       )!,
+      navStyle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nav_style'],
+      )!,
       musicTracks: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}music_tracks'],
@@ -1258,6 +1281,10 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   final bool swipeHintDone;
   final bool holdHintDone;
 
+  /// How to get around: `button` (the FITNS button in the corner, tap or
+  /// hold) or `bar` (a tab bar along the bottom). Schema v18.
+  final String navStyle;
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.
@@ -1306,6 +1333,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     required this.tipsSeen,
     required this.swipeHintDone,
     required this.holdHintDone,
+    required this.navStyle,
     this.musicTracks,
   });
   @override
@@ -1404,6 +1432,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     map['tips_seen'] = Variable<bool>(tipsSeen);
     map['swipe_hint_done'] = Variable<bool>(swipeHintDone);
     map['hold_hint_done'] = Variable<bool>(holdHintDone);
+    map['nav_style'] = Variable<String>(navStyle);
     if (!nullToAbsent || musicTracks != null) {
       map['music_tracks'] = Variable<String>(musicTracks);
     }
@@ -1493,6 +1522,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       tipsSeen: Value(tipsSeen),
       swipeHintDone: Value(swipeHintDone),
       holdHintDone: Value(holdHintDone),
+      navStyle: Value(navStyle),
       musicTracks: musicTracks == null && nullToAbsent
           ? const Value.absent()
           : Value(musicTracks),
@@ -1576,6 +1606,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       tipsSeen: serializer.fromJson<bool>(json['tipsSeen']),
       swipeHintDone: serializer.fromJson<bool>(json['swipeHintDone']),
       holdHintDone: serializer.fromJson<bool>(json['holdHintDone']),
+      navStyle: serializer.fromJson<String>(json['navStyle']),
       musicTracks: serializer.fromJson<String?>(json['musicTracks']),
     );
   }
@@ -1636,6 +1667,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'tipsSeen': serializer.toJson<bool>(tipsSeen),
       'swipeHintDone': serializer.toJson<bool>(swipeHintDone),
       'holdHintDone': serializer.toJson<bool>(holdHintDone),
+      'navStyle': serializer.toJson<String>(navStyle),
       'musicTracks': serializer.toJson<String?>(musicTracks),
     };
   }
@@ -1684,6 +1716,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     bool? tipsSeen,
     bool? swipeHintDone,
     bool? holdHintDone,
+    String? navStyle,
     Value<String?> musicTracks = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
@@ -1751,6 +1784,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     tipsSeen: tipsSeen ?? this.tipsSeen,
     swipeHintDone: swipeHintDone ?? this.swipeHintDone,
     holdHintDone: holdHintDone ?? this.holdHintDone,
+    navStyle: navStyle ?? this.navStyle,
     musicTracks: musicTracks.present ? musicTracks.value : this.musicTracks,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
@@ -1864,6 +1898,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       holdHintDone: data.holdHintDone.present
           ? data.holdHintDone.value
           : this.holdHintDone,
+      navStyle: data.navStyle.present ? data.navStyle.value : this.navStyle,
       musicTracks: data.musicTracks.present
           ? data.musicTracks.value
           : this.musicTracks,
@@ -1916,6 +1951,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('tipsSeen: $tipsSeen, ')
           ..write('swipeHintDone: $swipeHintDone, ')
           ..write('holdHintDone: $holdHintDone, ')
+          ..write('navStyle: $navStyle, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -1966,6 +2002,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     tipsSeen,
     swipeHintDone,
     holdHintDone,
+    navStyle,
     musicTracks,
   ]);
   @override
@@ -2015,6 +2052,7 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.tipsSeen == this.tipsSeen &&
           other.swipeHintDone == this.swipeHintDone &&
           other.holdHintDone == this.holdHintDone &&
+          other.navStyle == this.navStyle &&
           other.musicTracks == this.musicTracks);
 }
 
@@ -2062,6 +2100,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<bool> tipsSeen;
   final Value<bool> swipeHintDone;
   final Value<bool> holdHintDone;
+  final Value<String> navStyle;
   final Value<String?> musicTracks;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -2107,6 +2146,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.tipsSeen = const Value.absent(),
     this.swipeHintDone = const Value.absent(),
     this.holdHintDone = const Value.absent(),
+    this.navStyle = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -2153,6 +2193,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.tipsSeen = const Value.absent(),
     this.swipeHintDone = const Value.absent(),
     this.holdHintDone = const Value.absent(),
+    this.navStyle = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
@@ -2199,6 +2240,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<bool>? tipsSeen,
     Expression<bool>? swipeHintDone,
     Expression<bool>? holdHintDone,
+    Expression<String>? navStyle,
     Expression<String>? musicTracks,
   }) {
     return RawValuesInsertable({
@@ -2255,6 +2297,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (tipsSeen != null) 'tips_seen': tipsSeen,
       if (swipeHintDone != null) 'swipe_hint_done': swipeHintDone,
       if (holdHintDone != null) 'hold_hint_done': holdHintDone,
+      if (navStyle != null) 'nav_style': navStyle,
       if (musicTracks != null) 'music_tracks': musicTracks,
     });
   }
@@ -2303,6 +2346,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<bool>? tipsSeen,
     Value<bool>? swipeHintDone,
     Value<bool>? holdHintDone,
+    Value<String>? navStyle,
     Value<String?>? musicTracks,
   }) {
     return SettingsCompanion(
@@ -2354,6 +2398,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       tipsSeen: tipsSeen ?? this.tipsSeen,
       swipeHintDone: swipeHintDone ?? this.swipeHintDone,
       holdHintDone: holdHintDone ?? this.holdHintDone,
+      navStyle: navStyle ?? this.navStyle,
       musicTracks: musicTracks ?? this.musicTracks,
     );
   }
@@ -2512,6 +2557,9 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (holdHintDone.present) {
       map['hold_hint_done'] = Variable<bool>(holdHintDone.value);
     }
+    if (navStyle.present) {
+      map['nav_style'] = Variable<String>(navStyle.value);
+    }
     if (musicTracks.present) {
       map['music_tracks'] = Variable<String>(musicTracks.value);
     }
@@ -2564,6 +2612,7 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('tipsSeen: $tipsSeen, ')
           ..write('swipeHintDone: $swipeHintDone, ')
           ..write('holdHintDone: $holdHintDone, ')
+          ..write('navStyle: $navStyle, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -11147,6 +11196,7 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<bool> tipsSeen,
       Value<bool> swipeHintDone,
       Value<bool> holdHintDone,
+      Value<String> navStyle,
       Value<String?> musicTracks,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
@@ -11194,6 +11244,7 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<bool> tipsSeen,
       Value<bool> swipeHintDone,
       Value<bool> holdHintDone,
+      Value<String> navStyle,
       Value<String?> musicTracks,
     });
 
@@ -11423,6 +11474,11 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<bool> get holdHintDone => $composableBuilder(
     column: $table.holdHintDone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get navStyle => $composableBuilder(
+    column: $table.navStyle,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11656,6 +11712,11 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get navStyle => $composableBuilder(
+    column: $table.navStyle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => ColumnOrderings(column),
@@ -11869,6 +11930,9 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get navStyle =>
+      $composableBuilder(column: $table.navStyle, builder: (column) => column);
+
   GeneratedColumn<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => column,
@@ -11949,6 +12013,7 @@ class $$SettingsTableTableManager
                 Value<bool> tipsSeen = const Value.absent(),
                 Value<bool> swipeHintDone = const Value.absent(),
                 Value<bool> holdHintDone = const Value.absent(),
+                Value<String> navStyle = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -11994,6 +12059,7 @@ class $$SettingsTableTableManager
                 tipsSeen: tipsSeen,
                 swipeHintDone: swipeHintDone,
                 holdHintDone: holdHintDone,
+                navStyle: navStyle,
                 musicTracks: musicTracks,
               ),
           createCompanionCallback:
@@ -12041,6 +12107,7 @@ class $$SettingsTableTableManager
                 Value<bool> tipsSeen = const Value.absent(),
                 Value<bool> swipeHintDone = const Value.absent(),
                 Value<bool> holdHintDone = const Value.absent(),
+                Value<String> navStyle = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -12086,6 +12153,7 @@ class $$SettingsTableTableManager
                 tipsSeen: tipsSeen,
                 swipeHintDone: swipeHintDone,
                 holdHintDone: holdHintDone,
+                navStyle: navStyle,
                 musicTracks: musicTracks,
               ),
           withReferenceMapper: (p0) => p0

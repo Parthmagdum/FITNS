@@ -11,6 +11,7 @@ import '../../data/tables.dart' show Meal;
 import '../body/body_log_sheet.dart';
 import '../body/body_screen.dart';
 import 'burn_card.dart';
+import 'glance.dart';
 import '../cycling/cycling_screen.dart';
 import '../food/calories_card.dart';
 import '../food/water_card.dart';
@@ -65,6 +66,9 @@ class TodayScreen extends ConsumerWidget {
             ],
           ),
         ),
+        // The whole day at a glance, before anything else.
+        const TodayGlance(),
+        const SizedBox(height: 12),
         const _QuickActions(),
         const SizedBox(height: 16),
         const _WorkoutSection(),

@@ -305,6 +305,8 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        // Above the FITNS button in the corner, not over it.
+        insetPadding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(controlRadius),
         ),

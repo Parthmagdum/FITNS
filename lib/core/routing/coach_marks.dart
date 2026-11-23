@@ -29,7 +29,9 @@ class CoachMarks extends ConsumerWidget {
     }
     return Stack(
       children: [
-        if (!s.holdHintDone) const Positioned.fill(child: HoldHint()),
+        // No button to hold with the tab bar on.
+        if (!s.holdHintDone && s.navStyle != 'bar')
+          const Positioned.fill(child: HoldHint()),
         if (!s.swipeHintDone) const Positioned.fill(child: SwipeHint()),
       ],
     );

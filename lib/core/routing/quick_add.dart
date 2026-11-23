@@ -169,6 +169,12 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
   Offset _anchor = Offset.zero;
   List<Offset> _centres = const [];
 
+  /// Bottom left while held: slide there to swap the button for a tab bar.
+  Rect _barTarget = Rect.zero;
+
+  /// What [_hovered] holds while the thumb is on [_barTarget].
+  static const _onBarSwitch = -2;
+
   List<QuickAction> get _items => [
     ...actionsFor(ref.read(activeWorkoutProvider).valueOrNull),
     ...widget.tabs,
@@ -198,6 +204,11 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
     }
     _centres = [for (final c in fan) c + Offset(dx, dy)];
     final origin = _anchor + Offset(dx, dy);
+    _barTarget = Rect.fromCenter(
+      center: Offset(16 + 62, _anchor.dy),
+      width: 124,
+      height: 48,
+    );
     _entry = OverlayEntry(
       builder: (_) => Positioned.fill(
         child: _HoldMenu(
@@ -210,6 +221,7 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
           firstTab: quickActions.length,
           currentTab: widget.currentTab,
           hovered: _hovered,
+          barTarget: _barTarget,
         ),
       ),
     );
@@ -218,11 +230,13 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
 
   void _onLongPressMoveUpdate(LongPressMoveUpdateDetails details) {
     if (_entry == null) return;
-    final index = fanHoveredIndex(
-      anchor: _anchor,
-      pointer: details.globalPosition,
-      centres: _centres,
-    );
+    final index = _barTarget.inflate(8).contains(details.globalPosition)
+        ? _onBarSwitch
+        : fanHoveredIndex(
+            anchor: _anchor,
+            pointer: details.globalPosition,
+            centres: _centres,
+          );
     if (index != _hovered.value) {
       _hovered.value = index;
       HapticFeedback.selectionClick();
@@ -236,6 +250,7 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
     final items = _items;
     final index = _hovered.value;
     final chosen = commit && index >= 0 && index < items.length;
+    final toBar = commit && index == _onBarSwitch;
     if (chosen) {
       HapticFeedback.mediumImpact();
       // The hold menu is found: no more pulsing hint.
@@ -246,6 +261,21 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
     entry.remove();
     _hovered.value = -1;
     if (chosen && mounted) await _launch(context, ref, items[index], _anchor);
+    if (toBar && mounted) {
+      HapticFeedback.mediumImpact();
+      final messenger = ScaffoldMessenger.of(context);
+      await setTabBarNav(ref, true);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Tab bar on. To get the FITNS button back, long-press the bar '
+              'or go to Settings.',
+            ),
+          ),
+        );
+    }
   }
 
   @override
@@ -561,10 +591,14 @@ class _HoldMenu extends StatefulWidget {
     required this.firstTab,
     required this.currentTab,
     required this.hovered,
+    required this.barTarget,
   });
 
   final bool glass;
   final Offset anchor;
+
+  /// Where the "Use tab bar" switch sits.
+  final Rect barTarget;
 
   /// The centre of the rings: [anchor], unless the fan was nudged on screen.
   final Offset origin;
@@ -654,6 +688,7 @@ class _HoldMenuState extends State<_HoldMenu>
               for (var i = 0; i < widget.centres.length; i++)
                 _bubbleAt(context, i, hovered == i),
               _label(context, hovered, open),
+              _barSwitch(context, hovered == -2, open),
               Positioned(
                 left: widget.anchor.dx - QuickAddButton.size / 2,
                 top: widget.anchor.dy - QuickAddButton.size / 2,
@@ -755,13 +790,56 @@ class _HoldMenuState extends State<_HoldMenu>
     );
   }
 
+  /// "Use tab bar", bottom left: slide here to swap the button for a tab
+  /// bar along the bottom.
+  Widget _barSwitch(BuildContext context, bool hovered, double open) {
+    final theme = Theme.of(context);
+    final r = widget.barTarget;
+    final ink = hovered ? Colors.white : const Color(0xFF1C1C1E);
+    return Positioned.fromRect(
+      rect: r,
+      child: Opacity(
+        opacity: open.clamp(0.0, 1.0),
+        child: AnimatedScale(
+          scale: hovered ? 1.1 : 1,
+          duration: const Duration(milliseconds: 150),
+          child: DecoratedBox(
+            key: const Key('bar-switch'),
+            decoration: BoxDecoration(
+              color: hovered ? theme.accent : const Color(0xFFF2F2F7),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white, width: hovered ? 2 : 0),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.call_to_action_outlined, size: 20, color: ink),
+                const SizedBox(width: 6),
+                Text(
+                  'Tab bar',
+                  style: TextStyle(
+                    color: ink,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// The hovered item's name above the fan — or, with nothing under the
   /// thumb, how to use the menu.
   Widget _label(BuildContext context, int hovered, double open) {
     final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
     final isTab = hovered >= widget.firstTab;
-    final text = hovered >= 0
+    final text = hovered == -2
+        ? 'Use a tab bar instead of this button'
+        : hovered >= 0
         ? '${isTab ? 'Go to' : 'Quick add'} · ${widget.items[hovered].label}'
         : 'Slide to one · let go on ✕ to cancel';
     // Above the whole fan, clear of every bubble.
@@ -804,7 +882,7 @@ class _HoldMenuState extends State<_HoldMenu>
         mainAxisSize: MainAxisSize.min,
         children: [
           // The legend: which zone is which.
-          if (hovered < 0) ...[
+          if (hovered == -1) ...[
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Row(
@@ -870,8 +948,8 @@ class _ZonesPainter extends CustomPainter {
     // its inner and outer rims (a radial gradient), and its two ends are
     // feathered (a blur), so it melts into the dimmed page — no edges.
     void band(double inner, double outer, Color color, double alpha) {
-      const from = -196 * math.pi / 180;
-      const sweep = 124 * math.pi / 180;
+      const from = -180 * math.pi / 180;
+      const sweep = 106 * math.pi / 180;
       final path = Path()
         ..arcTo(
           Rect.fromCircle(center: origin, radius: outer),

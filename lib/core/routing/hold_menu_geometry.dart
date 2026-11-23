@@ -20,7 +20,8 @@ const fanRings = [3, 4, 5];
 const _radii = [100.0, 172.0, 244.0];
 
 /// [count] bubble centres on rings around [anchor], from just short of
-/// straight up (-92°) to straight left (-178°), so nothing falls off an
+/// straight up (-92°) to a little above straight left (-165°) — clear of
+/// the tab-bar switch at the bottom left — so nothing falls off an
 /// edge. Items past the rings' capacity go on further rings.
 List<Offset> cornerFanCenters(Offset anchor, int count) {
   final centres = <Offset>[];
@@ -33,7 +34,7 @@ List<Offset> cornerFanCenters(Offset anchor, int count) {
     final k = math.min(capacity, count - centres.length);
     for (var i = 0; i < k; i++) {
       final t = capacity == 1 ? 0.5 : i / (capacity - 1);
-      final rad = (-92 - 86 * t) * math.pi / 180;
+      final rad = (-92 - 73 * t) * math.pi / 180;
       centres.add(anchor + Offset(math.cos(rad), math.sin(rad)) * radius);
     }
     ring++;

@@ -1353,8 +1353,8 @@ void main() {
     final button = tester.getCenter(find.byKey(const Key('quick-add')));
     expect(button.dx, greaterThan(300));
     expect(button.dy, greaterThan(700));
-    // The last bubble of the outer ring, straight left: Settings.
-    await holdAndSlide(tester, const Offset(-244, -8));
+    // The last bubble of the outer ring, left and a little up: Settings.
+    await holdAndSlide(tester, const Offset(-236, -63));
     expect(
       tester.widget<PageView>(find.byType(PageView)).controller!.page!.round(),
       4,
@@ -1705,6 +1705,68 @@ void main() {
       await tester.runAsync(() => db.select(db.activities).get()),
       isEmpty,
     );
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('slide to "Tab bar" while holding: a tab bar replaces the '
+      'button; a long press on it, or Settings, brings the button back', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+    // The switch, bottom left, level with the button.
+    await holdAndSlide(tester, const Offset(-235, 0));
+    expect((await tester.runAsync(db.getSettings))!.navStyle, 'bar');
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('quick-add')), findsNothing);
+    // The bar works.
+    await tester.tap(find.text('Food').last);
+    await settle(tester);
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).controller!.page!.round(),
+      2,
+    );
+    // A long press on the bar offers the button back.
+    await tester.longPress(find.byKey(const Key('tab-bar')));
+    await settle(tester);
+    await tester.tap(find.text('Switch to the FITNS button'));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.navStyle, 'button');
+    expect(find.byKey(const Key('quick-add')), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+
+    // And in Settings, both ways — once the "Tab bar on" note has gone.
+    await tester.pump(const Duration(seconds: 6));
+    await settle(tester);
+    await goToTab(tester, 'Settings');
+    await scrollToMiddle(tester, find.byKey(const Key('nav-style')));
+    await tester.tap(find.text('Tab bar'));
+    await settle(tester);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    await scrollToMiddle(tester, find.byKey(const Key('nav-style')));
+    await tester.tap(find.text('FITNS button'));
+    await settle(tester);
+    expect(find.byKey(const Key('quick-add')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('Today opens with the day at a glance', (tester) async {
+    await pumpApp(tester);
+    for (final key in [
+      'glance-steps',
+      'glance-food',
+      'glance-water',
+      'glance-sleep',
+      'glance-weight',
+      'glance-workouts',
+    ]) {
+      expect(find.byKey(Key(key)), findsOneWidget, reason: key);
+    }
+    // Each one a tap from its page: water, here.
+    await tester.tap(find.byKey(const Key('glance-water')));
+    await settle(tester);
+    expect(find.text('Water reminders'), findsWidgets);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
