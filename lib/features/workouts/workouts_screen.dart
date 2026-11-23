@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../today/burn_card.dart';
 import '../../core/dates.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/units.dart';
@@ -37,6 +38,9 @@ class WorkoutsScreen extends ConsumerWidget {
     return AppPage(
       title: 'Workouts',
       children: [
+        // Burned today and what's left to burn, in full.
+        const BurnSection(),
+        const SizedBox(height: 16),
         if (active == null)
           FilledButton.icon(
             onPressed: () => startWorkout(context, ref),

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.21 — 2026-11-23
+
+**Your burn, up front**
+- Top right of Today: a small ring with **burned / to burn** ("640 /
+  1,150 kcal burned"), so it's the first thing you see. Tap it to go to
+  Workouts.
+- The **Workouts** tab now opens with the burn in full:
+  - burned, target and still to go, big, with a progress bar;
+  - where today's burn came from: workouts, steps and cycling;
+  - how your target is worked out, in your own numbers;
+  - what the rest would take: minutes of brisk walking, steps, minutes
+    of cycling or running, or a strength workout.
+
 ## 0.1.20 — 2026-11-23
 
 **A new FITNS logo**

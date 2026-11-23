@@ -869,9 +869,9 @@ void main() {
 
     await goToTab(tester, 'Workouts');
     await settle(tester);
+    // Below the burn section.
+    await scrollToMiddle(tester, find.text('Training at'));
     expect(find.text('Training at'), findsOneWidget);
-    expect(find.text('My week'), findsOneWidget);
-    expect(find.text('Up next: Day 1 of 2 · Chest day'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'Home'));
     await settle(tester);
@@ -883,6 +883,8 @@ void main() {
       scrollable: pageScrollable,
     );
     await settle(tester);
+    expect(find.text('My week'), findsOneWidget);
+    expect(find.text('Up next: Day 1 of 2 · Chest day'), findsOneWidget);
     await tester.tap(find.byTooltip('Start Chest day').first);
     await settle(tester);
     expect(find.text('Bench Press (Dumbbell)'), findsOneWidget);
@@ -1586,7 +1588,7 @@ void main() {
     await unmount(tester);
   });
 
-  testWidgets('Today shows calories burned and the burn target for the goal', (
+  testWidgets('burned / to burn on Today, and the burn in full on Workouts', (
     tester,
   ) async {
     final now = DateTime.now();
@@ -1618,14 +1620,21 @@ void main() {
         );
       },
     );
-    await scrollToMiddle(tester, find.text('Calories burned'));
-    expect(find.textContaining('Cycling 300'), findsOneWidget);
-    expect(find.textContaining('to lose 0.5 kg a week'), findsOneWidget);
-    // How it's worked out.
-    await tester.tap(find.text('Calories burned'));
+    // Top right of Today: burned / to burn.
+    expect(find.byKey(const Key('burn-pill')), findsOneWidget);
+    expect(find.textContaining('300 / '), findsOneWidget);
+    // A tap opens the Workouts tab, with the burn in full.
+    await tester.tap(find.byKey(const Key('burn-pill')));
     await settle(tester);
-    expect(find.text('Your burn target'), findsOneWidget);
-    expect(find.text('Burn through activity today'), findsOneWidget);
+    expect(
+      tester.widget<PageView>(find.byType(PageView)).controller!.page!.round(),
+      1,
+    );
+    expect(find.text('Calories burned today'), findsOneWidget);
+    expect(find.textContaining('to lose 0.5 kg a week'), findsOneWidget);
+    await scrollToMiddle(tester, find.text('How your target is worked out'));
+    expect(find.text('Burn through activity'), findsOneWidget);
+    expect(find.text('300 kcal'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

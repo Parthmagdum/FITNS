@@ -36,6 +36,8 @@ class TodayScreen extends ConsumerWidget {
     return AppPage(
       title: 'Today',
       actions: [
+        // Burned / to burn, at a glance; the Workouts tab has it in full.
+        const BurnPill(),
         const MusicButton(),
         IconButton(
           tooltip: 'Progress',
@@ -75,9 +77,6 @@ class TodayScreen extends ConsumerWidget {
         const CyclingCard(),
         const SectionLabel('Food'),
         CaloriesCard(day: today, onTap: () => context.go('/food')),
-        const SizedBox(height: 12),
-        // What activity burned, against what the goal needs.
-        const BurnCard(),
         const SizedBox(height: 12),
         WaterCard(day: today),
         const SectionLabel('Sleep'),

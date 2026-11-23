@@ -5,7 +5,7 @@ publish_to: 'none'
 # `AppInfo.version` / `AppInfo.buildNumber` mirror this line so the About screen
 # can show it without a platform plugin. `test/branding_test.dart` parses this
 # file and fails if the two ever disagree.
-version: 0.1.20+29
+version: 0.1.21+30
 
 environment:
   # Same floor as XPENC, so a contributor on stable Flutter can build both.
