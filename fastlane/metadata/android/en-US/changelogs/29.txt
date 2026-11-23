@@ -1,0 +1,3 @@
+- A new FITNS logo: a forward-leaning F with a dot above it, a figure in stride
+- Calories burned on Today: workouts, steps and rides
+- A daily burn target worked out for you from your body, goal and what you ate, with walking, steps and cycling to get there

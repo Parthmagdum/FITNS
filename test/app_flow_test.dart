@@ -1585,4 +1585,48 @@ void main() {
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });
+
+  testWidgets('Today shows calories burned and the burn target for the goal', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        await db.updateSettings(
+          const SettingsCompanion(
+            heightMm: Value(1800),
+            birthYear: Value(1996),
+            sex: Value(Sex.male),
+            weightGoal: Value(WeightGoal.lose),
+            weeklyChangeGrams: Value(500),
+            calorieGoal: Value(2000),
+          ),
+        );
+        await db.addBodyEntries(now.subtract(const Duration(days: 1)), {
+          BodyMetric.weight: 80000,
+        });
+        await db.addBikeRide(
+          BikeRidesCompanion.insert(
+            startedAt: now.subtract(const Duration(minutes: 50)),
+            endedAt: now.subtract(const Duration(minutes: 10)),
+            movingSeconds: 2400,
+            revolutions: 2400,
+            distanceMeters: 12000,
+            kcal: 300,
+          ),
+        );
+      },
+    );
+    await scrollToMiddle(tester, find.text('Calories burned'));
+    expect(find.textContaining('Cycling 300'), findsOneWidget);
+    expect(find.textContaining('to lose 0.5 kg a week'), findsOneWidget);
+    // How it's worked out.
+    await tester.tap(find.text('Calories burned'));
+    await settle(tester);
+    expect(find.text('Your burn target'), findsOneWidget);
+    expect(find.text('Burn through activity today'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 }

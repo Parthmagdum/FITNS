@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart';
 
-/// The FITNS mark: the launcher icon's dumbbell, tilted 45°. Same shapes as
-/// `ic_launcher_foreground.xml` (tool/make_icons.py), drawn in [color].
+/// The FITNS mark: a forward-leaning "F" whose top bar reaches up and
+/// ahead, with a dot above it — an F that is also a figure in stride. The
+/// same shapes as the launcher icon (tool/make_icons.py writes that), drawn
+/// in [color].
 class FitnsLogo extends StatelessWidget {
   const FitnsLogo({
     super.key,
@@ -22,34 +24,38 @@ class _LogoPainter extends CustomPainter {
 
   final Color color;
 
-  /// The plates and bar in the icon's 108-unit box, which only uses its
-  /// middle 58 units (25–83) — so the mark is scaled to fill [size].
-  static const _parts = <(double, double, double, double, double)>[
-    // left, top, right, bottom, corner radius
-    (25, 43, 32, 65, 2.5),
-    (32, 35, 41, 73, 3),
-    (40, 50.5, 68, 57.5, 2),
-    (67, 35, 76, 73, 3),
-    (76, 43, 83, 65, 2.5),
+  // In the launcher icon's 108-unit viewport — keep in step with
+  // tool/make_icons.py.
+  static const _stroke = 9.9;
+  static const _strokes = [
+    (Offset(46.8, 80.1), Offset(55.0, 41.4)),
+    (Offset(55.0, 41.4), Offset(73.9, 37.1)),
+    (Offset(51.0, 60.4), Offset(66.2, 57.8)),
   ];
+  static const _dot = Offset(59.0, 26.5);
+  static const _dotRadius = 5.5;
+
+  /// The mark's bounds (strokes' round ends included), to fit it in [size].
+  static const _bounds = Rect.fromLTRB(41.8, 21.0, 78.9, 85.1);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final scale = size.width / 70;
-    final paint = Paint()..color = color;
+    final scale = size.height / _bounds.height * 0.96;
     canvas
       ..save()
       ..translate(size.width / 2, size.height / 2)
-      ..rotate(-0.785398)
       ..scale(scale)
-      ..translate(-54, -54);
-    for (final (l, t, r, b, radius) in _parts) {
-      canvas.drawRRect(
-        RRect.fromLTRBR(l, t, r, b, Radius.circular(radius)),
-        paint,
-      );
+      ..translate(-_bounds.center.dx, -_bounds.center.dy);
+    final line = Paint()
+      ..color = color
+      ..strokeWidth = _stroke
+      ..strokeCap = StrokeCap.round;
+    for (final (a, b) in _strokes) {
+      canvas.drawLine(a, b, line);
     }
-    canvas.restore();
+    canvas
+      ..drawCircle(_dot, _dotRadius, Paint()..color = color)
+      ..restore();
   }
 
   @override

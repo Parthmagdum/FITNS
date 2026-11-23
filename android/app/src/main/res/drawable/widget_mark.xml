@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The FITNS mark on an orange disc, in the workout widget's corner. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="oval">
             <gradient android:angle="315" android:startColor="#FFFF9A3D" android:endColor="#FFEA580C"/>
         </shape>
     </item>
-    <item android:drawable="@drawable/ic_w_dumbbell" android:top="9dp" android:bottom="9dp" android:left="9dp" android:right="9dp"/>
+    <item android:drawable="@drawable/ic_w_logo" android:top="2dp" android:bottom="2dp" android:left="2dp" android:right="2dp"/>
 </layer-list>

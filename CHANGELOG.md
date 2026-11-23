@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.20 — 2026-11-23
+
+**A new FITNS logo**
+- The dumbbell is gone. FITNS's own mark is a forward-leaning **F** whose
+  top bar reaches up and ahead, with a dot above it: an F that is also a
+  figure in stride. White on FITNS orange.
+- It's on the app icon (including Android 13's themed icons), the store
+  icon and banner, the FITNS button, the tips and the workout widget.
+
+**Calories burned, and how much to burn**
+- Today has a new **Calories burned** card: everything activity burned
+  today (finished workouts, steps and bike rides) with where it came from.
+- It also shows **how much you need to burn today** for your goal, worked
+  out for you: your body's resting energy (from your weight, height, age
+  and sex) plus everyday living, the calorie gap your goal asks for (0.5
+  kg a week is about 550 kcal a day), and what you've actually eaten. Eat
+  more and the target goes up; eat less and it goes down.
+- What's left is shown as minutes of brisk walking, steps and minutes of
+  cycling for your weight. Tap the card to see the sum in your own
+  numbers.
+- Without a plan yet, it asks for your height, age and goal to work the
+  target out.
+
 ## 0.1.19 — 2026-11-23
 
 **Meal combos: a whole meal in one tap**

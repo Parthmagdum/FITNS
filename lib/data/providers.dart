@@ -17,6 +17,9 @@ import '../core/progress.dart';
 import '../core/platform/photo_source.dart';
 import '../core/steps/step_sensor.dart';
 import '../core/steps/step_tracker.dart';
+import '../core/steps/step_stats.dart' show stepCalories;
+import '../core/training/burn.dart';
+import '../core/training/burn_target.dart';
 import '../core/training/programs.dart';
 import '../core/training/swaps.dart';
 import '../core/units.dart';
@@ -586,4 +589,70 @@ final bikeRidesProvider = StreamProvider<List<BikeRideRow>>((ref) {
   return ref
       .watch(dbProvider)
       .watchBikeRidesSince(today.subtract(const Duration(days: 35)));
+});
+
+// ── Calories burned ─────────────────────────────────────────────────────────
+
+/// What activity burned today, by source, in kcal.
+typedef TodayBurn = ({int workouts, int steps, int cycling});
+
+/// Today's finished workouts, steps and bike rides, burned.
+final todayBurnProvider = FutureProvider.autoDispose<TodayBurn>((ref) async {
+  final today = ref.watch(todayProvider);
+  final history = ref.watch(workoutHistoryProvider).valueOrNull ?? const [];
+  final steps = ref.watch(todayStepsProvider).valueOrNull ?? 0;
+  final rides = ref.watch(bikeRidesProvider).valueOrNull ?? const [];
+  final weights = ref.watch(weightHistoryProvider);
+  final db = ref.read(dbProvider);
+  var workouts = 0;
+  for (final h in history) {
+    final w = h.workout;
+    if (w.endedAt == null || !isSameDay(w.startedAt, today)) continue;
+    final detail = await db.watchWorkoutDetail(w.id).first;
+    if (detail == null) continue;
+    workouts +=
+        workoutBurn(
+          detail,
+          length: w.endedAt!.difference(w.startedAt),
+          weightGrams: weightAt(weights, w.startedAt),
+        )?.kcal ??
+        0;
+  }
+  return (
+    workouts: workouts,
+    steps: stepCalories(
+      steps,
+      weightGrams: weights.isEmpty ? null : weights.first.value,
+    ),
+    cycling: rides
+        .where((r) => isSameDay(r.startedAt, today))
+        .fold(0, (sum, r) => sum + r.kcal),
+  );
+});
+
+/// Today's burn target for this person's goal, from what's eaten. Null
+/// until the plan's details are in: weight, height, birth year, sex, goal.
+final burnTargetProvider = Provider.autoDispose<BurnTarget?>((ref) {
+  final today = ref.watch(todayProvider);
+  final s = ref.watch(settingsProvider).valueOrNull;
+  final weights = ref.watch(weightHistoryProvider);
+  final logs = ref.watch(foodLogsProvider(today)).valueOrNull ?? const [];
+  if (s == null || weights.isEmpty) return null;
+  final height = s.heightMm;
+  final born = s.birthYear;
+  final sex = s.sex;
+  final goal = s.weightGoal;
+  if (height == null || born == null || sex == null || goal == null) {
+    return null;
+  }
+  return burnTarget(
+    weightGrams: weights.first.value,
+    heightMm: height,
+    age: today.year - born,
+    sex: sex,
+    goal: goal,
+    weeklyChangeGrams: s.weeklyChangeGrams,
+    eatenKcal: logs.fold(0, (sum, l) => sum + l.kcal),
+    calorieGoal: s.calorieGoal,
+  );
 });
