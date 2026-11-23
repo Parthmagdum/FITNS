@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Water (WaterWidget): today's water, with add buttons. -->
+<!-- Water (WaterWidget): a filling glass with add buttons; 2x1 or 2x2. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="150dp"
+    android:minWidth="110dp"
     android:minHeight="110dp"
-    android:minResizeWidth="150dp"
-    android:minResizeHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="50dp"
     android:targetCellWidth="2"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_water"
-    android:previewLayout="@layout/widget_water"
+    android:initialLayout="@layout/widget_water_m"
+    android:previewLayout="@layout/widget_water_m"
     android:description="@string/water_widget_description"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"/>

@@ -6,29 +6,48 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.os.Build
+import android.os.Bundle
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 /**
- * FITNS's home-screen widgets: Today (this one), [StepsWidget],
- * [WaterWidget], [CaloriesWidget] and [StreakWidget].
+ * FITNS's home-screen widgets — Activity (this one), [StepsWidget],
+ * [WaterWidget], [CaloriesWidget] and Workout ([StreakWidget]) — all drawn
+ * here, their pictures by [WidgetArt].
+ *
+ * Each comes in sizes (a 2×1 pill, 2×2, 4×2) and the launcher picks the one
+ * that fits as the widget is resized.
  *
  * Dart works the numbers out (it owns the database) and hands them over
  * with [save] whenever they change. Between app opens they keep going by
- * themselves:
- *  * steps from the all-day step counter ([onStepReading]);
- *  * water from the widget's own + buttons (logged through [WaterBar], so
- *    FITNS books them next time it opens), shown at once;
- *  * a new day starts from zero at midnight instead of showing yesterday.
+ * themselves: steps from the all-day step counter ([onStepReading]), water
+ * from the widgets' own + buttons (logged through [WaterBar]), and a new
+ * day starts from zero at midnight.
  */
 class FitnsWidget : AppWidgetProvider() {
-    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        for (id in ids) manager.updateAppWidget(id, todayViews(context))
-    }
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) =
+        draw(context, manager, ids, Kind.ACTIVITY)
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        manager: AppWidgetManager,
+        id: Int,
+        options: Bundle,
+    ) = draw(context, manager, intArrayOf(id), Kind.ACTIVITY)
+
+    enum class Kind { ACTIVITY, STEPS, WATER, CALORIES, WORKOUT }
 
     companion object {
         const val PREFS = "fitns_widget"
@@ -54,6 +73,11 @@ class FitnsWidget : AppWidgetProvider() {
                 }
                 putString("next", data["next"] as? String)
                 putInt("streakWeeks", int("streakWeeks"))
+                putString("week", data["week"] as? String ?: "")
+                putString("trained", data["trained"] as? String ?: "")
+                putInt("weekTarget", int("weekTarget"))
+                putInt("nextExercises", int("nextExercises"))
+                putInt("nextMinutes", int("nextMinutes"))
                 apply()
             }
             refreshAll(context)
@@ -69,15 +93,15 @@ class FitnsWidget : AppWidgetProvider() {
             val day = dayKey(atMs)
             if (day < savedDay) return
             var base = p.getLong("stepBase", -1L)
-            var steps = p.getInt("steps", 0)
+            val steps = if (day != savedDay) 0 else p.getInt("steps", 0)
             val e = p.edit()
             if (day != savedDay) {
                 // A new day: from zero, counting from the last reading of
                 // the old one.
-                steps = 0
                 base = p.getLong("lastCounter", counter)
                 e.putString("day", day).putInt("steps", 0).putLong("stepBase", base)
                     .putInt("kcalEaten", 0)
+                    .putString("week", shiftWeek(p.getString("week", "") ?: "", daysBetween(savedDay, day)))
                 for (m in MACROS) e.putInt("${m}G", 0)
             }
             // Unknown, or the counter restarted (a reboot).
@@ -94,17 +118,47 @@ class FitnsWidget : AppWidgetProvider() {
         /** Redraws every FITNS widget on the home screen. */
         fun refreshAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            fun redraw(cls: Class<*>, views: () -> RemoteViews) {
+            for ((cls, kind) in listOf(
+                FitnsWidget::class.java to Kind.ACTIVITY,
+                StepsWidget::class.java to Kind.STEPS,
+                WaterWidget::class.java to Kind.WATER,
+                CaloriesWidget::class.java to Kind.CALORIES,
+                StreakWidget::class.java to Kind.WORKOUT,
+            )) {
                 val ids = manager.getAppWidgetIds(ComponentName(context, cls))
-                if (ids.isEmpty()) return
-                val v = views()
-                for (id in ids) manager.updateAppWidget(id, v)
+                if (ids.isNotEmpty()) draw(context, manager, ids, kind)
             }
-            redraw(FitnsWidget::class.java) { todayViews(context) }
-            redraw(StepsWidget::class.java) { stepsViews(context) }
-            redraw(WaterWidget::class.java) { waterViews(context) }
-            redraw(CaloriesWidget::class.java) { caloriesViews(context) }
-            redraw(StreakWidget::class.java) { streakViews(context) }
+        }
+
+        /** Draws [ids] of one [kind], in each size it comes in. */
+        fun draw(context: Context, manager: AppWidgetManager, ids: IntArray, kind: Kind) {
+            val variants = when (kind) {
+                Kind.ACTIVITY -> activity(context)
+                Kind.STEPS -> steps(context)
+                Kind.WATER -> water(context)
+                Kind.CALORIES -> calories(context)
+                Kind.WORKOUT -> workout(context)
+            }
+            for (id in ids) {
+                val views = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    RemoteViews(variants.toMap())
+                } else {
+                    pick(manager.getAppWidgetOptions(id), variants)
+                }
+                manager.updateAppWidget(id, views)
+            }
+        }
+
+        /** Before Android 12: the biggest size that fits the widget now. */
+        private fun pick(options: Bundle, variants: List<Pair<SizeF, RemoteViews>>): RemoteViews {
+            val w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+            val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+            if (w == 0 || h == 0) return variants.last().second
+            return variants
+                .filter { it.first.width <= w && it.first.height <= h }
+                .maxByOrNull { it.first.width * it.first.height }
+                ?.second
+                ?: variants.minBy { it.first.width * it.first.height }.second
         }
 
         // ── The numbers, as of now ──────────────────────────────────────────
@@ -119,13 +173,30 @@ class FitnsWidget : AppWidgetProvider() {
         fun dayKey(millis: Long): String =
             SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(millis))
 
-        /** Dart has said something at least once. */
+        private fun daysBetween(from: String, to: String): Int {
+            val f = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val a = f.parse(from)?.time ?: return 0
+            val b = f.parse(to)?.time ?: return 0
+            return ((b - a) / 86_400_000L).toInt()
+        }
+
+        /** Moves the week's rings on by [days], the new days empty. */
+        private fun shiftWeek(week: String, days: Int): String {
+            if (days <= 0 || week.isEmpty()) return week
+            val parts = week.split(';').toMutableList()
+            repeat(minOf(days, 7)) {
+                if (parts.isNotEmpty()) parts.removeAt(0)
+                parts.add("0,0,0")
+            }
+            return parts.joinToString(";")
+        }
+
         private fun known(context: Context) = prefs(context).getString("day", null) != null
 
         /** Today's numbers belong to today (else a new day: zeros). */
         private fun current(context: Context) = prefs(context).getString("day", null) == today()
 
-        fun steps(context: Context): Int {
+        private fun stepsNow(context: Context): Int {
             val p = prefs(context)
             if (p.getString("liveDay", null) == today()) return p.getInt("liveSteps", 0)
             return if (current(context)) p.getInt("steps", 0) else 0
@@ -139,12 +210,31 @@ class FitnsWidget : AppWidgetProvider() {
 
         private fun n(value: Int): String = NumberFormat.getIntegerInstance().format(value)
 
+        private fun fraction(value: Int, goal: Int) =
+            if (goal <= 0) 0f else (value.toFloat() / goal).coerceIn(0f, 1f)
+
         private fun percent(value: Int, goal: Int) =
             if (goal <= 0) 0 else (value * 100 / goal).coerceIn(0, 100)
 
+        /** "5,240 /8,000 steps": the number bold, the rest smaller and muted. */
+        private fun withGoal(context: Context, value: String, rest: String): CharSequence {
+            val s = SpannableStringBuilder(value)
+            if (rest.isEmpty()) return s
+            val start = s.length
+            s.append(" ").append(rest)
+            s.setSpan(RelativeSizeSpan(0.72f), start, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            s.setSpan(
+                ForegroundColorSpan(context.getColor(R.color.widget_muted)),
+                start,
+                s.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            return s
+        }
+
         // ── Taps ─────────────────────────────────────────────────────────────
 
-        /** Opens FITNS on [page] (see `_openPage` in app.dart). */
+        /** Opens FITNS on [page] (see `widgetPageRoute` in home_widget.dart). */
         fun open(context: Context, page: String, code: Int): PendingIntent =
             PendingIntent.getActivity(
                 context,
@@ -166,168 +256,284 @@ class FitnsWidget : AppWidgetProvider() {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
 
-        // ── Drawing ──────────────────────────────────────────────────────────
+        private fun views(context: Context, layout: Int) = RemoteViews(context.packageName, layout)
 
-        fun todayViews(context: Context): RemoteViews {
-            val v = RemoteViews(context.packageName, R.layout.fitns_widget)
+        // ── Activity: three rings ────────────────────────────────────────────
+
+        private fun activity(context: Context): List<Pair<SizeF, RemoteViews>> {
             val p = prefs(context)
-            if (known(context)) {
-                val steps = steps(context)
-                val stepGoal = p.getInt("stepGoal", 0)
-                v.setTextViewText(R.id.t_steps_value, n(steps))
-                v.setTextViewText(R.id.t_steps_sub, if (stepGoal > 0) "of ${n(stepGoal)}" else "steps")
-                v.setProgressBar(R.id.t_steps_bar, 100, percent(steps, stepGoal), false)
-
-                val eaten = kcalEaten(context)
-                val goal = p.getInt("kcalGoal", 0)
-                if (goal > 0) {
-                    val left = goal - eaten
-                    v.setTextViewText(R.id.t_kcal_value, n(kotlin.math.abs(left)))
-                    v.setTextViewText(R.id.t_kcal_sub, if (left >= 0) "kcal left" else "kcal over")
-                    v.setProgressBar(R.id.t_kcal_bar, 100, percent(eaten, goal), false)
-                } else {
-                    v.setTextViewText(R.id.t_kcal_value, n(eaten))
-                    v.setTextViewText(R.id.t_kcal_sub, "kcal eaten")
-                    v.setProgressBar(R.id.t_kcal_bar, 100, 0, false)
-                }
-
-                val weeks = p.getInt("streakWeeks", 0)
-                v.setTextViewText(R.id.widget_streak, if (weeks > 0) "🔥 $weeks" else "")
-                val next = p.getString("next", null)
-                v.setTextViewText(
-                    R.id.widget_workout,
-                    if (next.isNullOrBlank()) "▶ Workout" else "▶ ${next.removePrefix("Next: ")}",
-                )
-            }
+            val steps = stepsNow(context)
+            val stepGoal = p.getInt("stepGoal", 0)
             val (drunk, waterGoal) = WaterBar.today(context)
-            v.setTextViewText(R.id.t_water_value, WaterBar.volume(context, drunk))
-            v.setTextViewText(
-                R.id.t_water_sub,
-                if (waterGoal > 0) "of ${WaterBar.volume(context, waterGoal)}" else "today",
+            val eaten = kcalEaten(context)
+            val kcalGoal = p.getInt("kcalGoal", 0)
+            // One bitmap for every size: the launcher scales it.
+            val rings = WidgetArt.rings(
+                context,
+                92f,
+                listOf(fraction(steps, stepGoal), fraction(drunk, waterGoal), fraction(eaten, kcalGoal)),
+                listOf(WidgetArt.STEPS, WidgetArt.WATER, WidgetArt.KCAL),
             )
-            v.setProgressBar(R.id.t_water_bar, 100, percent(drunk, waterGoal), false)
-            val glass = WaterBar.firstPreset(context) ?: 250
-            v.setTextViewText(R.id.widget_water_add, "+${WaterBar.volume(context, glass)}")
-
-            v.setOnClickPendingIntent(R.id.widget_root, open(context, "today", 300))
-            v.setOnClickPendingIntent(R.id.t_steps_tile, open(context, "steps", 301))
-            v.setOnClickPendingIntent(R.id.t_kcal_tile, open(context, "food", 302))
-            v.setOnClickPendingIntent(R.id.t_water_tile, open(context, "water", 303))
-            v.setOnClickPendingIntent(R.id.widget_workout, open(context, "workout", 304))
-            v.setOnClickPendingIntent(R.id.widget_food, open(context, "logFood", 305))
-            v.setOnClickPendingIntent(R.id.widget_water_add, addWater(context, glass, 306))
-            return v
-        }
-
-        fun stepsViews(context: Context): RemoteViews {
-            val v = RemoteViews(context.packageName, R.layout.widget_steps)
-            if (known(context)) {
-                val steps = steps(context)
-                val goal = prefs(context).getInt("stepGoal", 0)
-                v.setTextViewText(R.id.steps_count, n(steps))
-                v.setTextViewText(R.id.steps_goal, if (goal > 0) "of ${n(goal)} steps" else "steps")
-                v.setProgressBar(R.id.steps_ring, 100, percent(steps, goal), false)
+            fun fill(v: RemoteViews, goals: Boolean): RemoteViews {
+                v.setImageViewBitmap(R.id.act_rings, rings)
+                val known = known(context)
+                v.setTextViewText(
+                    R.id.act_val1,
+                    if (!known) "—" else if (goals && stepGoal > 0) withGoal(context, n(steps), "/${n(stepGoal)}") else n(steps),
+                )
+                v.setTextViewText(
+                    R.id.act_val2,
+                    if (goals && waterGoal > 0) {
+                        withGoal(context, WaterBar.volume(context, drunk), "/${WaterBar.volume(context, waterGoal)}")
+                    } else {
+                        WaterBar.volume(context, drunk)
+                    },
+                )
+                v.setTextViewText(
+                    R.id.act_val3,
+                    if (!known) "—" else if (goals && kcalGoal > 0) withGoal(context, n(eaten), "/${n(kcalGoal)} kcal") else n(eaten),
+                )
+                v.setOnClickPendingIntent(R.id.act_root, open(context, "today", 300))
+                return v
             }
-            v.setOnClickPendingIntent(R.id.steps_root, open(context, "steps", 310))
-            return v
+            val large = fill(views(context, R.layout.widget_activity_l), true)
+            large.setImageViewBitmap(R.id.act_week, weekStrip(context))
+            return listOf(
+                SizeF(110f, 40f) to fill(views(context, R.layout.widget_activity_s), false),
+                SizeF(110f, 110f) to fill(views(context, R.layout.widget_activity_m), false),
+                SizeF(250f, 110f) to large,
+            )
         }
 
-        fun waterViews(context: Context): RemoteViews {
-            val v = RemoteViews(context.packageName, R.layout.widget_water)
+        private fun weekStrip(context: Context): Bitmap {
+            val week = (prefs(context).getString("week", "") ?: "")
+                .split(';')
+                .filter { it.isNotBlank() }
+                .map { d ->
+                    val v = d.split(',').map { (it.trim().toIntOrNull() ?: 0) / 100f }
+                    Triple(v.getOrElse(0) { 0f }, v.getOrElse(1) { 0f }, v.getOrElse(2) { 0f })
+                }
+                .takeLast(7)
+                .let { List(7 - it.size) { Triple(0f, 0f, 0f) } + it }
+            val letters = mutableListOf<String>()
+            val weekend = mutableListOf<Boolean>()
+            val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -6) }
+            val fmt = SimpleDateFormat("EEEEE", Locale.getDefault())
+            repeat(7) {
+                letters += fmt.format(cal.time)
+                val dow = cal.get(Calendar.DAY_OF_WEEK)
+                weekend += dow == Calendar.SATURDAY || dow == Calendar.SUNDAY
+                cal.add(Calendar.DAY_OF_YEAR, 1)
+            }
+            return WidgetArt.week(context, 300f, 46f, week, letters, weekend)
+        }
+
+        // ── Steps ───────────────────────────────────────────────────────────
+
+        private fun steps(context: Context): List<Pair<SizeF, RemoteViews>> {
+            val steps = stepsNow(context)
+            val goal = prefs(context).getInt("stepGoal", 0)
+            val ring = WidgetArt.rings(context, 124f, listOf(fraction(steps, goal)), listOf(WidgetArt.STEPS))
+            fun fill(v: RemoteViews, small: Boolean): RemoteViews {
+                v.setImageViewBitmap(R.id.st_ring, ring)
+                if (known(context)) {
+                    v.setTextViewText(R.id.st_count, n(steps))
+                    v.setTextViewText(
+                        R.id.st_goal,
+                        when {
+                            goal <= 0 -> "steps"
+                            small -> "/${n(goal)} steps"
+                            else -> "/${n(goal)}"
+                        },
+                    )
+                }
+                v.setOnClickPendingIntent(R.id.st_root, open(context, "steps", 310))
+                return v
+            }
+            return listOf(
+                SizeF(110f, 40f) to fill(views(context, R.layout.widget_steps_s), true),
+                SizeF(110f, 110f) to fill(views(context, R.layout.widget_steps_m), false),
+            )
+        }
+
+        // ── Water ───────────────────────────────────────────────────────────
+
+        private fun water(context: Context): List<Pair<SizeF, RemoteViews>> {
             val (drunk, goal) = WaterBar.today(context)
-            v.setTextViewText(R.id.water_amount, WaterBar.volume(context, drunk))
-            if (goal > 0) {
-                v.setTextViewText(R.id.water_goal, "/ ${WaterBar.volume(context, goal)}")
-                v.setViewVisibility(R.id.water_goal, View.VISIBLE)
-            } else {
-                v.setViewVisibility(R.id.water_goal, View.GONE)
-            }
-            v.setProgressBar(R.id.water_bar, 100, percent(drunk, goal), false)
+            val glass = WidgetArt.glass(context, 46f, 70f, fraction(drunk, goal))
             val sizes = WaterBar.presetSizes(context).ifEmpty { listOf(250, 500) }
             val first = sizes[0]
             val second = sizes.getOrElse(1) { first * 2 }
-            v.setTextViewText(R.id.water_add_1, "+${WaterBar.volume(context, first)}")
-            v.setTextViewText(R.id.water_add_2, "+${WaterBar.volume(context, second)}")
-            v.setOnClickPendingIntent(R.id.water_add_1, addWater(context, first, 320))
-            v.setOnClickPendingIntent(R.id.water_add_2, addWater(context, second, 321))
-            v.setOnClickPendingIntent(R.id.water_root, open(context, "water", 322))
-            return v
-        }
-
-        fun caloriesViews(context: Context): RemoteViews {
-            val v = RemoteViews(context.packageName, R.layout.widget_calories)
-            val p = prefs(context)
-            if (known(context)) {
-                val eaten = kcalEaten(context)
-                val goal = p.getInt("kcalGoal", 0)
+            fun fill(v: RemoteViews): RemoteViews {
+                v.setImageViewBitmap(R.id.wa_glass, glass)
+                v.setTextViewText(R.id.wa_amount, WaterBar.volume(context, drunk))
                 if (goal > 0) {
-                    val left = goal - eaten
-                    v.setTextViewText(R.id.kcal_number, n(kotlin.math.abs(left)))
-                    v.setTextViewText(R.id.kcal_caption, if (left >= 0) "kcal left" else "kcal over")
-                    v.setTextViewText(R.id.kcal_eaten, "🍽 ${n(eaten)} of ${n(goal)} kcal")
-                    v.setProgressBar(R.id.kcal_ring, 100, percent(eaten, goal), false)
+                    v.setTextViewText(R.id.wa_goal, "of ${WaterBar.volume(context, goal)} · ${percent(drunk, goal)}%")
+                    v.setViewVisibility(R.id.wa_goal, View.VISIBLE)
                 } else {
-                    v.setTextViewText(R.id.kcal_number, n(eaten))
-                    v.setTextViewText(R.id.kcal_caption, "kcal eaten")
-                    v.setTextViewText(R.id.kcal_eaten, "Set a calorie goal in FITNS")
-                    v.setProgressBar(R.id.kcal_ring, 100, 0, false)
+                    v.setViewVisibility(R.id.wa_goal, View.GONE)
                 }
-                val rows = listOf(
-                    Triple("protein", R.id.protein_text, R.id.protein_bar),
-                    Triple("carbs", R.id.carbs_text, R.id.carbs_bar),
-                    Triple("fat", R.id.fat_text, R.id.fat_bar),
-                )
-                for ((m, text, bar) in rows) {
-                    val g = macro(context, m)
-                    val target = p.getInt("${m}GoalG", 0)
-                    val name = m.replaceFirstChar { it.uppercase() }
-                    v.setTextViewText(
-                        text,
-                        if (target > 0) "$name · $g / $target g" else "$name · $g g",
-                    )
-                    v.setProgressBar(bar, 100, percent(g, target), false)
-                }
+                v.setOnClickPendingIntent(R.id.wa_add1, addWater(context, first, 320))
+                v.setOnClickPendingIntent(R.id.wa_root, open(context, "water", 322))
+                return v
             }
-            v.setOnClickPendingIntent(R.id.kcal_root, open(context, "logFood", 330))
-            return v
-        }
-
-        fun streakViews(context: Context): RemoteViews {
-            val weeks = prefs(context).getInt("streakWeeks", 0)
-            val v = RemoteViews(context.packageName, R.layout.streak_widget)
-            v.setTextViewText(R.id.streak_number, "$weeks")
-            v.setTextViewText(
-                R.id.streak_caption,
-                context.getString(
-                    if (weeks > 0) R.string.streak_widget_weeks else R.string.streak_widget_none,
-                ),
+            val medium = fill(views(context, R.layout.widget_water_m))
+            medium.setTextViewText(R.id.wa_add1, "+${WaterBar.volume(context, first)}")
+            medium.setTextViewText(R.id.wa_add2, "+${WaterBar.volume(context, second)}")
+            medium.setOnClickPendingIntent(R.id.wa_add2, addWater(context, second, 321))
+            return listOf(
+                SizeF(110f, 40f) to fill(views(context, R.layout.widget_water_s)),
+                SizeF(110f, 110f) to medium,
             )
-            v.setOnClickPendingIntent(R.id.streak_root, open(context, "workout", 340))
-            return v
+        }
+
+        // ── Calories ────────────────────────────────────────────────────────
+
+        private fun calories(context: Context): List<Pair<SizeF, RemoteViews>> {
+            val p = prefs(context)
+            val eaten = kcalEaten(context)
+            val goal = p.getInt("kcalGoal", 0)
+            val ring = WidgetArt.rings(context, 108f, listOf(fraction(eaten, goal)), listOf(WidgetArt.KCAL))
+            val grams = MACROS.associateWith { macro(context, it) }
+            fun fill(v: RemoteViews): RemoteViews {
+                v.setImageViewBitmap(R.id.kc_ring, ring)
+                if (known(context)) {
+                    if (goal > 0) {
+                        val left = goal - eaten
+                        v.setTextViewText(R.id.kc_number, n(kotlin.math.abs(left)))
+                        v.setTextViewText(R.id.kc_caption, if (left >= 0) "kcal left" else "kcal over")
+                    } else {
+                        v.setTextViewText(R.id.kc_number, n(eaten))
+                        v.setTextViewText(R.id.kc_caption, "kcal eaten")
+                    }
+                }
+                v.setOnClickPendingIntent(R.id.kc_root, open(context, "logFood", 330))
+                return v
+            }
+            val medium = fill(views(context, R.layout.widget_calories_m))
+            medium.setTextViewText(
+                R.id.kc_line,
+                "P ${grams["protein"]} · C ${grams["carbs"]} · F ${grams["fat"]} g",
+            )
+            val large = fill(views(context, R.layout.widget_calories_l))
+            large.setTextViewText(
+                R.id.kc_line,
+                if (goal > 0) "${n(eaten)} of ${n(goal)} kcal eaten" else "Set a calorie goal in FITNS",
+            )
+            for ((m, text, bar) in listOf(
+                Triple("protein", R.id.kc_p_text, R.id.kc_p_bar),
+                Triple("carbs", R.id.kc_c_text, R.id.kc_c_bar),
+                Triple("fat", R.id.kc_f_text, R.id.kc_f_bar),
+            )) {
+                val g = grams[m] ?: 0
+                val target = p.getInt("${m}GoalG", 0)
+                val name = m.replaceFirstChar { it.uppercase() }
+                large.setTextViewText(
+                    text,
+                    withGoal(context, name, if (target > 0) "$g / $target g" else "$g g"),
+                )
+                large.setProgressBar(bar, 100, percent(g, target), false)
+            }
+            return listOf(
+                SizeF(110f, 110f) to medium,
+                SizeF(220f, 110f) to large,
+            )
+        }
+
+        // ── Workout: today's training card ──────────────────────────────────
+
+        private fun workout(context: Context): List<Pair<SizeF, RemoteViews>> {
+            val p = prefs(context)
+            val bg = WidgetArt.contours(context, 360f, 180f, 28f)
+            // Monday to Sunday; a new week starts empty.
+            var trained = (p.getString("trained", "") ?: "").padEnd(7, '0').map { it == '1' }
+            val savedWeek = p.getString("day", null)?.let { weekOf(it) }
+            if (savedWeek != null && savedWeek != weekOf(today())) trained = List(7) { false }
+            val accent = context.getColor(R.color.widget_accent)
+            val dashes = WidgetArt.dashes(context, 150f, trained, accent)
+            val todayIndex = (Calendar.getInstance().get(Calendar.DAY_OF_WEEK) + 5) % 7
+            val done = trained.count { it }
+            val target = p.getInt("weekTarget", 3).coerceAtLeast(1)
+            val weeks = p.getInt("streakWeeks", 0)
+            val next = p.getString("next", null)?.removePrefix("Next: ")?.takeIf { it.isNotBlank() }
+            val exercises = p.getInt("nextExercises", 0)
+            val minutes = p.getInt("nextMinutes", 0)
+            val trainedToday = trained.getOrElse(todayIndex) { false }
+            fun fill(v: RemoteViews): RemoteViews {
+                v.setImageViewBitmap(R.id.wo_bg, bg)
+                v.setImageViewBitmap(R.id.wo_dashes, dashes)
+                v.setTextViewText(
+                    R.id.wo_week,
+                    "$done/$target this week" + if (weeks > 0) "  ·  🔥 $weeks" else "",
+                )
+                when {
+                    trainedToday -> {
+                        v.setTextViewText(R.id.wo_kind, "Done today ✓")
+                        v.setTextViewText(R.id.wo_name, next?.let { "Next: $it" } ?: "Nice work")
+                        v.setTextViewText(R.id.wo_detail, "Rest up — see you next session")
+                    }
+                    next != null -> {
+                        v.setTextViewText(R.id.wo_kind, "Training day")
+                        v.setTextViewText(R.id.wo_name, next)
+                        v.setTextViewText(
+                            R.id.wo_detail,
+                            if (exercises > 0) "$exercises exercises · ~$minutes min" else "Your program's next day",
+                        )
+                    }
+                    else -> {
+                        v.setTextViewText(R.id.wo_kind, if (done >= target) "Goal reached" else "Training day")
+                        v.setTextViewText(R.id.wo_name, "Pick a workout")
+                        v.setTextViewText(R.id.wo_detail, "A routine, or one ready-made")
+                    }
+                }
+                v.setOnClickPendingIntent(R.id.wo_root, open(context, "workout", 340))
+                return v
+            }
+            val large = fill(views(context, R.layout.widget_workout_l))
+            large.setOnClickPendingIntent(R.id.wo_start, open(context, "workout", 341))
+            return listOf(
+                SizeF(110f, 110f) to fill(views(context, R.layout.widget_workout_m)),
+                SizeF(220f, 110f) to large,
+            )
+        }
+
+        /** The Monday of [day]'s week, as a key. */
+        private fun weekOf(day: String): String {
+            val f = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val date = f.parse(day) ?: return day
+            val c = Calendar.getInstance().apply {
+                time = date
+                firstDayOfWeek = Calendar.MONDAY
+                set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            }
+            return f.format(c.time)
         }
     }
 }
 
-/** Steps today, as a ring: [FitnsWidget.stepsViews]. */
+/** Steps today, as a ring. */
 class StepsWidget : AppWidgetProvider() {
-    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val v = FitnsWidget.stepsViews(context)
-        for (id in ids) manager.updateAppWidget(id, v)
-    }
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) =
+        FitnsWidget.draw(context, manager, ids, FitnsWidget.Kind.STEPS)
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
+        FitnsWidget.draw(context, manager, intArrayOf(id), FitnsWidget.Kind.STEPS)
 }
 
-/** Water today, with add buttons: [FitnsWidget.waterViews]. */
+/** Water today: a filling glass, with add buttons. */
 class WaterWidget : AppWidgetProvider() {
-    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val v = FitnsWidget.waterViews(context)
-        for (id in ids) manager.updateAppWidget(id, v)
-    }
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) =
+        FitnsWidget.draw(context, manager, ids, FitnsWidget.Kind.WATER)
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
+        FitnsWidget.draw(context, manager, intArrayOf(id), FitnsWidget.Kind.WATER)
 }
 
-/** Calories left and macros: [FitnsWidget.caloriesViews]. */
+/** Calories left, with protein, carbs and fat. */
 class CaloriesWidget : AppWidgetProvider() {
-    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val v = FitnsWidget.caloriesViews(context)
-        for (id in ids) manager.updateAppWidget(id, v)
-    }
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) =
+        FitnsWidget.draw(context, manager, ids, FitnsWidget.Kind.CALORIES)
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
+        FitnsWidget.draw(context, manager, intArrayOf(id), FitnsWidget.Kind.CALORIES)
 }

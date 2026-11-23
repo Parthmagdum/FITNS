@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <gradient android:angle="315" android:startColor="#FFFF9A3D" android:endColor="#FFEA580C"/>
+        </shape>
+    </item>
+    <item android:drawable="@drawable/ic_w_dumbbell" android:top="9dp" android:bottom="9dp" android:left="9dp" android:right="9dp"/>
+</layer-list>

@@ -1,0 +1,5 @@
+Redesigned home-screen widgets:
+- Activity rings for steps, water and calories, with your last 7 days
+- Steps ring, a water glass that fills up (+ buttons), calories ring with macros
+- Workout card: today's training, this week's progress, streak and Start
+- Glass look, light or dark, and sizes from a 2x1 pill to 4x2

@@ -308,8 +308,24 @@ final barcodeScannerProvider = Provider<BarcodeScanner>(
 
 /// What the home-screen widget should show right now. Null until the data
 /// it's made from has loaded, so a half-loaded state never reaches it.
+/// Calories for each of the last 7 days, by `dayKey`.
+final weekNutritionProvider =
+    StreamProvider<Map<String, ({int kcal, int proteinTenths})>>((ref) {
+      final today = ref.watch(todayProvider);
+      return ref
+          .watch(dbProvider)
+          .watchDailyNutrition(
+            today.subtract(const Duration(days: 6)),
+            today.add(const Duration(days: 1)),
+          );
+    });
+
 final widgetDataProvider = Provider<WidgetData?>((ref) {
   final today = ref.watch(todayProvider);
+  final weekSteps = ref.watch(weekStepsProvider).valueOrNull;
+  final weekWater = ref.watch(waterWeekProvider(today)).valueOrNull;
+  final weekFood = ref.watch(weekNutritionProvider).valueOrNull;
+  final routines = ref.watch(routinesProvider).valueOrNull;
   final settings = ref.watch(settingsProvider).valueOrNull;
   final steps = ref.watch(todayStepsProvider).valueOrNull;
   final logs = ref.watch(foodLogsProvider(today)).valueOrNull;
@@ -318,13 +334,35 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
   final history = ref.watch(workoutHistoryProvider).valueOrNull;
   if (settings == null || steps == null || logs == null) return null;
   String? next;
+  var nextExercises = 0;
   for (final p in programs ?? const <ProgramDetail>[]) {
     final n = nextProgramDay(p, lastDays?[p.program.id]);
     if (n != null) {
-      next = p.days[n.index].routine!.name;
+      final routine = p.days[n.index].routine!;
+      next = routine.name;
+      for (final r in routines ?? const <RoutineDetail>[]) {
+        if (r.routine.id == routine.id) nextExercises = r.items.length;
+      }
       break;
     }
   }
+  final week = <WeekDayRings>[
+    for (var i = 6; i >= 0; i--)
+      () {
+        final day = today.subtract(Duration(days: i));
+        final key = dayKey(day);
+        final s = weekSteps?.where((d) => isSameDay(d.day, day)).firstOrNull;
+        final w = weekWater?.where((d) => isSameDay(d.day, day)).firstOrNull;
+        return (
+          steps: goalPercent(s?.steps ?? 0, settings.dailyStepGoal),
+          water: goalPercent(
+            w?.logs.fold<int>(0, (sum, l) => sum + l.ml) ?? 0,
+            settings.waterGoalMl,
+          ),
+          kcal: goalPercent(weekFood?[key]?.kcal ?? 0, settings.calorieGoal),
+        );
+      }(),
+  ];
   return widgetData(
     day: today,
     steps: steps,
@@ -341,6 +379,12 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
     proteinGoalG: settings.proteinGoalG,
     carbsGoalG: settings.carbsGoalG,
     fatGoalG: settings.fatGoalG,
+    week: week,
+    trainedThisWeek: trainedDaysOfWeek([
+      for (final h in history ?? const <WorkoutSummary>[]) h.workout.startedAt,
+    ], today),
+    weekTarget: settings.trainingDaysPerWeek ?? 3,
+    nextExercises: nextExercises,
   );
 });
 

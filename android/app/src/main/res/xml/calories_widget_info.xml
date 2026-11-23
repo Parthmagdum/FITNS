@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Calories (CaloriesWidget): kcal left, protein, carbs, fat. -->
+<!-- Calories (CaloriesWidget): a ring and macros; 2x2 or 4x2. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="220dp"
+    android:minWidth="250dp"
     android:minHeight="110dp"
-    android:minResizeWidth="220dp"
-    android:minResizeHeight="110dp"
-    android:targetCellWidth="3"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="50dp"
+    android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_calories"
-    android:previewLayout="@layout/widget_calories"
+    android:initialLayout="@layout/widget_calories_l"
+    android:previewLayout="@layout/widget_calories_l"
     android:description="@string/calories_widget_description"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"/>

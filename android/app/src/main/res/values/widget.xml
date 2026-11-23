@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Home-screen widgets (Widgets.kt): light. values-night has dark. -->
-    <color name="widget_background">#FFFFFF</color>
-    <color name="widget_surface">#F2F2F7</color>
-    <color name="widget_text">#1C1C1E</color>
+    <!-- Home-screen widgets (FitnsWidget.kt, WidgetArt.kt): light. Dark
+         in values-night. Glass: a translucent gradient with a light rim. -->
+    <color name="widget_glass_top">#F7FFFFFF</color>
+    <color name="widget_glass_bottom">#EDF1F2F6</color>
+    <color name="widget_glass_rim">#1A000000</color>
+    <color name="widget_pill">#14000000</color>
+    <color name="widget_text">#111114</color>
     <color name="widget_muted">#6E6E73</color>
-    <color name="widget_track">#E5E5EA</color>
+    <color name="widget_track">#E3E3E8</color>
     <color name="widget_accent">#EA580C</color>
-    <color name="widget_water">#0A84FF</color>
+    <color name="widget_water">#1F6FEB</color>
     <color name="widget_protein">#3B82F6</color>
     <color name="widget_carbs">#F59E0B</color>
     <color name="widget_fat">#EC4899</color>
-    <color name="widget_on_accent">#FFFFFF</color>
 
-    <string name="widget_label">FITNS today</string>
-    <string name="widget_description">Steps, calories, water and your next workout, with quick buttons</string>
-    <string name="streak_widget_label">FITNS streak</string>
-    <string name="streak_widget_description">Weeks in a row with a workout</string>
-    <string name="streak_widget_weeks">week streak</string>
-    <string name="streak_widget_none">Train this week to start a streak</string>
+    <string name="widget_label">FITNS activity</string>
+    <string name="widget_description">Steps, water and calories as rings, with your week</string>
+    <string name="streak_widget_label">FITNS workout</string>
+    <string name="streak_widget_description">Today\'s training, your week and your streak</string>
     <string name="steps_widget_label">FITNS steps</string>
     <string name="steps_widget_description">Today\'s steps against your goal, updated as you walk</string>
     <string name="water_widget_label">FITNS water</string>

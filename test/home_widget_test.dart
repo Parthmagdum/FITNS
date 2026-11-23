@@ -87,4 +87,18 @@ void main() {
     ));
     expect(widgetPageRoute('nonsense', noon), isNull);
   });
+
+  test('training days this week, Monday first, and goal percents', () {
+    // Wednesday 25 November 2026.
+    final wed = DateTime(2026, 11, 25, 18);
+    final days = trainedDaysOfWeek([
+      DateTime(2026, 11, 23, 7), // Monday
+      DateTime(2026, 11, 25, 6), // Wednesday
+      DateTime(2026, 11, 22, 9), // last Sunday: not this week
+    ], wed);
+    expect(days, [true, false, true, false, false, false, false]);
+    expect(goalPercent(4000, 8000), 50);
+    expect(goalPercent(9000, 8000), 100);
+    expect(goalPercent(500, null), 0);
+  });
 }

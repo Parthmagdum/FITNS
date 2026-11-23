@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.17 — 2026-11-23
+
+**Redesigned widgets**
+- All widgets are redrawn: gradient rings with rounded ends, round icon
+  badges, big numbers with their goal beside them ("5,240 /8,000"), on a
+  frosted-glass card that follows your phone's light or dark mode.
+- Each one comes in sizes, and changes layout as you resize it:
+  - **Activity** (was Today): three rings, for steps, water and calories.
+    As a 2×1 pill, a 2×2 square, or 4×2 with a row of small rings for
+    each of the last 7 days.
+  - **Steps:** one ring, as a pill or a square.
+  - **Water:** a glass that fills as you drink, with + buttons to log a
+    drink from the home screen.
+  - **Calories:** a ring of calories left; 4×2 adds protein, carbs and fat.
+  - **Workout** (was Streak): today's training on a card with contour
+    lines: "Training day" or "Done today", your next workout with its
+    exercises and time, this week's workouts as a progress bar, your
+    streak, and a Start button.
+
 ## 0.1.16 — 2026-11-23
 
 **Five home-screen widgets** ([#9](https://github.com/Parthmagdum/FITNS/issues/9))

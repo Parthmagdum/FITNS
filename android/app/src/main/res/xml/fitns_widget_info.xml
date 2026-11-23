@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Today (FitnsWidget): steps, calories, water, quick buttons. -->
+<!-- Activity (FitnsWidget): rings for steps, water, calories; 2x1, 2x2 or 4x2. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
-    android:minHeight="150dp"
-    android:minResizeWidth="250dp"
-    android:minResizeHeight="150dp"
+    android:minHeight="140dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="50dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/fitns_widget"
-    android:previewLayout="@layout/fitns_widget"
+    android:initialLayout="@layout/widget_activity_l"
+    android:previewLayout="@layout/widget_activity_l"
     android:description="@string/widget_description"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"/>

@@ -33,7 +33,28 @@ typedef WidgetData = ({
   int proteinGoalG,
   int carbsGoalG,
   int fatGoalG,
+
+  /// The last 7 days, oldest first: each goal's percent (0–100) for the
+  /// activity widget's week of rings.
+  List<WeekDayRings> week,
+
+  /// Monday to Sunday of this week: a workout that day.
+  List<bool> trainedThisWeek,
+
+  /// Workouts a week the rider aims for.
+  int weekTarget,
+
+  /// The next workout's size, for the workout card ("6 exercises · ~30 min").
+  int nextExercises,
+  int nextMinutes,
 });
+
+/// One day of the activity widget's week: percent of each goal reached.
+typedef WeekDayRings = ({int steps, int water, int kcal});
+
+/// [value] as a percent of [goal], 0–100 (0 without a goal).
+int goalPercent(int value, int? goal) =>
+    goal == null || goal <= 0 ? 0 : (value * 100 ~/ goal).clamp(0, 100);
 
 /// "🔥 3-week streak", "🔥 1-week streak", or empty for none.
 String streakLine(int weeks) => weeks <= 0 ? '' : '🔥 $weeks-week streak';
@@ -53,6 +74,10 @@ WidgetData widgetData({
   int? proteinGoalG,
   int? carbsGoalG,
   int? fatGoalG,
+  List<WeekDayRings> week = const [],
+  List<bool> trainedThisWeek = const [],
+  int weekTarget = 3,
+  int nextExercises = 0,
 }) {
   final n = NumberFormat('#,##0');
   final String food;
@@ -80,7 +105,23 @@ WidgetData widgetData({
     proteinGoalG: proteinGoalG ?? 0,
     carbsGoalG: carbsGoalG ?? 0,
     fatGoalG: fatGoalG ?? 0,
+    week: week,
+    trainedThisWeek: trainedThisWeek,
+    weekTarget: weekTarget,
+    nextExercises: nextExercises,
+    // About 5 minutes an exercise, warm-up and rests included.
+    nextMinutes: nextExercises * 5,
   );
+}
+
+/// Monday to Sunday of [today]'s week: whether any of [workouts] fell on
+/// that day.
+List<bool> trainedDaysOfWeek(Iterable<DateTime> workouts, DateTime today) {
+  final monday = startOfDay(today).subtract(Duration(days: today.weekday - 1));
+  return [
+    for (var i = 0; i < 7; i++)
+      workouts.any((w) => isSameDay(w, monday.add(Duration(days: i)))),
+  ];
 }
 
 /// Where a widget tap (or a notification) takes FITNS: a tab to switch to
@@ -125,6 +166,14 @@ class HomeWidget {
         'proteinGoalG': d.proteinGoalG,
         'carbsGoalG': d.carbsGoalG,
         'fatGoalG': d.fatGoalG,
+        // Compact for the native side: "steps,water,kcal;…" oldest first.
+        'week': [
+          for (final w in d.week) '${w.steps},${w.water},${w.kcal}',
+        ].join(';'),
+        'trained': [for (final t in d.trainedThisWeek) t ? '1' : '0'].join(),
+        'weekTarget': d.weekTarget,
+        'nextExercises': d.nextExercises,
+        'nextMinutes': d.nextMinutes,
       });
     } on MissingPluginException {
       // Not on Android.
