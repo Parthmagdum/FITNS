@@ -123,7 +123,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -216,6 +216,10 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 14) await m.createTable(bikeRides);
       if (from < 15) await m.addColumn(settings, settings.tipsSeen);
+      if (from < 16) {
+        await m.addColumn(settings, settings.swipeHintDone);
+        await m.addColumn(settings, settings.holdHintDone);
+      }
       if (from < 11) {
         for (final column in <GeneratedColumn>[
           settings.waterIntervalMinutes,

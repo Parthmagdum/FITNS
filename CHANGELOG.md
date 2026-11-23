@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.18 — 2026-11-23
+
+**Learn the app where you use it**
+- No more digging through Settings to find out how FITNS works: hints now
+  show up right where they apply, and go away once you've done the thing
+  they teach.
+- **Swiping:** until you first swipe between pages, the page gently peeks
+  at the next one when FITNS opens, with a "Swipe to change page" pill.
+- **The FITNS button:** until you first use the hold menu, the button
+  pulses, with a bubble saying "Hold & slide for shortcuts · tap for all
+  pages".
+- Either hint can also be closed with its ✕.
+- The FITNS button's sheet has a **Show me how** link that replays the
+  animated tips any time.
+
 ## 0.1.17 — 2026-11-23
 
 **Redesigned widgets**

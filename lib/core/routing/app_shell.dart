@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +9,7 @@ import '../../data/providers.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/glass.dart';
+import 'coach_marks.dart';
 import 'first_run_tips.dart';
 import 'quick_add.dart';
 
@@ -63,6 +67,8 @@ class AppShell extends StatelessWidget {
               ),
             ),
           ),
+          // Hints in place until each thing is done once: swipe, hold.
+          const Positioned.fill(child: CoachMarks()),
           // Once, after the setup guide: how to get around (swipe, tap and
           // hold the button), animated.
           Positioned.fill(
@@ -86,18 +92,74 @@ class AppShell extends StatelessWidget {
 /// well as choosing one from the FITNS button. Each tab keeps its place — scroll position,
 /// pages opened inside it — while another is shown. A swipe that starts on
 /// something that scrolls sideways itself (a row of cards) scrolls that.
-class SwipeTabs extends StatefulWidget {
+///
+/// Until the first swipe, the Today page peeks at the next one now and then
+/// (with "Swipe to change page" below — [SwipeHint]), so the swipe is found
+/// without being told.
+class SwipeTabs extends ConsumerStatefulWidget {
   const SwipeTabs({super.key, required this.shell, required this.children});
 
   final StatefulNavigationShell shell;
   final List<Widget> children;
 
   @override
-  State<SwipeTabs> createState() => _SwipeTabsState();
+  ConsumerState<SwipeTabs> createState() => _SwipeTabsState();
 }
 
-class _SwipeTabsState extends State<SwipeTabs> {
+class _SwipeTabsState extends ConsumerState<SwipeTabs> {
   late final _pages = PageController(initialPage: widget.shell.currentIndex);
+  Timer? _peekTimer;
+  var _peeked = false;
+  var _swiped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(settingsProvider, (_, next) {
+      final s = next.valueOrNull;
+      if (s == null || _peeked) return;
+      if (s.setupDone && s.tipsSeen && !s.swipeHintDone) {
+        _peeked = true;
+        _peekTimer = Timer(const Duration(milliseconds: 1400), _peek);
+      }
+    }, fireImmediately: true);
+  }
+
+  /// Slides the page a little toward the next and back, twice — a peek at
+  /// what a swipe would show. A touch stops it.
+  Future<void> _peek() async {
+    for (var i = 0; i < 2; i++) {
+      if (!mounted || !_pages.hasClients || _swiped) return;
+      final position = _pages.position;
+      final home = position.pixels;
+      final toward = widget.shell.currentIndex < widget.children.length - 1
+          ? 1
+          : -1;
+      await _pages.animateTo(
+        home + toward * position.viewportDimension * 0.18,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
+      if (!mounted || !_pages.hasClients) return;
+      await _pages.animateTo(
+        home,
+        duration: const Duration(milliseconds: 520),
+        curve: Curves.easeInOutCubic,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+    }
+  }
+
+  /// A swipe by hand (not a jump or the peek — only a finger makes a
+  /// user scroll): the hint has done its job.
+  bool _onScroll(UserScrollNotification n) {
+    if (n.depth == 0 && n.direction != ScrollDirection.idle && !_swiped) {
+      _swiped = true;
+      final s = ref.read(settingsProvider).valueOrNull;
+      if (s != null && !s.swipeHintDone) finishHint(ref, swipe: true);
+    }
+    return false;
+  }
 
   @override
   void didUpdateWidget(SwipeTabs old) {
@@ -112,18 +174,25 @@ class _SwipeTabsState extends State<SwipeTabs> {
 
   @override
   void dispose() {
+    _peekTimer?.cancel();
     _pages.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => PageView(
-    controller: _pages,
-    onPageChanged: (i) {
-      if (i != widget.shell.currentIndex) widget.shell.goBranch(i);
-    },
-    children: [for (final child in widget.children) _KeepAlive(child: child)],
-  );
+  Widget build(BuildContext context) =>
+      NotificationListener<UserScrollNotification>(
+        onNotification: _onScroll,
+        child: PageView(
+          controller: _pages,
+          onPageChanged: (i) {
+            if (i != widget.shell.currentIndex) widget.shell.goBranch(i);
+          },
+          children: [
+            for (final child in widget.children) _KeepAlive(child: child),
+          ],
+        ),
+      );
 }
 
 /// Keeps a tab built while it's swiped out of view.

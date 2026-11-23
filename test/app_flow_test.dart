@@ -153,6 +153,8 @@ void main() {
           const SettingsCompanion(
             setupDone: Value(true),
             tipsSeen: Value(true),
+            swipeHintDone: Value(true),
+            holdHintDone: Value(true),
           ),
         ),
       );
@@ -1500,6 +1502,55 @@ void main() {
     await settle(tester);
     final logs = (await tester.runAsync(() => db.select(db.foodLogs).get()))!;
     expect(logs.single.kcal, 240);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('hints in place: swipe and hold, each gone once done; the '
+      'tips replay from the button', (tester) async {
+    final db = await pumpApp(
+      tester,
+      seed: (db) => db.updateSettings(
+        const SettingsCompanion(
+          swipeHintDone: Value(false),
+          holdHintDone: Value(false),
+        ),
+      ),
+    );
+    expect(find.byKey(const Key('swipe-hint')), findsOneWidget);
+    expect(find.byKey(const Key('hold-hint')), findsOneWidget);
+    expect(find.text('Hold & slide'), findsOneWidget);
+    // Let the page peek, then swipe by hand.
+    await settle(tester);
+    await settle(tester);
+    await tester.fling(find.byType(PageView), const Offset(-300, 0), 1500);
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.swipeHintDone, isTrue);
+    expect(find.byKey(const Key('swipe-hint')), findsNothing);
+    expect(find.byKey(const Key('hold-hint')), findsOneWidget);
+
+    // Using the hold menu once retires its hint.
+    await holdAndSlide(tester, const Offset(-4, -100));
+    expect((await tester.runAsync(db.getSettings))!.holdHintDone, isTrue);
+    expect(find.byKey(const Key('hold-hint')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('"Show me how" in the button sheet replays the tips', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await settle(tester);
+    await tester.ensureVisible(find.text('Show me how'));
+    await settle(tester);
+    await tester.tap(find.text('Show me how'));
+    await settle(tester);
+    expect(find.text('Swipe between pages'), findsOneWidget);
+    await tester.tap(find.text('Skip'));
+    await settle(tester);
+    expect(find.byKey(const Key('first-run-tips')), findsNothing);
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

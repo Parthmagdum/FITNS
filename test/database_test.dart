@@ -38,6 +38,14 @@ void main() {
     final file = File('${dir.path}/fitns.db');
     final db = AppDatabase(NativeDatabase(file));
     await db.addBodyEntries(DateTime(2026, 10, 28), {BodyMetric.weight: 72500});
+    if (schema < 16) {
+      await db.customStatement(
+        'ALTER TABLE settings DROP COLUMN swipe_hint_done',
+      );
+      await db.customStatement(
+        'ALTER TABLE settings DROP COLUMN hold_hint_done',
+      );
+    }
     if (schema < 15) {
       await db.customStatement('ALTER TABLE settings DROP COLUMN tips_seen');
     }

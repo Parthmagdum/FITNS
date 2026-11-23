@@ -1,0 +1,4 @@
+Learn FITNS where you use it:
+- The page peeks to show you can swipe, until your first swipe
+- The FITNS button pulses with a "Hold & slide" hint, until you first use it
+- "Show me how" in the button's sheet replays the tips any time

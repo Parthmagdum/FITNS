@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +22,7 @@ import '../theme/app_theme.dart';
 import '../theme/glass.dart';
 import '../units.dart';
 import '../widgets/app_page.dart';
+import 'coach_marks.dart';
 import 'hold_menu_geometry.dart';
 import 'launch_reveal.dart';
 
@@ -233,7 +236,12 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
     final items = _items;
     final index = _hovered.value;
     final chosen = commit && index >= 0 && index < items.length;
-    if (chosen) HapticFeedback.mediumImpact();
+    if (chosen) {
+      HapticFeedback.mediumImpact();
+      // The hold menu is found: no more pulsing hint.
+      final s = ref.read(settingsProvider).valueOrNull;
+      if (s != null && !s.holdHintDone) unawaited(finishHint(ref, hold: true));
+    }
     await _menuKey.currentState?.close();
     entry.remove();
     _hovered.value = -1;
@@ -462,6 +470,21 @@ Future<void> showQuickAddSheet(
                 'there even faster.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.muted),
+              ),
+              // The tips again, right here — no hunting through Settings.
+              Center(
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheet);
+                    ref
+                        .read(dbProvider)
+                        .updateSettings(
+                          const SettingsCompanion(tipsSeen: Value(false)),
+                        );
+                  },
+                  icon: const Icon(Icons.play_circle_outline_rounded),
+                  label: const Text('Show me how'),
+                ),
               ),
             ],
           ),

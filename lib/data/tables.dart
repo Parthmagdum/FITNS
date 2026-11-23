@@ -331,6 +331,13 @@ class Settings extends Table {
   /// button) were played through or skipped. Schema v15.
   BoolColumn get tipsSeen => boolean().withDefault(const Constant(false))();
 
+  /// The in-place hints, each shown until the thing it teaches is done
+  /// once (or the hint is closed): swiping between tabs, and holding the
+  /// FITNS button. Schema v16.
+  BoolColumn get swipeHintDone =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get holdHintDone => boolean().withDefault(const Constant(false))();
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.
