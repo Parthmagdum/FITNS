@@ -42,6 +42,37 @@ List<Offset> cornerFanCenters(Offset anchor, int count) {
   return centres;
 }
 
+/// The hold menu's bubbles: [actions] (no labels) fill the inner rings,
+/// and the [pages] — which carry their names underneath — always get the
+/// outer ring of their own, however few actions there are. On an inner
+/// ring the bubbles sit too close for a name under each, and a page there
+/// would cover its neighbour's label.
+List<Offset> holdMenuCenters(
+  Offset anchor, {
+  required int actions,
+  required int pages,
+}) {
+  final inner = cornerFanCenters(anchor, actions);
+  var used = 0;
+  for (var n = actions; n > 0; used++) {
+    n -= used < fanRings.length ? fanRings[used] : 6;
+  }
+  final ring = math.max(used, fanRings.length - 1);
+  final radius = ring < _radii.length
+      ? _radii[ring]
+      : _radii.last + 72.0 * (ring - _radii.length + 1);
+  final capacity = math.max(fanRings.last, pages);
+  return [
+    ...inner,
+    for (var i = 0; i < pages; i++)
+      () {
+        final t = capacity == 1 ? 0.5 : i / (capacity - 1);
+        final rad = (-92 - 73 * t) * math.pi / 180;
+        return anchor + Offset(math.cos(rad), math.sin(rad)) * radius;
+      }(),
+  ];
+}
+
 /// The bubble the thumb is over: the nearest of [centres] within
 /// [hitRadius] of [pointer], or `-1` — which also covers the thumb resting
 /// back on the button (within [cancelRadius] of [anchor]), a release there

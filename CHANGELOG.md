@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.1.26 — 2026-11-28
+
+**Fixes**
+- **Glass while swiping:** the wallpaper now holds still while the pages
+  slide over it — no more seams or jumps between tabs.
+- **Glass header:** a tab's title sits on the wallpaper itself and frosts as
+  you scroll; the grey band with content showing through is gone.
+- **Buttons under the tab bar:** a page's button (Log on Body, and others)
+  now sits above the floating tab bar, not behind it.
+- **Hold menu:** the pages always get the outer ring of their own, so with
+  only a few shortcuts their names no longer hide under other bubbles.
+- **Steps widgets** keep up while the screen is on — readings come every
+  couple of seconds instead of in batches of up to five minutes — and
+  catch up the moment you turn the screen on.
+- **The rest timer rings:** when rest is over FITNS plays your alarm sound
+  for a few seconds, on the alarm volume, so it's heard even with the phone
+  on silent — and buzzes. Turn the sound off in Settings → Activity.
+
+**More precise calories** — following the weight guide
+- Losing or gaining uses the guide's moderate gap: 300 kcal a day (gentle)
+  or 500 (steady), about 0.25 or 0.5 kg a week. Never below 1,200 kcal
+  (women) or 1,500 (men).
+- Check-ins come every two weeks and suggest the guide's steps: 150–200
+  kcal less when losing stalls, 200–250 more when gaining does.
+- Workouts, logged activities and steps count **active** calories — what
+  they add beyond resting, which the plan already counts — the way a watch
+  shows them. Steps use your height for stride length.
+
+**New**
+- **Weight guide:** how weight change works, losing, gaining and tracking —
+  with your own maintenance, deficit, surplus and protein numbers. From
+  Body, Your goal & plan, or Settings.
+- **Accent colours:** orange, blue, green, purple, pink, teal or red, in
+  every theme (Settings → Appearance).
+- **Two new home-screen widgets:** Burn (active calories against today's
+  burn target) and Weight (latest weigh-in and the way to your target).
+
 ## 0.1.25 — 2026-11-23
 
 **Make it yours** — Settings → Navigation → Customize, after XPENC

@@ -47,20 +47,20 @@ void main() {
 
   test('losing too slowly: eat less, in a small step', () {
     final c = check(weighIns(-200))!;
-    // 300 g a week short ≈ 330 kcal a day, capped to 250.
-    expect(c.kcalChange, -250);
-    expect(c.newKcal, 1950);
+    // 300 g a week short: the guide's bigger step, 200 kcal.
+    expect(c.kcalChange, -200);
+    expect(c.newKcal, 2000);
   });
 
   test('losing too fast: eat more', () {
     final c = check(weighIns(-900))!;
-    expect(c.kcalChange, 250);
+    expect(c.kcalChange, 200);
   });
 
-  test('a small gap is a step of 50s', () {
+  test('a small gap is the smaller step', () {
     final c = check(weighIns(-300))!;
-    // 200 g short → 220 kcal → 200.
-    expect(c.kcalChange, -200);
+    // 200 g short → 150 kcal.
+    expect(c.kcalChange, -150);
   });
 
   test('never below the floor', () {

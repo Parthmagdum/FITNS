@@ -11,6 +11,7 @@ import 'package:fitns/core/motion/motion_sensors.dart';
 import 'package:fitns/core/motion/rep_detectors.dart';
 import 'package:fitns/core/platform/document_files.dart';
 import 'package:fitns/core/routing/floating_tab_bar.dart';
+import 'package:fitns/core/theme/accent.dart';
 import 'package:fitns/core/theme/glass.dart';
 import 'package:fitns/core/steps/step_sensor.dart';
 import 'package:fitns/data/database.dart';
@@ -1657,7 +1658,7 @@ void main() {
       1,
     );
     expect(find.text('Calories burned today'), findsOneWidget);
-    expect(find.textContaining('to lose 0.5 kg a week'), findsOneWidget);
+    expect(find.textContaining('to lose about 0.5 kg a week'), findsOneWidget);
     await scrollToMiddle(tester, find.text('How your target is worked out'));
     expect(find.text('Burn through activity'), findsOneWidget);
     expect(find.text('300 kcal'), findsOneWidget);
@@ -1677,13 +1678,14 @@ void main() {
     await settle(tester);
     await tester.tap(find.widgetWithText(ActionChip, '60 min'));
     await settle(tester);
-    // The estimate for 70 kg first: 9.8 MET x 70 kg x 1 h.
+    // The estimate for 70 kg first, beyond resting: (9.8 − 1) MET x 70 kg
+    // x 1 h — a watch's "active calories".
     expect(
       tester
           .widget<TextField>(find.byKey(const Key('activity-kcal')))
           .controller!
           .text,
-      '686',
+      '616',
     );
     await tester.enterText(find.byKey(const Key('activity-kcal')), '537');
     // The sheet's button (the page behind has one too).
@@ -1916,6 +1918,83 @@ void main() {
     expect((await tester.runAsync(db.getSettings))!.glassBackdrop, 'ocean');
     expect(AppSurface.of(page()).backdrop, GlassBackdrop.ocean);
     expect(Theme.of(page()).brightness, Brightness.dark);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('the weight guide fills in this person\'s numbers', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      seed: (db) async {
+        await db.updateSettings(
+          const SettingsCompanion(
+            heightMm: Value(1750),
+            birthYear: Value(1996),
+            sex: Value(Sex.male),
+            activityLevel: Value(ActivityLevel.moderate),
+          ),
+        );
+        await db.addBodyEntries(DateTime(2026, 11, 20), {
+          BodyMetric.weight: 70000,
+        });
+      },
+    );
+    await goToTab(tester, 'Body');
+    await scrollToMiddle(tester, find.byKey(const Key('weight-guide')));
+    await tester.tap(find.byKey(const Key('weight-guide')));
+    await settle(tester);
+    expect(find.text('How weight change works'), findsOneWidget);
+    expect(find.byKey(const Key('guide-yours')), findsOneWidget);
+    // 1.6–2.2 g a kg at 70 kg.
+    expect(find.text('112–154 g a day'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('an accent colour from Settings takes over the app', (
+    tester,
+  ) async {
+    final db = await pumpApp(tester);
+    await goToTab(tester, 'Settings');
+    await scrollToMiddle(tester, find.byKey(const Key('accent-blue')));
+    await tester.tap(find.byKey(const Key('accent-blue')));
+    await settle(tester);
+    expect((await tester.runAsync(db.getSettings))!.accentColor, 'blue');
+    expect(
+      Theme.of(
+        tester.element(find.byKey(const Key('quick-add'))),
+      ).colorScheme.secondary,
+      AccentColor.blue.light,
+    );
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
+
+  testWidgets('under Glass a tab page has a glass header; with the floating '
+      'bar, the page\'s button sits above it', (tester) async {
+    await pumpApp(
+      tester,
+      seed: (db) => db.updateSettings(
+        const SettingsCompanion(
+          themeMode: Value('glass'),
+          navStyle: Value('bar'),
+          glassBackdrop: Value('ocean'),
+        ),
+      ),
+    );
+    await goToTab(tester, 'Body');
+    expect(find.byType(GlassWallpaper), findsWidgets);
+    // Scrolled: the title rides into the bar, nothing breaks.
+    await tester.drag(
+      find.byType(CustomScrollView).last,
+      const Offset(0, -400),
+    );
+    await settle(tester);
+    final fab = tester.getRect(find.byType(FloatingActionButton).last);
+    final bar = tester.getRect(find.byType(FloatingTabBar));
+    expect(fab.bottom, lessThanOrEqualTo(bar.top + 1));
     expect(tester.takeException(), isNull);
     await unmount(tester);
   });

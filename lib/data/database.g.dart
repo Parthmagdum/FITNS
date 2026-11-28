@@ -606,6 +606,33 @@ class $SettingsTable extends Settings
     requiredDuringInsert: false,
     defaultValue: const Constant('aurora'),
   );
+  static const VerificationMeta _restRingMeta = const VerificationMeta(
+    'restRing',
+  );
+  @override
+  late final GeneratedColumn<bool> restRing = GeneratedColumn<bool>(
+    'rest_ring',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("rest_ring" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _accentColorMeta = const VerificationMeta(
+    'accentColor',
+  );
+  @override
+  late final GeneratedColumn<String> accentColor = GeneratedColumn<String>(
+    'accent_color',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('orange'),
+  );
   static const VerificationMeta _musicTracksMeta = const VerificationMeta(
     'musicTracks',
   );
@@ -669,6 +696,8 @@ class $SettingsTable extends Settings
     holdShortcuts,
     holdTabs,
     glassBackdrop,
+    restRing,
+    accentColor,
     musicTracks,
   ];
   @override
@@ -1052,6 +1081,21 @@ class $SettingsTable extends Settings
         ),
       );
     }
+    if (data.containsKey('rest_ring')) {
+      context.handle(
+        _restRingMeta,
+        restRing.isAcceptableOrUnknown(data['rest_ring']!, _restRingMeta),
+      );
+    }
+    if (data.containsKey('accent_color')) {
+      context.handle(
+        _accentColorMeta,
+        accentColor.isAcceptableOrUnknown(
+          data['accent_color']!,
+          _accentColorMeta,
+        ),
+      );
+    }
     if (data.containsKey('music_tracks')) {
       context.handle(
         _musicTracksMeta,
@@ -1280,6 +1324,14 @@ class $SettingsTable extends Settings
         DriftSqlType.string,
         data['${effectivePrefix}glass_backdrop'],
       )!,
+      restRing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}rest_ring'],
+      )!,
+      accentColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}accent_color'],
+      )!,
       musicTracks: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}music_tracks'],
@@ -1462,6 +1514,13 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
   /// What Glass sits on: a [GlassBackdrop] name.
   final String glassBackdrop;
 
+  /// Rest ends with the phone's alarm sound — on the alarm volume, which a
+  /// phone on silent still plays — as well as a buzz. Schema v20.
+  final bool restRing;
+
+  /// The accent colour, an `AccentColor` name. Schema v20.
+  final String accentColor;
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.
@@ -1517,6 +1576,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     this.holdShortcuts,
     required this.holdTabs,
     required this.glassBackdrop,
+    required this.restRing,
+    required this.accentColor,
     this.musicTracks,
   });
   @override
@@ -1624,6 +1685,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     }
     map['hold_tabs'] = Variable<bool>(holdTabs);
     map['glass_backdrop'] = Variable<String>(glassBackdrop);
+    map['rest_ring'] = Variable<bool>(restRing);
+    map['accent_color'] = Variable<String>(accentColor);
     if (!nullToAbsent || musicTracks != null) {
       map['music_tracks'] = Variable<String>(musicTracks);
     }
@@ -1722,6 +1785,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           : Value(holdShortcuts),
       holdTabs: Value(holdTabs),
       glassBackdrop: Value(glassBackdrop),
+      restRing: Value(restRing),
+      accentColor: Value(accentColor),
       musicTracks: musicTracks == null && nullToAbsent
           ? const Value.absent()
           : Value(musicTracks),
@@ -1812,6 +1877,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       holdShortcuts: serializer.fromJson<String?>(json['holdShortcuts']),
       holdTabs: serializer.fromJson<bool>(json['holdTabs']),
       glassBackdrop: serializer.fromJson<String>(json['glassBackdrop']),
+      restRing: serializer.fromJson<bool>(json['restRing']),
+      accentColor: serializer.fromJson<String>(json['accentColor']),
       musicTracks: serializer.fromJson<String?>(json['musicTracks']),
     );
   }
@@ -1879,6 +1946,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       'holdShortcuts': serializer.toJson<String?>(holdShortcuts),
       'holdTabs': serializer.toJson<bool>(holdTabs),
       'glassBackdrop': serializer.toJson<String>(glassBackdrop),
+      'restRing': serializer.toJson<bool>(restRing),
+      'accentColor': serializer.toJson<String>(accentColor),
       'musicTracks': serializer.toJson<String?>(musicTracks),
     };
   }
@@ -1934,6 +2003,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     Value<String?> holdShortcuts = const Value.absent(),
     bool? holdTabs,
     String? glassBackdrop,
+    bool? restRing,
+    String? accentColor,
     Value<String?> musicTracks = const Value.absent(),
   }) => SettingRow(
     id: id ?? this.id,
@@ -2010,6 +2081,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
         : this.holdShortcuts,
     holdTabs: holdTabs ?? this.holdTabs,
     glassBackdrop: glassBackdrop ?? this.glassBackdrop,
+    restRing: restRing ?? this.restRing,
+    accentColor: accentColor ?? this.accentColor,
     musicTracks: musicTracks.present ? musicTracks.value : this.musicTracks,
   );
   SettingRow copyWithCompanion(SettingsCompanion data) {
@@ -2138,6 +2211,10 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
       glassBackdrop: data.glassBackdrop.present
           ? data.glassBackdrop.value
           : this.glassBackdrop,
+      restRing: data.restRing.present ? data.restRing.value : this.restRing,
+      accentColor: data.accentColor.present
+          ? data.accentColor.value
+          : this.accentColor,
       musicTracks: data.musicTracks.present
           ? data.musicTracks.value
           : this.musicTracks,
@@ -2197,6 +2274,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           ..write('holdShortcuts: $holdShortcuts, ')
           ..write('holdTabs: $holdTabs, ')
           ..write('glassBackdrop: $glassBackdrop, ')
+          ..write('restRing: $restRing, ')
+          ..write('accentColor: $accentColor, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -2254,6 +2333,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
     holdShortcuts,
     holdTabs,
     glassBackdrop,
+    restRing,
+    accentColor,
     musicTracks,
   ]);
   @override
@@ -2310,6 +2391,8 @@ class SettingRow extends DataClass implements Insertable<SettingRow> {
           other.holdShortcuts == this.holdShortcuts &&
           other.holdTabs == this.holdTabs &&
           other.glassBackdrop == this.glassBackdrop &&
+          other.restRing == this.restRing &&
+          other.accentColor == this.accentColor &&
           other.musicTracks == this.musicTracks);
 }
 
@@ -2364,6 +2447,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
   final Value<String?> holdShortcuts;
   final Value<bool> holdTabs;
   final Value<String> glassBackdrop;
+  final Value<bool> restRing;
+  final Value<String> accentColor;
   final Value<String?> musicTracks;
   const SettingsCompanion({
     this.id = const Value.absent(),
@@ -2416,6 +2501,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.holdShortcuts = const Value.absent(),
     this.holdTabs = const Value.absent(),
     this.glassBackdrop = const Value.absent(),
+    this.restRing = const Value.absent(),
+    this.accentColor = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   SettingsCompanion.insert({
@@ -2469,6 +2556,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     this.holdShortcuts = const Value.absent(),
     this.holdTabs = const Value.absent(),
     this.glassBackdrop = const Value.absent(),
+    this.restRing = const Value.absent(),
+    this.accentColor = const Value.absent(),
     this.musicTracks = const Value.absent(),
   });
   static Insertable<SettingRow> custom({
@@ -2522,6 +2611,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Expression<String>? holdShortcuts,
     Expression<bool>? holdTabs,
     Expression<String>? glassBackdrop,
+    Expression<bool>? restRing,
+    Expression<String>? accentColor,
     Expression<String>? musicTracks,
   }) {
     return RawValuesInsertable({
@@ -2585,6 +2676,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       if (holdShortcuts != null) 'hold_shortcuts': holdShortcuts,
       if (holdTabs != null) 'hold_tabs': holdTabs,
       if (glassBackdrop != null) 'glass_backdrop': glassBackdrop,
+      if (restRing != null) 'rest_ring': restRing,
+      if (accentColor != null) 'accent_color': accentColor,
       if (musicTracks != null) 'music_tracks': musicTracks,
     });
   }
@@ -2640,6 +2733,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     Value<String?>? holdShortcuts,
     Value<bool>? holdTabs,
     Value<String>? glassBackdrop,
+    Value<bool>? restRing,
+    Value<String>? accentColor,
     Value<String?>? musicTracks,
   }) {
     return SettingsCompanion(
@@ -2698,6 +2793,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
       holdShortcuts: holdShortcuts ?? this.holdShortcuts,
       holdTabs: holdTabs ?? this.holdTabs,
       glassBackdrop: glassBackdrop ?? this.glassBackdrop,
+      restRing: restRing ?? this.restRing,
+      accentColor: accentColor ?? this.accentColor,
       musicTracks: musicTracks ?? this.musicTracks,
     );
   }
@@ -2877,6 +2974,12 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
     if (glassBackdrop.present) {
       map['glass_backdrop'] = Variable<String>(glassBackdrop.value);
     }
+    if (restRing.present) {
+      map['rest_ring'] = Variable<bool>(restRing.value);
+    }
+    if (accentColor.present) {
+      map['accent_color'] = Variable<String>(accentColor.value);
+    }
     if (musicTracks.present) {
       map['music_tracks'] = Variable<String>(musicTracks.value);
     }
@@ -2936,6 +3039,8 @@ class SettingsCompanion extends UpdateCompanion<SettingRow> {
           ..write('holdShortcuts: $holdShortcuts, ')
           ..write('holdTabs: $holdTabs, ')
           ..write('glassBackdrop: $glassBackdrop, ')
+          ..write('restRing: $restRing, ')
+          ..write('accentColor: $accentColor, ')
           ..write('musicTracks: $musicTracks')
           ..write(')'))
         .toString();
@@ -11526,6 +11631,8 @@ typedef $$SettingsTableCreateCompanionBuilder =
       Value<String?> holdShortcuts,
       Value<bool> holdTabs,
       Value<String> glassBackdrop,
+      Value<bool> restRing,
+      Value<String> accentColor,
       Value<String?> musicTracks,
     });
 typedef $$SettingsTableUpdateCompanionBuilder =
@@ -11580,6 +11687,8 @@ typedef $$SettingsTableUpdateCompanionBuilder =
       Value<String?> holdShortcuts,
       Value<bool> holdTabs,
       Value<String> glassBackdrop,
+      Value<bool> restRing,
+      Value<String> accentColor,
       Value<String?> musicTracks,
     });
 
@@ -11844,6 +11953,16 @@ class $$SettingsTableFilterComposer
 
   ColumnFilters<String> get glassBackdrop => $composableBuilder(
     column: $table.glassBackdrop,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get restRing => $composableBuilder(
+    column: $table.restRing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accentColor => $composableBuilder(
+    column: $table.accentColor,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12112,6 +12231,16 @@ class $$SettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get restRing => $composableBuilder(
+    column: $table.restRing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accentColor => $composableBuilder(
+    column: $table.accentColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => ColumnOrderings(column),
@@ -12354,6 +12483,14 @@ class $$SettingsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get restRing =>
+      $composableBuilder(column: $table.restRing, builder: (column) => column);
+
+  GeneratedColumn<String> get accentColor => $composableBuilder(
+    column: $table.accentColor,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get musicTracks => $composableBuilder(
     column: $table.musicTracks,
     builder: (column) => column,
@@ -12441,6 +12578,8 @@ class $$SettingsTableTableManager
                 Value<String?> holdShortcuts = const Value.absent(),
                 Value<bool> holdTabs = const Value.absent(),
                 Value<String> glassBackdrop = const Value.absent(),
+                Value<bool> restRing = const Value.absent(),
+                Value<String> accentColor = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion(
                 id: id,
@@ -12493,6 +12632,8 @@ class $$SettingsTableTableManager
                 holdShortcuts: holdShortcuts,
                 holdTabs: holdTabs,
                 glassBackdrop: glassBackdrop,
+                restRing: restRing,
+                accentColor: accentColor,
                 musicTracks: musicTracks,
               ),
           createCompanionCallback:
@@ -12547,6 +12688,8 @@ class $$SettingsTableTableManager
                 Value<String?> holdShortcuts = const Value.absent(),
                 Value<bool> holdTabs = const Value.absent(),
                 Value<String> glassBackdrop = const Value.absent(),
+                Value<bool> restRing = const Value.absent(),
+                Value<String> accentColor = const Value.absent(),
                 Value<String?> musicTracks = const Value.absent(),
               }) => SettingsCompanion.insert(
                 id: id,
@@ -12599,6 +12742,8 @@ class $$SettingsTableTableManager
                 holdShortcuts: holdShortcuts,
                 holdTabs: holdTabs,
                 glassBackdrop: glassBackdrop,
+                restRing: restRing,
+                accentColor: accentColor,
                 musicTracks: musicTracks,
               ),
           withReferenceMapper: (p0) => p0

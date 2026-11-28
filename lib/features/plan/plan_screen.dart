@@ -161,6 +161,15 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: [
                 _WhereYouAre(weight: weight, height: height, units: units),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => context.push('/guide/weight'),
+                    icon: const Icon(Icons.menu_book_outlined),
+                    label: const Text('How weight change works'),
+                  ),
+                ),
                 const SectionLabel('About you'),
                 SectionCard(
                   child: Column(
@@ -271,8 +280,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                             for (final (i, p) in paces.indexed)
                               ChoiceChip(
                                 label: Text(
-                                  '${['Gentle', 'Steady', 'Fast'][i]} · '
-                                  '${formatMass(p, units)}/week',
+                                  '${['Gentle', 'Steady'][i]} · '
+                                  '${p <= 250 ? 300 : 500} kcal a day',
                                 ),
                                 selected: pace == p,
                                 onSelected: (_) => setState(() => _pace = p),

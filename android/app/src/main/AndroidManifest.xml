@@ -154,6 +154,30 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/steps_widget_info"/>
         </receiver>
+        <!-- Widget: Burn, active calories against the burn target. -->
+        <receiver
+            android:name=".BurnWidget"
+            android:label="@string/burn_widget_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/burn_widget_info"/>
+        </receiver>
+        <!-- Widget: Weight, the latest weigh-in and the way to the target. -->
+        <receiver
+            android:name=".WeightWidget"
+            android:label="@string/weight_widget_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weight_widget_info"/>
+        </receiver>
         <!-- Widget: Water, with buttons to add a glass. -->
         <receiver
             android:name=".WaterWidget"

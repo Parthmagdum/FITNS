@@ -8,8 +8,10 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 
 /// Calories for [minutes] of [kind] at [weightGrams]: MET × kg × hours.
+/// Active calories: (MET − 1) × kg × hours — beyond resting, like a
+/// watch's "active calories" (the plan already counts resting energy).
 int activityKcal(ActivityKind kind, int minutes, int weightGrams) =>
-    (kind.met * weightGrams / 1000 * minutes / 60).round();
+    ((kind.met - 1) * weightGrams / 1000 * minutes / 60).round();
 
 IconData activityIcon(ActivityKind kind) => switch (kind) {
   ActivityKind.running => Icons.directions_run,

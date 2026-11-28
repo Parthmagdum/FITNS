@@ -28,12 +28,39 @@ class PlanInput {
   final int weeklyChangeGrams;
 }
 
-/// The paces offered, grams a week.
-const losePaces = [250, 500, 750];
+/// The paces offered, grams a week: gentle and steady, both ways. (Faster
+/// losing used to be offered; the guide's healthy range stops at 0.5 kg.)
+const losePaces = [250, 500];
 const gainPaces = [250, 500];
 
 /// Energy in a kilogram of body weight change — the usual rule of thumb.
 const kcalPerKg = 7700;
+
+/// The daily calorie gap for a goal, signed (negative: eat less than you
+/// burn), as the weight guide sets it: a moderate 300 kcal for the gentle
+/// pace, 500 for the steady one — about 0.25 and 0.5 kg a week. Losing is
+/// also kept to about 1 % of body weight a week, the most that comes off as
+/// fat rather than muscle.
+int goalDailyKcal(WeightGoal goal, int weeklyChangeGrams, int weightGrams) {
+  final gap = weeklyChangeGrams <= 250 ? 300 : 500;
+  return switch (goal) {
+    WeightGoal.maintain => 0,
+    WeightGoal.lose => -math.min(
+      gap,
+      (weightGrams * 0.01 * kcalPerKg / 1000 / 7).round(),
+    ),
+    WeightGoal.gain => gap,
+  };
+}
+
+/// What a daily calorie gap of [kcal] does to the weight, grams a week.
+int weeklyGramsFor(int kcal) => (kcal * 7 * 1000 / kcalPerKg).round();
+
+/// The protein range the guide gives, 1.6–2.2 g per kg a day.
+({int low, int high}) proteinRange(int weightGrams) => (
+  low: (weightGrams / 1000 * 1.6).round(),
+  high: (weightGrams / 1000 * 2.2).round(),
+);
 
 /// Daily targets for a goal, and how long it should take.
 class Plan {
@@ -126,10 +153,11 @@ double restingKcal({
 
 /// Works out the daily targets for [input].
 ///
-/// Calories: resting energy (Mifflin-St Jeor) × activity, plus or minus the
-/// pace at 7,700 kcal per kg. Losing is capped at 1 % of body weight a week
-/// and never below 1,500 kcal (men) or 1,200 (women); gaining at 0.5 kg a
-/// week, past which it's mostly fat. Protein is per kilo — 2.0 g losing (to
+/// Calories: resting energy (Mifflin-St Jeor) × activity — the TDEE — less
+/// (or plus) 300 or 500 kcal a day, as the weight guide sets it. Losing is
+/// capped at 1 % of body weight a week and never below 1,500 kcal (men) or
+/// 1,200 (women) without a doctor; gaining at 500 kcal over, past which the
+/// extra is mostly fat. Protein is per kilo — 2.0 g losing (to
 /// keep muscle), 1.8 gaining, 1.6 keeping — of the lighter of current and
 /// target weight, so a large body doesn't get an absurd figure. Fat is a
 /// quarter of the calories; carbs the rest.
@@ -148,23 +176,28 @@ Plan makePlan(PlanInput input) {
   final target = input.targetWeightGrams;
   final range = healthyWeightRange(input.heightMm);
 
-  var pace = switch (input.goal) {
-    WeightGoal.maintain => 0,
-    WeightGoal.lose => -math.min(
-      input.weeklyChangeGrams,
-      (input.weightGrams * 0.01).round(),
-    ),
-    WeightGoal.gain => math.min(input.weeklyChangeGrams, 500),
-  };
-  if (input.goal == WeightGoal.lose && -pace < input.weeklyChangeGrams) {
+  final gap = goalDailyKcal(
+    input.goal,
+    input.weeklyChangeGrams,
+    input.weightGrams,
+  );
+  var pace = weeklyGramsFor(gap);
+  final asked = input.weeklyChangeGrams <= 250 ? 300 : 500;
+  if (input.goal == WeightGoal.lose && -gap < asked) {
     notes.add(
       'Slowed to ${(-pace / 1000).toStringAsFixed(2)} kg a week — about 1 % '
       'of your weight, the most that comes off as fat rather than muscle.',
     );
   }
+  if (input.goal != WeightGoal.maintain && input.weeklyChangeGrams > 500) {
+    notes.add(
+      'Kept to a 500 kcal a day gap — about 0.5 kg a week. Faster than that '
+      'costs muscle and energy and tends to come back.',
+    );
+  }
 
   final floor = input.sex == Sex.male ? 1500 : 1200;
-  var daily = maintenance + (pace * kcalPerKg / 1000 / 7).round();
+  var daily = maintenance + gap;
   if (daily < floor) {
     daily = floor;
     pace = math.min(0, ((floor - maintenance) * 7 * 1000 / kcalPerKg).round());

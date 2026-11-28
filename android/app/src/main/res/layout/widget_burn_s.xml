@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/st_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass_pill"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingHorizontal="14dp">
+    <FrameLayout android:layout_width="56dp" android:layout_height="56dp">
+        <ImageView
+        android:id="@+id/st_ring"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        android:src="@drawable/wpreview_ring_kcal"/>
+        <ImageView
+        android:id="@+id/st_chip"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_chip_burn"
+        android:layout_gravity="center"/>
+    </FrameLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+        <TextView
+        android:id="@+id/st_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:text="312"
+        android:textColor="@color/widget_text"
+        android:textSize="20sp"/>
+        <TextView
+        android:id="@+id/st_goal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:text="/540 kcal"
+        android:textColor="@color/widget_muted"
+        android:textSize="12sp"
+        android:layout_marginTop="2dp"/>
+    </LinearLayout>
+</LinearLayout>

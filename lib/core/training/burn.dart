@@ -23,8 +23,10 @@ double exerciseMet(ExerciseRow e) => switch (e.kind) {
 /// Workouts left running by mistake don't count past this.
 const maxCountedWorkout = Duration(hours: 3);
 
-/// kcal = MET × kg × hours, with the MET averaged over the exercises by how
-/// many sets of each were done. Rest between sets is part of the session, as
+/// Active kcal = (MET − 1) × kg × hours — the effort beyond resting, which
+/// the plan already counts (and what a watch calls "active calories") —
+/// with the MET averaged over the exercises by how many sets of each were
+/// done. Rest between sets is part of the session, as
 /// it is in the Compendium's figures. Null when nothing was done.
 WorkoutBurn? workoutBurn(
   WorkoutDetail detail, {
@@ -42,7 +44,7 @@ WorkoutBurn? workoutBurn(
   final kg = (weightGrams ?? 70000) / 1000;
   final counted = length > maxCountedWorkout ? maxCountedWorkout : length;
   final hours = counted.inSeconds / 3600;
-  final kcal = (metSum / sets) * kg * hours;
+  final kcal = (metSum / sets - 1) * kg * hours;
   return (kcal: math.max(1, kcal.round()), fromWeight: weightGrams != null);
 }
 

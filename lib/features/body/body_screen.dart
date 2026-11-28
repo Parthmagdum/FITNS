@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/bmi.dart';
@@ -41,6 +42,23 @@ class BodyScreen extends ConsumerWidget {
         const WeightCard(),
         ...goalSection(),
         const WeightTrendCard(),
+        SectionCard(
+          key: const Key('weight-guide'),
+          onTap: () => context.push('/guide/weight'),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: const Row(
+            children: [
+              Icon(Icons.menu_book_outlined),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'How to lose or gain weight — the guide, with your numbers',
+                ),
+              ),
+              Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
         const BodyFatEstimateCard(),
         const ProgressPhotosSection(),
         if (measured.isNotEmpty) ...[

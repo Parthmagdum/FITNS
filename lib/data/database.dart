@@ -124,7 +124,7 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'fitns'));
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -234,6 +234,10 @@ class AppDatabase extends _$AppDatabase {
         ]) {
           await m.addColumn(settings, column);
         }
+      }
+      if (from < 20) {
+        await m.addColumn(settings, settings.restRing);
+        await m.addColumn(settings, settings.accentColor);
       }
       if (from < 11) {
         for (final column in <GeneratedColumn>[

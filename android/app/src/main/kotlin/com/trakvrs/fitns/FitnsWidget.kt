@@ -47,7 +47,7 @@ class FitnsWidget : AppWidgetProvider() {
         options: Bundle,
     ) = draw(context, manager, intArrayOf(id), Kind.ACTIVITY)
 
-    enum class Kind { ACTIVITY, STEPS, WATER, CALORIES, WORKOUT }
+    enum class Kind { ACTIVITY, STEPS, WATER, CALORIES, WORKOUT, BURN, WEIGHT }
 
     companion object {
         const val PREFS = "fitns_widget"
@@ -78,6 +78,11 @@ class FitnsWidget : AppWidgetProvider() {
                 putInt("weekTarget", int("weekTarget"))
                 putInt("nextExercises", int("nextExercises"))
                 putInt("nextMinutes", int("nextMinutes"))
+                putInt("burned", int("burned"))
+                putInt("burnTarget", int("burnTarget"))
+                putString("weight", data["weight"] as? String ?: "")
+                putString("weightNote", data["weightNote"] as? String ?: "")
+                putInt("weightProgress", (data["weightProgress"] as? Number)?.toInt() ?: -1)
                 apply()
             }
             refreshAll(context)
@@ -124,6 +129,8 @@ class FitnsWidget : AppWidgetProvider() {
                 WaterWidget::class.java to Kind.WATER,
                 CaloriesWidget::class.java to Kind.CALORIES,
                 StreakWidget::class.java to Kind.WORKOUT,
+                BurnWidget::class.java to Kind.BURN,
+                WeightWidget::class.java to Kind.WEIGHT,
             )) {
                 val ids = manager.getAppWidgetIds(ComponentName(context, cls))
                 if (ids.isNotEmpty()) draw(context, manager, ids, kind)
@@ -138,6 +145,8 @@ class FitnsWidget : AppWidgetProvider() {
                 Kind.WATER -> water(context)
                 Kind.CALORIES -> calories(context)
                 Kind.WORKOUT -> workout(context)
+                Kind.BURN -> burn(context)
+                Kind.WEIGHT -> weight(context)
             }
             for (id in ids) {
                 val views = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -356,6 +365,67 @@ class FitnsWidget : AppWidgetProvider() {
             )
         }
 
+        // ── Burn ────────────────────────────────────────────────────────────
+
+        /** Active calories burned today against the day's burn target. */
+        private fun burn(context: Context): List<Pair<SizeF, RemoteViews>> {
+            val p = prefs(context)
+            val burned = if (current(context)) p.getInt("burned", 0) else 0
+            val target = p.getInt("burnTarget", 0)
+            val ring = WidgetArt.rings(context, 124f, listOf(fraction(burned, target)), listOf(WidgetArt.BURN))
+            fun fill(v: RemoteViews, small: Boolean): RemoteViews {
+                v.setImageViewBitmap(R.id.st_ring, ring)
+                v.setImageViewResource(R.id.st_chip, R.drawable.widget_chip_burn)
+                if (known(context)) {
+                    v.setTextViewText(R.id.st_count, n(burned))
+                    v.setTextViewText(
+                        R.id.st_goal,
+                        when {
+                            target <= 0 -> "kcal burned"
+                            small -> "/${n(target)} kcal"
+                            else -> "/${n(target)} kcal"
+                        },
+                    )
+                }
+                v.setOnClickPendingIntent(R.id.st_root, open(context, "workout", 330))
+                return v
+            }
+            return listOf(
+                SizeF(110f, 40f) to fill(views(context, R.layout.widget_burn_s), true),
+                SizeF(110f, 110f) to fill(views(context, R.layout.widget_burn_m), false),
+            )
+        }
+
+        // ── Weight ──────────────────────────────────────────────────────────
+
+        /** The latest weigh-in, and how far to the target (or the week's change). */
+        private fun weight(context: Context): List<Pair<SizeF, RemoteViews>> {
+            val p = prefs(context)
+            val weight = p.getString("weight", "") ?: ""
+            val note = p.getString("weightNote", "") ?: ""
+            val progress = p.getInt("weightProgress", -1)
+            val ring = WidgetArt.rings(
+                context,
+                124f,
+                listOf(if (progress < 0) 0f else progress / 100f),
+                listOf(WidgetArt.WEIGHT),
+            )
+            fun fill(v: RemoteViews): RemoteViews {
+                v.setImageViewBitmap(R.id.st_ring, ring)
+                v.setImageViewResource(R.id.st_chip, R.drawable.widget_chip_weight)
+                if (known(context)) {
+                    v.setTextViewText(R.id.st_count, weight.ifEmpty { "—" })
+                    v.setTextViewText(R.id.st_goal, note)
+                }
+                v.setOnClickPendingIntent(R.id.st_root, open(context, "body", 340))
+                return v
+            }
+            return listOf(
+                SizeF(110f, 40f) to fill(views(context, R.layout.widget_weight_s)),
+                SizeF(110f, 110f) to fill(views(context, R.layout.widget_weight_m)),
+            )
+        }
+
         // ── Water ───────────────────────────────────────────────────────────
 
         private fun water(context: Context): List<Pair<SizeF, RemoteViews>> {
@@ -537,4 +607,22 @@ class CaloriesWidget : AppWidgetProvider() {
 
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
         FitnsWidget.draw(context, manager, intArrayOf(id), FitnsWidget.Kind.CALORIES)
+}
+
+/** Active calories burned today against the burn target: a ring. */
+class BurnWidget : AppWidgetProvider() {
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) =
+        FitnsWidget.draw(context, manager, ids, FitnsWidget.Kind.BURN)
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
+        FitnsWidget.draw(context, manager, intArrayOf(id), FitnsWidget.Kind.BURN)
+}
+
+/** The latest weight, and the way to the target. */
+class WeightWidget : AppWidgetProvider() {
+    override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) =
+        FitnsWidget.draw(context, manager, ids, FitnsWidget.Kind.WEIGHT)
+
+    override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) =
+        FitnsWidget.draw(context, manager, intArrayOf(id), FitnsWidget.Kind.WEIGHT)
 }

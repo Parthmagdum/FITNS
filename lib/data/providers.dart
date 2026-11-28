@@ -22,6 +22,7 @@ import '../core/steps/step_stats.dart' show stepCalories;
 import '../core/training/burn.dart';
 import '../core/training/burn_target.dart';
 import '../core/training/programs.dart';
+import '../core/theme/accent.dart';
 import '../core/theme/glass.dart' show GlassBackdrop;
 import '../core/training/swaps.dart';
 import '../core/units.dart';
@@ -142,6 +143,20 @@ final holdTabsProvider = Provider<bool>(
 /// The Liquid Glass look (XPENC's).
 final glassThemeProvider = Provider<bool>(
   (ref) => ref.watch(appearanceProvider) == 'glass',
+);
+
+/// The accent colour picked in Settings → Appearance.
+final accentProvider = Provider<AccentColor>(
+  (ref) => AccentColor.byName(
+    ref.watch(settingsProvider.select((s) => s.valueOrNull?.accentColor)),
+  ),
+);
+
+/// Rest ends with the alarm sound, not just a buzz.
+final restRingProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(settingsProvider.select((s) => s.valueOrNull?.restRing)) ??
+      true,
 );
 
 /// What Glass sits on.
@@ -414,7 +429,8 @@ final weekNutritionProvider =
           );
     });
 
-final widgetDataProvider = Provider<WidgetData?>((ref) {
+// Auto-disposing, like the burn it shows; the app keeps it listened to.
+final widgetDataProvider = Provider.autoDispose<WidgetData?>((ref) {
   final today = ref.watch(todayProvider);
   final weekSteps = ref.watch(weekStepsProvider).valueOrNull;
   final weekWater = ref.watch(waterWeekProvider(today)).valueOrNull;
@@ -457,6 +473,12 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
         );
       }(),
   ];
+  final lines = weightLines(
+    weights: ref.watch(weightHistoryProvider),
+    target: settings.targetWeightGrams,
+    units: ref.watch(unitsProvider),
+    now: today,
+  );
   return widgetData(
     day: today,
     steps: steps,
@@ -479,8 +501,56 @@ final widgetDataProvider = Provider<WidgetData?>((ref) {
     ], today),
     weekTarget: settings.trainingDaysPerWeek ?? 3,
     nextExercises: nextExercises,
+    burned: () {
+      final b = ref.watch(todayBurnProvider).valueOrNull;
+      return b == null ? 0 : b.workouts + b.steps + b.cycling + b.activities;
+    }(),
+    burnTarget: ref.watch(burnTargetProvider)?.targetKcal ?? 0,
+    weight: lines.weight,
+    weightNote: lines.weightNote,
+    weightProgress: lines.weightProgress,
   );
 });
+
+/// The weight widget's lines: the latest weigh-in, then how far to the
+/// target weight — or, without one, the change over the last week.
+({String weight, String weightNote, int weightProgress}) weightLines({
+  required List<BodyEntryRow> weights,
+  required int? target,
+  required UnitSystem units,
+  required DateTime now,
+}) {
+  if (weights.isEmpty) {
+    return (weight: '', weightNote: 'Log your weight', weightProgress: -1);
+  }
+  final latest = weights.first.value;
+  if (target != null && target != latest) {
+    final start = weights.last.value;
+    final span = (target - start).abs();
+    final done = span == 0
+        ? 100
+        : ((1 - (target - latest).abs() / span) * 100).round().clamp(0, 100);
+    return (
+      weight: formatMass(latest, units),
+      weightNote: '${formatMass((target - latest).abs(), units)} to go',
+      weightProgress: done,
+    );
+  }
+  final weekAgo = now.subtract(const Duration(days: 7));
+  final before = weights
+      .where((w) => !w.measuredAt.isAfter(weekAgo))
+      .firstOrNull;
+  final change = before == null ? null : latest - before.value;
+  return (
+    weight: formatMass(latest, units),
+    weightNote: change == null
+        ? 'Latest weigh-in'
+        : change == 0
+        ? 'Same as a week ago'
+        : '${change > 0 ? '+' : '−'}${formatMass(change.abs(), units)} this week',
+    weightProgress: target == null ? -1 : 100,
+  );
+}
 
 // ── Progress photos ─────────────────────────────────────────────────────────
 
@@ -719,6 +789,9 @@ final todayBurnProvider = FutureProvider.autoDispose<TodayBurn>((ref) async {
     steps: stepCalories(
       steps,
       weightGrams: weights.isEmpty ? null : weights.first.value,
+      heightMm: ref.watch(
+        settingsProvider.select((s) => s.valueOrNull?.heightMm),
+      ),
     ),
     cycling: rides
         .where((r) => isSameDay(r.startedAt, today))

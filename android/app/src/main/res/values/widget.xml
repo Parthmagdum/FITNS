@@ -21,6 +21,10 @@
     <string name="streak_widget_description">Today\'s training, your week and your streak</string>
     <string name="steps_widget_label">FITNS steps</string>
     <string name="steps_widget_description">Today\'s steps against your goal, updated as you walk</string>
+    <string name="burn_widget_label">FITNS burn</string>
+    <string name="burn_widget_description">Active calories burned today against your burn target</string>
+    <string name="weight_widget_label">FITNS weight</string>
+    <string name="weight_widget_description">Your latest weight and the way to your target</string>
     <string name="water_widget_label">FITNS water</string>
     <string name="water_widget_description">Water today, with buttons to add a glass</string>
     <string name="calories_widget_label">FITNS calories</string>

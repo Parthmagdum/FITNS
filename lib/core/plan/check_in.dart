@@ -26,16 +26,22 @@ typedef CheckIn = ({
 /// and water make the trend wobble; this ignores the wobble.
 const _tolerance = 150;
 
-/// A check-in, once a week while a goal is set: how the weight is really
-/// moving against the plan, and how to change the calories to match.
+/// How long between check-ins: the guide's 2–3 weeks — daily weight swings
+/// by 0.5–1.5 kg with water and salt, so only a fortnight's trend counts.
+const checkInEvery = Duration(days: 14);
+
+/// A check-in, every two weeks while a goal is set: how the weight is
+/// really moving (its trend, not a day's number) against the plan, and how
+/// to change the calories to match.
 ///
-/// Null when not due — under a week since the last one (or since the goal
-/// was set) — or when there's too little weighing since the goal was set to
-/// call a trend (two weigh-ins at least a week apart).
+/// Null when not due — under [checkInEvery] since the last one (or since
+/// the goal was set) — or when there's too little weighing since the goal
+/// was set to call a trend.
 ///
-/// The fix is the gap times 7,700 kcal per kg, over 7 days, rounded to 50
-/// and capped at 250 kcal a day per check-in — small steps, re-checked a
-/// week later. It never goes below the plan's floor for [Settings.sex].
+/// The steps are the guide's: too slow losing, eat 150–200 kcal a day less;
+/// too slow gaining, 200–250 more; the bigger step when the gap is bigger.
+/// Too fast either way eases back by 150–200. It never goes below the
+/// plan's floor for [Settings.sex].
 CheckIn? weeklyCheckIn({
   required SettingRow settings,
   required List<WeighIn> weighIns,
@@ -47,7 +53,7 @@ CheckIn? weeklyCheckIn({
   final setAt = settings.goalSetAt;
   if (goal == null || kcal == null || setAt == null) return null;
   final since = settings.lastCheckInAt ?? setAt;
-  if (now.difference(since) < const Duration(days: 7)) return null;
+  if (now.difference(since) < checkInEvery) return null;
 
   final sinceGoal = [
     for (final w in weighIns)
@@ -66,8 +72,12 @@ CheckIn? weeklyCheckIn({
   final gap = actual - planned;
   var change = 0;
   if (gap.abs() > _tolerance) {
-    final perDay = -gap * 7700 / 1000 / 7;
-    change = ((perDay / 50).round() * 50).clamp(-250, 250);
+    final big = gap.abs() >= 300;
+    // Gaining too slowly takes the bigger steps; everything else 150–200.
+    final step = goal == WeightGoal.gain && gap < 0
+        ? (big ? 250 : 200)
+        : (big ? 200 : 150);
+    change = gap > 0 ? -step : step;
   }
   final held = waterRetention && change < 0;
   if (held) change = 0;

@@ -213,6 +213,14 @@ class MainActivity : FlutterActivity() {
                     RestAlert.cancel(this)
                     result.success(null)
                 }
+                "ring" -> {
+                    RestAlert.ring(this)
+                    result.success(null)
+                }
+                "setRing" -> {
+                    RestAlert.setRing(this, call.arguments as Boolean)
+                    result.success(null)
+                }
                 "status" -> result.success(
                     mapOf(
                         "notifications" to notificationsAllowed(),

@@ -124,6 +124,17 @@ class SettingsScreen extends ConsumerWidget {
                   },
                 ),
               _RestAlertTile(),
+              SwitchListTile(
+                key: const Key('rest-ring'),
+                secondary: const Icon(Icons.alarm),
+                title: const Text('Ring when rest is over'),
+                subtitle: const Text(
+                  'Plays your alarm sound for a few seconds, even with the '
+                  'phone on silent. Off, it only buzzes.',
+                ),
+                value: settings.restRing,
+                onChanged: (on) => save(SettingsCompanion(restRing: Value(on))),
+              ),
               ListTile(
                 leading: const Icon(Icons.timer_outlined),
                 title: const Text('Rest between sets'),
@@ -171,6 +182,14 @@ class SettingsScreen extends ConsumerWidget {
                             'calories, meals and training',
                 ),
                 onTap: () => context.push('/plan'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.menu_book_outlined),
+                title: const Text('Weight guide'),
+                subtitle: const Text(
+                  'Losing, gaining and tracking — with your numbers',
+                ),
+                onTap: () => context.push('/guide/weight'),
               ),
               ListTile(
                 leading: const Icon(Icons.flag_outlined),
@@ -302,6 +321,10 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const _GlassBackdropPicker(),
         ],
+        const SizedBox(height: 16),
+        Text('Accent colour', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 10),
+        const _AccentPicker(),
         const SectionLabel('Navigation'),
         // The FITNS button (tap, or hold and slide), or a plain tab bar.
         SegmentedButton<bool>(
@@ -507,6 +530,61 @@ class _GlassBackdropPicker extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// The accent colours, as dots: tap one and the whole app takes it.
+class _AccentPicker extends ConsumerWidget {
+  const _AccentPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final current = ref.watch(accentProvider);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        for (final a in AccentColor.values)
+          Semantics(
+            button: true,
+            selected: a == current,
+            label: a.label,
+            child: GestureDetector(
+              key: Key('accent-${a.name}'),
+              onTap: () => ref
+                  .read(dbProvider)
+                  .updateSettings(
+                    SettingsCompanion(accentColor: Value(a.name)),
+                  ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: a == current
+                        ? theme.colorScheme.onSurface
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: a.forBrightness(theme.brightness),
+                  ),
+                  child: a == current
+                      ? const Icon(Icons.check, color: Colors.white, size: 20)
+                      : null,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

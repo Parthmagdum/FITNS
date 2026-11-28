@@ -47,6 +47,17 @@ typedef WidgetData = ({
   /// The next workout's size, for the workout card ("6 exercises · ~30 min").
   int nextExercises,
   int nextMinutes,
+
+  /// Active calories burned today, and today's burn target (0: none).
+  int burned,
+  int burnTarget,
+
+  /// The latest weigh-in ("55.6 kg"), or empty; a line under it ("1.4 kg
+  /// to go" / "−0.3 kg this week"); and how far toward the target weight,
+  /// 0–100 (-1 without one).
+  String weight,
+  String weightNote,
+  int weightProgress,
 });
 
 /// One day of the activity widget's week: percent of each goal reached.
@@ -78,6 +89,11 @@ WidgetData widgetData({
   List<bool> trainedThisWeek = const [],
   int weekTarget = 3,
   int nextExercises = 0,
+  int burned = 0,
+  int burnTarget = 0,
+  String weight = '',
+  String weightNote = '',
+  int weightProgress = -1,
 }) {
   final n = NumberFormat('#,##0');
   final String food;
@@ -111,6 +127,11 @@ WidgetData widgetData({
     nextExercises: nextExercises,
     // About 5 minutes an exercise, warm-up and rests included.
     nextMinutes: nextExercises * 5,
+    burned: burned,
+    burnTarget: burnTarget,
+    weight: weight,
+    weightNote: weightNote,
+    weightProgress: weightProgress,
   );
 }
 
@@ -137,11 +158,12 @@ List<bool> trainedDaysOfWeek(Iterable<DateTime> workouts, DateTime today) {
       ),
       'water' => (path: '/water', go: false),
       'steps' => (path: '/steps', go: false),
+      'body' => (path: '/body', go: true),
       'cycling' => (path: '/cycling', go: false),
       _ => null,
     };
 
-/// The Dart end of `FitnsWidget.kt`, which draws all five widgets. Channel name must match
+/// The Dart end of `FitnsWidget.kt`, which draws all seven widgets. Channel name must match
 /// `MainActivity.kt`. A no-op off Android.
 class HomeWidget {
   const HomeWidget();
@@ -174,6 +196,11 @@ class HomeWidget {
         'weekTarget': d.weekTarget,
         'nextExercises': d.nextExercises,
         'nextMinutes': d.nextMinutes,
+        'burned': d.burned,
+        'burnTarget': d.burnTarget,
+        'weight': d.weight,
+        'weightNote': d.weightNote,
+        'weightProgress': d.weightProgress,
       });
     } on MissingPluginException {
       // Not on Android.

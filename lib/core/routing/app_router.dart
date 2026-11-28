@@ -12,6 +12,7 @@ import '../../features/food/goals_screen.dart';
 import '../../features/food/water_screen.dart';
 import '../../features/places/places_screen.dart';
 import '../../features/plan/plan_screen.dart';
+import '../../features/plan/weight_guide_screen.dart';
 import '../../features/progress/progress_screen.dart';
 import '../../features/programs/program_editor_screen.dart';
 import '../../features/routines/routine_editor_screen.dart';
@@ -104,6 +105,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/places', builder: (_, _) => const PlacesScreen()),
       GoRoute(path: '/plan', builder: (_, _) => const PlanScreen()),
+      GoRoute(
+        path: '/guide/weight',
+        builder: (_, _) => const WeightGuideScreen(),
+      ),
       GoRoute(path: '/progress', builder: (_, _) => const ProgressScreen()),
       GoRoute(
         path: '/exercises/pick',

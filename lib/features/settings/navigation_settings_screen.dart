@@ -283,7 +283,11 @@ class _HoldPreview extends ConsumerWidget {
       builder: (context, box) {
         final anchor = Offset(box.maxWidth - 44, box.maxHeight - 36);
         final centres = [
-          for (final c in cornerFanCenters(Offset.zero, actions.length + pages))
+          for (final c in holdMenuCenters(
+            Offset.zero,
+            actions: actions.length,
+            pages: pages,
+          ))
             anchor + c * _scale,
         ];
         return Stack(

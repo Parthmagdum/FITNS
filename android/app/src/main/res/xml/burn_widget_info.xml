@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Burn (BurnWidget): a ring; 2x1 or 2x2. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="50dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_burn_m"
+    android:previewLayout="@layout/widget_burn_m"
+    android:description="@string/burn_widget_description"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"/>

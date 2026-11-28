@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/providers.dart';
 
-import '../theme/app_theme.dart';
 import '../theme/glass.dart';
 import 'coach_marks.dart';
 import 'first_run_tips.dart';
@@ -237,7 +236,9 @@ class SwipeTabs extends ConsumerStatefulWidget {
 }
 
 class _SwipeTabsState extends ConsumerState<SwipeTabs> {
-  late final _pages = PageController(initialPage: widget.shell.currentIndex);
+  late final _pages = PageController(initialPage: widget.shell.currentIndex)
+    // Under Glass, the wallpaper holds still while the pages slide.
+    ..addListener(GlassWallpaper.moved);
   Timer? _peekTimer;
   var _peeked = false;
   var _swiped = false;

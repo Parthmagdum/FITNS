@@ -1,0 +1,4 @@
+- Fixes: glass no longer glitches while swiping; glass header; buttons sit above the tab bar; hold menu labels
+- The rest timer rings (alarm sound, even on silent); steps widgets update live
+- More precise calories and a weight guide with your numbers
+- Accent colours; new Burn and Weight widgets

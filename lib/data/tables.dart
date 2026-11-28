@@ -366,6 +366,13 @@ class Settings extends Table {
   TextColumn get glassBackdrop =>
       text().withDefault(const Constant('aurora'))();
 
+  /// Rest ends with the phone's alarm sound — on the alarm volume, which a
+  /// phone on silent still plays — as well as a buzz. Schema v20.
+  BoolColumn get restRing => boolean().withDefault(const Constant(true))();
+
+  /// The accent colour, an `AccentColor` name. Schema v20.
+  TextColumn get accentColor => text().withDefault(const Constant('orange'))();
+
   /// The songs imported for workouts, as JSON: `[{"uri": …, "title": …}]`.
   /// Links to files on this phone, so they're left out of backups.
   /// Schema v12.

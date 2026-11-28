@@ -24,39 +24,39 @@ void main() {
   test('eat more, burn more: what is eaten beyond base and goal', () {
     final t = target(eaten: 2500, calorieGoal: 2000);
     expect(t.baseKcal, 2136);
-    // 0.5 kg a week = 7,700 × 0.5 / 7 = 550 a day.
-    expect(t.goalKcalPerDay, -550);
+    // The guide's steady pace: 500 kcal a day under.
+    expect(t.goalKcalPerDay, -500);
     expect(t.intakeKcal, 2500);
     expect(t.intakeIsPlan, isFalse);
-    expect(t.targetKcal, 2500 - 2136 + 550);
-    expect(t.goalText, 'lose 0.5 kg a week');
-    expect(target(eaten: 3000, calorieGoal: 2000).targetKcal, 1414);
+    expect(t.targetKcal, 2500 - 2136 + 500);
+    expect(t.goalText, 'lose about 0.5 kg a week');
+    expect(target(eaten: 3000, calorieGoal: 2000).targetKcal, 1364);
   });
 
   test('before the day is eaten, the calorie goal stands in', () {
     final t = target(eaten: 800, calorieGoal: 2000);
     expect(t.intakeIsPlan, isTrue);
-    expect(t.targetKcal, 2000 - 2136 + 550);
+    expect(t.targetKcal, 2000 - 2136 + 500);
   });
 
   test('keeping or gaining weight needs less, never below zero', () {
     expect(target(goal: WeightGoal.maintain, eaten: 1800).targetKcal, 0);
     expect(target(goal: WeightGoal.maintain, eaten: 2600).targetKcal, 464);
     final gain = target(goal: WeightGoal.gain, eaten: 2600, pace: 250);
-    expect(gain.goalKcalPerDay, 275);
-    expect(gain.targetKcal, 2600 - 2136 - 275);
-    expect(gain.goalText, 'gain 0.25 kg a week');
+    expect(gain.goalKcalPerDay, 300);
+    expect(gain.targetKcal, 2600 - 2136 - 300);
+    expect(gain.goalText, 'gain about 0.25 kg a week');
   });
 
-  test('losing is capped at 1 % of body weight a week', () {
+  test('losing is kept to a 500 kcal gap, however fast asked', () {
     final t = target(eaten: 2000, pace: 1500);
-    expect(t.goalKcalPerDay, -880); // 0.8 kg a week
+    expect(t.goalKcalPerDay, -500);
   });
 
   test('kcal as minutes and steps for this body', () {
-    // 4.3 MET × 80 kg / 60 = 5.73 kcal a minute.
-    expect(minutesToBurn(500, met: briskWalkMet, weightGrams: 80000), 88);
-    // 0.04 kcal a step at 80 kg.
-    expect(stepsToBurn(400, weightGrams: 80000), 10000);
+    // (4.3 − 1) MET × 80 kg / 60 = 4.4 kcal a minute beyond resting.
+    expect(minutesToBurn(500, met: briskWalkMet, weightGrams: 80000), 114);
+    // 0.0308 kcal a step at 80 kg — the inverse of stepCalories.
+    expect(stepsToBurn(308, weightGrams: 80000), 10000);
   });
 }

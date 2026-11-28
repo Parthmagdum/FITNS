@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/notifications/rest_alerts.dart';
@@ -108,7 +107,8 @@ final restTimerProvider =
     StateNotifierProvider<RestTimerController, RestTimerState?>(
       (ref) => RestTimerController(
         alerts: ref.watch(restAlertsProvider),
-        onFinished: HapticFeedback.vibrate,
+        // The phone's alarm sound and a buzz: a silent timer goes unnoticed.
+        onFinished: () => ref.read(restAlertsProvider).ring(),
         // The next exercise's clock waits for the rest, wherever it ends.
         onEndChanged: (endsAt) =>
             ref.read(dbProvider).movePendingExerciseTimers(endsAt),

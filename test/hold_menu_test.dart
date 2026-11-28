@@ -58,4 +58,18 @@ void main() {
       -1,
     );
   });
+
+  test('pages keep the outer ring, however few actions there are', () {
+    const anchor = Offset(330, 700);
+    for (final actions in [0, 2, 3, 7]) {
+      final centres = holdMenuCenters(anchor, actions: actions, pages: 5);
+      expect(centres, hasLength(actions + 5));
+      for (final page in centres.skip(actions)) {
+        expect((page - anchor).distance, closeTo(244, 0.01));
+      }
+      for (final action in centres.take(actions)) {
+        expect((action - anchor).distance, lessThan(200));
+      }
+    }
+  });
 }

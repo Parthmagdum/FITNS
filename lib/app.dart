@@ -134,6 +134,10 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
       _offeredSetup = true;
       ref.read(routerProvider).push('/setup');
     });
+    ref.listen<bool>(
+      restRingProvider,
+      (_, on) => ref.read(restAlertsProvider).setRing(on),
+    );
     ref.listen<WaterBarState?>(waterBarStateProvider, (_, next) {
       if (next == null) return;
       final key = next.toString();
@@ -150,11 +154,17 @@ class _FitnsAppState extends ConsumerState<FitnsApp>
       title: AppInfo.name,
       debugShowCheckedModeBanner: false,
       theme: ref.watch(glassThemeProvider)
-          ? AppTheme.glass(ref.watch(glassBackdropProvider))
-          : AppTheme.light,
+          ? AppTheme.glass(
+              ref.watch(glassBackdropProvider),
+              ref.watch(accentProvider),
+            )
+          : AppTheme.lightWith(ref.watch(accentProvider)),
       darkTheme: ref.watch(glassThemeProvider)
-          ? AppTheme.glass(ref.watch(glassBackdropProvider))
-          : AppTheme.dark,
+          ? AppTheme.glass(
+              ref.watch(glassBackdropProvider),
+              ref.watch(accentProvider),
+            )
+          : AppTheme.darkWith(ref.watch(accentProvider)),
       themeMode: ref.watch(themeModeProvider),
       routerConfig: ref.watch(routerProvider),
       // Pages opened from the FITNS button grow out of it.

@@ -96,26 +96,33 @@ void main() {
       final p = makePlan(base);
       // Mifflin: 10×85 + 6.25×175 − 5×30 + 5 = 1798.75; × 1.55 = 2788.
       expect(p.maintenanceKcal, 2788);
-      // 0.5 kg a week = 550 kcal a day.
-      expect(p.dailyKcal, 2238);
-      expect(p.weeklyChangeGrams, -500);
+      // The guide's steady pace: 500 kcal a day under, ≈ 0.45 kg a week.
+      expect(p.dailyKcal, 2288);
+      expect(p.weeklyChangeGrams, -455);
       // 2 g per kg of the target, 76 kg.
       expect(p.proteinG, 152);
-      expect(p.fatG, (2238 * 0.25 / 9).round());
+      expect(p.fatG, (2288 * 0.25 / 9).round());
       expect(
         p.proteinG * 4 + p.carbsG * 4 + p.fatG * 9,
         closeTo(p.dailyKcal, 6),
       );
-      expect(p.weeksToGoal, 18); // 9 kg at 0.5 kg/week
+      expect(p.weeksToGoal, 20); // 9 kg at 0.455 kg/week
       expect(p.steps, 10000);
       expect(p.waterMl, 3000);
       expect(p.notes, isEmpty);
     });
 
-    test('losing faster than 1 % a week is slowed', () {
+    test('asking for more than 0.5 kg a week keeps to a 500 kcal gap', () {
       final p = makePlan(variant(weightGrams: 60000, target: 57000, pace: 750));
-      expect(p.weeklyChangeGrams, -600);
-      expect(p.notes.single, contains('Slowed'));
+      expect(p.weeklyChangeGrams, -455);
+      expect(p.notes.single, contains('500 kcal'));
+    });
+
+    test('losing faster than 1 % a week is slowed', () {
+      final p = makePlan(variant(weightGrams: 40000, target: 38000));
+      // 1 % of 40 kg = 400 g a week ≈ 440 kcal a day, under the 500.
+      expect(p.weeklyChangeGrams, -400);
+      expect(p.notes.any((n) => n.contains('Slowed')), isTrue);
     });
 
     test('calories never go below the floor', () {
@@ -142,9 +149,9 @@ void main() {
           pace: 900,
         ),
       );
-      expect(p.weeklyChangeGrams, 500);
-      expect(p.dailyKcal, greaterThan(p.maintenanceKcal));
-      expect(p.weeksToGoal, 12);
+      expect(p.weeklyChangeGrams, 455);
+      expect(p.dailyKcal, p.maintenanceKcal + 500);
+      expect(p.weeksToGoal, 14);
       expect(p.proteinG, (55 * 1.8).round());
     });
 

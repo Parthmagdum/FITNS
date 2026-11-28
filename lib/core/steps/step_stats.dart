@@ -15,10 +15,15 @@ double strideMetres(int? heightMm) =>
 double stepDistanceMetres(int steps, {int? heightMm}) =>
     steps * strideMetres(heightMm);
 
-/// Calories burned walking [steps]: about 0.5 kcal per kg of body weight per
-/// thousand steps at an ordinary pace.
-int stepCalories(int steps, {int? weightGrams}) =>
-    (steps * (weightGrams ?? defaultWeightGrams) / 1000 * 0.0005).round();
+/// Active calories walking [steps] — on top of what the body burns anyway,
+/// which the plan already counts: walking costs about 0.55 kcal per kg of
+/// body weight per km beyond resting, and a step is about 0.415 × height
+/// (0.7 m when the height isn't known).
+int stepCalories(int steps, {int? weightGrams, int? heightMm}) {
+  final strideM = heightMm == null ? 0.7 : heightMm / 1000 * 0.415;
+  final km = steps * strideM / 1000;
+  return (km * (weightGrams ?? defaultWeightGrams) / 1000 * 0.55).round();
+}
 
 /// Minutes spent walking, at a typical ~100 steps a minute.
 int stepActiveMinutes(int steps) => (steps / 100).round();

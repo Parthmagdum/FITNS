@@ -208,7 +208,12 @@ class _QuickAddButtonState extends ConsumerState<QuickAddButton> {
     _hovered.value = -1;
     HapticFeedback.mediumImpact();
     final items = _items;
-    final fan = cornerFanCenters(_anchor, items.length);
+    final actions = _actions.length;
+    final fan = holdMenuCenters(
+      _anchor,
+      actions: actions,
+      pages: items.length - actions,
+    );
     // Kept on screen as a whole, so the bubbles keep their spacing.
     final size = MediaQuery.sizeOf(context);
     var dx = 0.0;

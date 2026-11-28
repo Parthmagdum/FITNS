@@ -55,13 +55,14 @@ BodyEntryRow weight(int grams, DateTime at) => BodyEntryRow(
 );
 
 void main() {
-  test('an hour of lifting at 80 kg is about 400 kcal', () {
+  test('an hour of lifting at 80 kg is about 320 active kcal', () {
     final burn = workoutBurn(
       detail([entry(exercise(ExerciseKind.weightReps))]),
       length: const Duration(hours: 1),
       weightGrams: 80000,
     );
-    expect(burn, (kcal: 400, fromWeight: true));
+    // (5 − 1) MET × 80 kg × 1 h: beyond resting, which the plan counts.
+    expect(burn, (kcal: 320, fromWeight: true));
   });
 
   test('jumping moves burn more than lifting; the mix is averaged by sets', () {
@@ -72,7 +73,7 @@ void main() {
       detail([entry(lift), entry(jumps, done: 1, undone: 2)]),
       length: const Duration(minutes: 30),
     );
-    expect(burn, (kcal: 201, fromWeight: false));
+    expect(burn, (kcal: 166, fromWeight: false));
   });
 
   test('nothing done, or no time, is no estimate', () {

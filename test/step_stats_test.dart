@@ -7,7 +7,10 @@ void main() {
   test('estimates distance, calories and active time', () {
     expect(stepDistanceMetres(1000, heightMm: 1800), closeTo(747, 0.01));
     expect(stepDistanceMetres(1000), closeTo(705.5, 0.01));
-    expect(stepCalories(10000, weightGrams: 80000), 400);
+    // 7 km × 80 kg × 0.55 kcal beyond resting.
+    expect(stepCalories(10000, weightGrams: 80000), 308);
+    // A taller stride covers more ground.
+    expect(stepCalories(10000, weightGrams: 80000, heightMm: 1800), 329);
     expect(stepCalories(0), 0);
     expect(stepActiveMinutes(4520), 45);
   });

@@ -301,8 +301,10 @@ class BurnSection extends ConsumerWidget {
                 Text(
                   'Resting energy is worked out from your weight, height, '
                   'age and sex (Mifflin-St Jeor), times 1.2 for everyday '
-                  'living. A kilo of body weight is about 7,700 kcal. Eat more '
-                  'and the target goes up; eat less and it goes down.',
+                  'living. A kilo of body weight is about 7,700 kcal. Burn '
+                  'counts only what activity adds on top — "active" calories, '
+                  'as a watch shows them. Eat more and the target goes up; '
+                  'eat less and it goes down.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.muted,
                   ),
@@ -329,7 +331,15 @@ class BurnSection extends ConsumerWidget {
                 _Way(
                   Icons.directions_walk,
                   'Steps',
-                  _n.format(stepsToBurn(left, weightGrams: weight)),
+                  _n.format(
+                    stepsToBurn(
+                      left,
+                      weightGrams: weight,
+                      heightMm: ref.watch(
+                        settingsProvider.select((s) => s.valueOrNull?.heightMm),
+                      ),
+                    ),
+                  ),
                 ),
                 _Way(
                   Icons.directions_bike,

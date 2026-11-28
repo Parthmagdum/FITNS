@@ -392,6 +392,14 @@ class GlassWallpaper extends SingleChildRenderObjectWidget {
 
   final GlassBackdrop backdrop;
 
+  static final _moved = ValueNotifier<int>(0);
+
+  /// Something carrying wallpapers moved without repainting them — a page
+  /// sliding by in the swipe between tabs, whose layers are only shifted.
+  /// Each wallpaper repaints its slice for where it now is, so the
+  /// wallpaper stays still while the pages slide over it.
+  static void moved() => _moved.value++;
+
   @override
   RenderObject createRenderObject(BuildContext context) =>
       RenderGlassWallpaper(MediaQuery.sizeOf(context), backdrop);
@@ -422,6 +430,18 @@ class RenderGlassWallpaper extends RenderProxyBox {
     if (value == _backdrop) return;
     _backdrop = value;
     markNeedsPaint();
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    GlassWallpaper._moved.addListener(markNeedsPaint);
+  }
+
+  @override
+  void detach() {
+    GlassWallpaper._moved.removeListener(markNeedsPaint);
+    super.detach();
   }
 
   @override

@@ -53,20 +53,21 @@ BurnTarget burnTarget({
               ) *
               dailyLivingFactor)
           .round();
-  // The same pace limits as the plan: losing at most 1 % of body weight a
-  // week, gaining at most 0.5 kg.
-  final pace = switch (goal) {
-    WeightGoal.maintain => 0,
-    WeightGoal.lose => -math.min(
-      weeklyChangeGrams ?? 500,
-      (weightGrams * 0.01).round(),
-    ),
-    WeightGoal.gain => math.min(weeklyChangeGrams ?? 250, 500),
-  };
-  final goalPerDay = (pace * kcalPerKg / 1000 / 7).round();
+  // The same gap as the plan (300 or 500 kcal a day).
+  final goalPerDay = goalDailyKcal(
+    goal,
+    weeklyChangeGrams ?? (goal == WeightGoal.gain ? 250 : 500),
+    weightGrams,
+  );
+  final pace = weeklyGramsFor(goalPerDay);
   final planned = calorieGoal ?? 0;
   final intake = math.max(eatenKcal, planned);
-  final kg = (pace.abs() / 1000).toStringAsFixed(pace.abs() % 500 == 0 ? 1 : 2);
+  // The guide's nominal paces: 300 kcal ≈ 0.25 kg a week, 500 ≈ 0.5.
+  final kg = switch (goalPerDay.abs()) {
+    300 => '0.25',
+    500 => '0.5',
+    _ => (pace.abs() / 1000).toStringAsFixed(2),
+  };
   return (
     baseKcal: base,
     goalKcalPerDay: goalPerDay,
@@ -75,21 +76,23 @@ BurnTarget burnTarget({
     targetKcal: math.max(0, intake - base - goalPerDay),
     goalText: switch (goal) {
       WeightGoal.maintain => 'keep your weight',
-      WeightGoal.lose => 'lose $kg kg a week',
-      WeightGoal.gain => 'gain $kg kg a week',
+      WeightGoal.lose => 'lose about $kg kg a week',
+      WeightGoal.gain => 'gain about $kg kg a week',
     },
   );
 }
 
-/// Minutes of an activity of [met] that burn [kcal], for [weightGrams].
+/// Minutes of an activity of [met] that burn [kcal] beyond resting, for
+/// [weightGrams] — the same (MET − 1) count as the burn itself.
 int minutesToBurn(int kcal, {required double met, required int weightGrams}) {
-  final perMinute = met * (weightGrams / 1000) / 60;
+  final perMinute = (met - 1) * (weightGrams / 1000) / 60;
   return perMinute <= 0 ? 0 : (kcal / perMinute).ceil();
 }
 
 /// Steps that burn [kcal] — the inverse of `stepCalories`.
-int stepsToBurn(int kcal, {required int weightGrams}) {
-  final perStep = weightGrams / 1000 * 0.0005;
+int stepsToBurn(int kcal, {required int weightGrams, int? heightMm}) {
+  final strideM = heightMm == null ? 0.7 : heightMm / 1000 * 0.415;
+  final perStep = strideM / 1000 * weightGrams / 1000 * 0.55;
   return perStep <= 0 ? 0 : (kcal / perStep).ceil();
 }
 

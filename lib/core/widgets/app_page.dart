@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -37,8 +39,21 @@ class AppPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final glass = AppSurface.of(context).backdrop;
+    // Over the floating tab bar, which the page runs on beneath: the page's
+    // bottom padding includes the bar, the system's doesn't.
+    final lift = math.max(
+      0.0,
+      MediaQuery.paddingOf(context).bottom -
+          MediaQuery.viewPaddingOf(context).bottom,
+    );
     return Scaffold(
-      floatingActionButton: floatingActionButton,
+      floatingActionButton: floatingActionButton == null || lift == 0
+          ? floatingActionButton
+          : Padding(
+              padding: EdgeInsets.only(bottom: lift),
+              child: floatingActionButton,
+            ),
       // Bottom-left: the bottom-right corner is the FITNS button's.
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       bottomNavigationBar: bottom == null
@@ -51,18 +66,36 @@ class AppPage extends StatelessWidget {
         slivers: [
           // The large title takes the expanded style from headlineMedium;
           // only here is it XPENC's size, so other headlines keep theirs.
-          Theme(
-            data: theme.copyWith(
-              textTheme: theme.textTheme.copyWith(
-                headlineMedium: largeTitle(theme),
+          if (glass != null)
+            // Glass: the wallpaper itself behind the title, frosting as it
+            // collapses — no grey band, nothing showing through.
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: 156,
+              toolbarHeight: 64,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              actions: actions,
+              flexibleSpace: _GlassHeader(
+                title: title,
+                backdrop: glass,
+                actions: actions?.length ?? 0,
+              ),
+            )
+          else
+            Theme(
+              data: theme.copyWith(
+                textTheme: theme.textTheme.copyWith(
+                  headlineMedium: largeTitle(theme),
+                ),
+              ),
+              child: SliverAppBar.large(
+                expandedHeight: 156,
+                title: Text(title),
+                actions: actions,
               ),
             ),
-            child: SliverAppBar.large(
-              expandedHeight: 156,
-              title: Text(title),
-              actions: actions,
-            ),
-          ),
           SliverPadding(
             // Clear of the FAB and of the FITNS button in the corner.
             padding: EdgeInsets.fromLTRB(
@@ -81,6 +114,80 @@ class AppPage extends StatelessWidget {
 
 /// A bold card on the orange gradient, for the one thing a screen is about
 /// — starting a workout, the day's headline.
+/// A tab page's header under Glass: its slice of the wallpaper, the large
+/// title shrinking into the bar as the page scrolls, and a frost and a
+/// hairline once it has.
+class _GlassHeader extends StatelessWidget {
+  const _GlassHeader({
+    required this.title,
+    required this.backdrop,
+    required this.actions,
+  });
+
+  final String title;
+  final GlassBackdrop backdrop;
+  final int actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tone = backdrop.tone;
+    final settings = context
+        .dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+    final span = settings == null
+        ? 0.0
+        : settings.maxExtent - settings.minExtent;
+    // 1 open, 0 collapsed into the bar.
+    final t = settings == null || span <= 0
+        ? 1.0
+        : ((settings.currentExtent - settings.minExtent) / span).clamp(
+            0.0,
+            1.0,
+          );
+    final big = AppPage.largeTitle(theme);
+    final size = lerpDouble(20, big?.fontSize ?? 36, t)!;
+    final veil = tone.isDark
+        ? Colors.black.withValues(alpha: 0.28 * (1 - t))
+        : Colors.white.withValues(alpha: 0.45 * (1 - t));
+    return GlassWallpaper(
+      backdrop: backdrop,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(color: veil),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 0.5,
+            child: ColoredBox(
+              color: tone.separator.withValues(
+                alpha: tone.separator.a * (1 - t),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            right: 16 + 48.0 * actions * (1 - t),
+            // Collapsed: centred in the 64-point bar.
+            bottom: lerpDouble((64 - size * 1.2) / 2, 14, t),
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: big?.copyWith(
+                fontSize: size,
+                letterSpacing: lerpDouble(-0.3, big.letterSpacing, t),
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class HeroCard extends StatelessWidget {
   const HeroCard({
     super.key,

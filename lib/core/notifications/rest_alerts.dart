@@ -27,6 +27,23 @@ class RestAlerts {
 
   Future<void> cancel() => _quietly(() => _channel.invokeMethod('cancel'));
 
+  /// Rest is over, with FITNS in front: the alarm sound (if on) and a buzz.
+  /// Off Android, just the buzz.
+  Future<void> ring() async {
+    try {
+      await _channel.invokeMethod('ring');
+    } on MissingPluginException {
+      await HapticFeedback.vibrate();
+    } on PlatformException {
+      await HapticFeedback.vibrate();
+    }
+  }
+
+  /// Whether rest ends with the alarm sound — kept on the Android side too,
+  /// for when rest ends with FITNS closed.
+  Future<void> setRing(bool on) =>
+      _quietly(() => _channel.invokeMethod('setRing', on));
+
   Future<RestAlertStatus> status() async {
     try {
       final map = await _channel.invokeMapMethod<String, bool>('status');

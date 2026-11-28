@@ -2,8 +2,10 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'accent.dart';
 import 'glass.dart';
 
+export 'accent.dart';
 export 'glass.dart' show AppSurface, GlassBackdrop;
 
 /// Every colour the theme varies. The monochrome pair is XPENC's Classic
@@ -45,6 +47,24 @@ class Palette {
   /// Filled buttons. Monochrome — the text colour.
   final Color primary;
   final Color onPrimary;
+
+  /// This palette with [accent] — its shade for this brightness.
+  Palette withAccent(AccentColor accent) {
+    final a = accent.forBrightness(brightness);
+    return Palette(
+      brightness: brightness,
+      bg: bg,
+      surface: surface,
+      surfaceHigh: surfaceHigh,
+      track: track,
+      border: border,
+      text: text,
+      textMuted: textMuted,
+      accent: a,
+      primary: primary,
+      onPrimary: onPrimary,
+    );
+  }
 
   static const light = Palette(
     brightness: Brightness.light,
@@ -125,10 +145,21 @@ class AppTheme {
   static ThemeData get light => of(Palette.light);
   static ThemeData get dark => of(Palette.dark);
 
+  /// Light or dark with the accent picked in Settings.
+  static ThemeData lightWith(AccentColor accent) =>
+      of(Palette.light.withAccent(accent));
+  static ThemeData darkWith(AccentColor accent) =>
+      of(Palette.dark.withAccent(accent));
+
   /// The Liquid Glass look, after XPENC's, over [backdrop] — light glass
   /// on a bright one, dark on a dark one.
-  static ThemeData glass([GlassBackdrop backdrop = GlassBackdrop.fallback]) {
-    final p = backdrop.isDark ? Palette.glass : Palette.glassLight;
+  static ThemeData glass([
+    GlassBackdrop backdrop = GlassBackdrop.fallback,
+    AccentColor accent = AccentColor.fallback,
+  ]) {
+    final p = (backdrop.isDark ? Palette.glass : Palette.glassLight).withAccent(
+      accent,
+    );
     return _liquidGlass(of(p), p, backdrop);
   }
 
@@ -368,11 +399,13 @@ ThemeData _liquidGlass(ThemeData t, Palette p, GlassBackdrop backdrop) {
     highlightColor: tone.isDark
         ? const Color(0x1FFFFFFF)
         : const Color(0x14000000),
-    // Clear over the wallpaper; frosted once the page scrolls beneath.
+    // Clear over the wallpaper; once the page scrolls beneath, solid frost
+    // — nothing ghosting through behind the title. (Tab pages draw their
+    // own glass header instead: see AppPage.)
     appBarTheme: t.appBarTheme.copyWith(
       backgroundColor: WidgetStateColor.resolveWith(
         (states) => states.contains(WidgetState.scrolledUnder)
-            ? tone.floating
+            ? Color.alphaBlend(tone.floating, backdrop.base)
             : Colors.transparent,
       ),
     ),

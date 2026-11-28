@@ -31,6 +31,8 @@ object WidgetArt {
     class Hue(val from: Int, val to: Int)
 
     val STEPS = Hue(0xFFFFB547.toInt(), 0xFFFF5A1F.toInt())
+    val BURN = Hue(0xFFFF8A4C.toInt(), 0xFFE11D48.toInt())
+    val WEIGHT = Hue(0xFF5EEAD4.toInt(), 0xFF6366F1.toInt())
     val WATER = Hue(0xFF6BE4FF.toInt(), 0xFF2F7BFF.toInt())
     val KCAL = Hue(0xFFFF7AC6.toInt(), 0xFFA855F7.toInt())
     val PROTEIN = Hue(0xFF60A5FA.toInt(), 0xFF3B82F6.toInt())

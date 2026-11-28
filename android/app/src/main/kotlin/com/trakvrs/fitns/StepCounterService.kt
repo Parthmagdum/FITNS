@@ -6,8 +6,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.hardware.Sensor
@@ -16,6 +18,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.os.SystemClock
 import java.util.Calendar
 
@@ -27,6 +30,11 @@ import java.util.Calendar
  * foreground service of type `health` (a silent, minimum-priority
  * notification) and writes readings to [StepLog] — at most every few minutes,
  * plus one either side of midnight so each day gets its own steps.
+ *
+ * With the screen off the hardware batches readings for minutes at a time
+ * (the CPU sleeps). With it on, someone may be looking at a home-screen
+ * widget, so readings come as they happen, and turning the screen on
+ * flushes whatever was batched — the widgets are up to date at a glance.
  */
 class StepCounterService : Service(), SensorEventListener {
     private data class Reading(val counter: Long, val at: Long, val boot: Long)
@@ -34,6 +42,33 @@ class StepCounterService : Service(), SensorEventListener {
     private var latest: Reading? = null
     private var lastLoggedAt = 0L
     private var filtering = false
+    private var sensor: Sensor? = null
+    private var live: Boolean? = null
+
+    /** Screen on: live readings, and the batch flushed. Off: batch again. */
+    private val screen = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_OFF -> listen(live = false)
+                else -> {
+                    listen(live = true)
+                    (getSystemService(SENSOR_SERVICE) as SensorManager).flush(this@StepCounterService)
+                }
+            }
+        }
+    }
+
+    /** (Re)registers the step counter: unbatched while [live], else batched. */
+    private fun listen(live: Boolean) {
+        val s = sensor ?: return
+        if (this.live == live) return
+        this.live = live
+        val sensors = getSystemService(SENSOR_SERVICE) as SensorManager
+        sensors.unregisterListener(this, s)
+        // Batched: the counter is cumulative, so a late delivery loses
+        // nothing, and the CPU can sleep.
+        sensors.registerListener(this, s, SensorManager.SENSOR_DELAY_NORMAL, if (live) LIVE_US else BATCH_US)
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -45,9 +80,18 @@ class StepCounterService : Service(), SensorEventListener {
             stopSelf()
             return
         }
-        // Let the hardware batch for minutes at a time: the counter is
-        // cumulative, so a late delivery loses nothing, and the CPU can sleep.
-        sensors.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL, BATCH_US)
+        this.sensor = sensor
+        listen(live = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive)
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screen, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screen, filter)
+        }
         // Judges each step's rhythm, so vehicle vibration isn't booked.
         StepFilter.acquire(this)
         filtering = true
@@ -56,6 +100,13 @@ class StepCounterService : Service(), SensorEventListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
+        if (sensor != null) {
+            try {
+                unregisterReceiver(screen)
+            } catch (e: IllegalArgumentException) {
+                // Never registered.
+            }
+        }
         (getSystemService(SENSOR_SERVICE) as SensorManager).unregisterListener(this)
         if (filtering) StepFilter.release()
         latest?.let { if (it.at > lastLoggedAt) log(it) }
@@ -151,6 +202,9 @@ class StepCounterService : Service(), SensorEventListener {
         private const val CHANNEL = "steps"
         private const val NOTIFICATION_ID = 4102
         private const val BATCH_US = 5 * 60 * 1_000_000
+
+        /** Screen on: a couple of seconds, so a widget keeps up as you walk. */
+        private const val LIVE_US = 2 * 1_000_000
         private const val LOG_EVERY_MS = 5 * 60 * 1000L
         private const val DAY_MS = 24 * 60 * 60 * 1000L
 
